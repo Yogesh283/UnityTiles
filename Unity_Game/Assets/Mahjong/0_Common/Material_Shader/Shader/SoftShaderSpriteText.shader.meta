@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0349d8e7bb5e91b45b838e4bd558c6c0
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/0_Common/Material_Shader/Shader/SoftShaderSpriteText.shader
+  uploadId: 886820

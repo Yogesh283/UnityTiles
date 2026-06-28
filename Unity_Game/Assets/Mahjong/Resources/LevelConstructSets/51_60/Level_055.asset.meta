@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 49339918ba289794fa9d777b69bfdb17
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Resources/LevelConstructSets/51_60/Level_055.asset
+  uploadId: 886820

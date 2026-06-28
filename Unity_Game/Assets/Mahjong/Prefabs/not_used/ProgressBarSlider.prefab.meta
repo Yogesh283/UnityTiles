@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4ac7381f9c227384a925cea46fc4a05c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Prefabs/not_used/ProgressBarSlider.prefab
+  uploadId: 886820

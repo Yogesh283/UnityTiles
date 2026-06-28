@@ -1,0 +1,4 @@
+Match IQ Unity Project
+
+Open this folder in Unity Hub:
+  c:\Users\yogib\TilesClash\Unity_Game

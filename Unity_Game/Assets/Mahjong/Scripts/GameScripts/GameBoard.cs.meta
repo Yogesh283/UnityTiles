@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: a115ce82750218348afe481a062a030e
+timeCreated: 1495036115
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 220
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Scripts/GameScripts/GameBoard.cs
+  uploadId: 886820

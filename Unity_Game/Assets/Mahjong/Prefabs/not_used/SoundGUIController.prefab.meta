@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1dec89a809086e64a96fcdb55124573d
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Prefabs/not_used/SoundGUIController.prefab
+  uploadId: 886820

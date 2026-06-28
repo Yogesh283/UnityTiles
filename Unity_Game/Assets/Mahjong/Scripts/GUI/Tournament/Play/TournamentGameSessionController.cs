@@ -1,0 +1,113 @@
+using System.Collections;
+using Mkey;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace Mkey.Tournament
+{
+    /// <summary>
+    /// Tracks tournament timer and moves during the Mahjong game scene.
+    /// </summary>
+    [DefaultExecutionOrder(-90)]
+    public class TournamentGameSessionController : MonoBehaviour
+    {
+        private static TournamentGameSessionController instance;
+        private static TournamentTimerHud timerHud;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Bootstrap()
+        {
+            if (instance) return;
+            GameObject host = new GameObject(nameof(TournamentGameSessionController));
+            instance = host.AddComponent<TournamentGameSessionController>();
+            DontDestroyOnLoad(host);
+        }
+
+        private void Awake()
+        {
+            if (instance && instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (scene.buildIndex != TournamentSession.GameSceneIndex || !TournamentSession.IsActive)
+            {
+                StopTracking();
+                return;
+            }
+
+            StartCoroutine(BeginRound());
+        }
+
+        private void Update()
+        {
+            if (!TournamentSession.IsActive) return;
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex != TournamentSession.GameSceneIndex)
+                return;
+            if (TournamentResultDialog.IsVisible || TournamentMatchManager.IsMatchResolved)
+                return;
+
+            if (Input.GetKeyDown(KeyCode.Escape))
+                TournamentMatchManager.ForfeitAsLoss();
+        }
+
+        private IEnumerator BeginRound()
+        {
+            yield return null;
+
+            float timeout = 5f;
+            while (GameBoard.Instance == null && timeout > 0f)
+            {
+                timeout -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            if (!TournamentSession.IsActive) yield break;
+
+            if (!TournamentMatchManager.HasActiveRoom && TournamentRoomRegistry.HasLocalRoom)
+                TournamentMatchManager.AttachRoom(TournamentRoomRegistry.LocalRoom);
+
+            if (!TournamentMatchManager.HasActiveRoom)
+            {
+                Debug.LogWarning("TournamentGameSessionController: no active room — match timer not started.");
+                yield break;
+            }
+
+            if (!TournamentMatchManager.PrepareMatchFromRoom())
+                TournamentRoomRegistry.ForcePrepareForLaunch();
+
+            TournamentMatchManager.BeginSynchronizedMatch();
+
+            GameEvents.MatchSpritesEvent += OnMatchMade;
+            timerHud = TournamentTimerHud.Create();
+        }
+
+        private static void OnMatchMade(Sprite _, Sprite __)
+        {
+            TournamentSession.RegisterMove();
+        }
+
+        public static void StopTracking()
+        {
+            GameEvents.MatchSpritesEvent -= OnMatchMade;
+            if (timerHud)
+            {
+                timerHud.Hide();
+                timerHud = null;
+            }
+        }
+    }
+}

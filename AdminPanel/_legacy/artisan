@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+
+define('LARAVEL_START', microtime(true));
+require __DIR__ . '/vendor/autoload.php';
+
+echo "TilesClash Admin Panel\n";
+echo "Run: composer install && php artisan serve --port=8080\n";

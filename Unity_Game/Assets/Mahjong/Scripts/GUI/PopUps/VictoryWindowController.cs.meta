@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: b04a2a59e8393db45beb3edaf1f61bb2
+timeCreated: 1491922281
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Scripts/GUI/PopUps/VictoryWindowController.cs
+  uploadId: 886820

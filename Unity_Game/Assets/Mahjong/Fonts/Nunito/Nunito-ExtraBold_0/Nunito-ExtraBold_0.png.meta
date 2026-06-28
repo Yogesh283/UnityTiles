@@ -1,0 +1,2865 @@
+fileFormatVersion: 2
+guid: 0cf8411a69139464eaabba469b5494e4
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7868299017428055589
+    second: Nunito-ExtraBold_se_rep_edit_work_0
+  - first:
+      213: -6828472183339627507
+    second: Nunito-ExtraBold_se_rep_edit_work_1
+  - first:
+      213: 3243194985402825255
+    second: Nunito-ExtraBold_se_rep_edit_work_2
+  - first:
+      213: 6850957915204626443
+    second: Nunito-ExtraBold_se_rep_edit_work_3
+  - first:
+      213: -2747482942701444740
+    second: Nunito-ExtraBold_se_rep_edit_work_4
+  - first:
+      213: -1788580347316551789
+    second: Nunito-ExtraBold_se_rep_edit_work_5
+  - first:
+      213: -5647228331948729421
+    second: Nunito-ExtraBold_se_rep_edit_work_6
+  - first:
+      213: 2740401434538266305
+    second: Nunito-ExtraBold_se_rep_edit_work_7
+  - first:
+      213: -5877514363172519769
+    second: Nunito-ExtraBold_se_rep_edit_work_8
+  - first:
+      213: 714677896837746705
+    second: Nunito-ExtraBold_se_rep_edit_work_9
+  - first:
+      213: 8201044613193928452
+    second: Nunito-ExtraBold_se_rep_edit_work_10
+  - first:
+      213: 8881105187165173466
+    second: Nunito-ExtraBold_se_rep_edit_work_11
+  - first:
+      213: -5382027495745681884
+    second: Nunito-ExtraBold_se_rep_edit_work_12
+  - first:
+      213: -6613163765080197572
+    second: Nunito-ExtraBold_se_rep_edit_work_13
+  - first:
+      213: 4468868534579035483
+    second: Nunito-ExtraBold_se_rep_edit_work_14
+  - first:
+      213: 5211312622290130393
+    second: Nunito-ExtraBold_se_rep_edit_work_15
+  - first:
+      213: -9125626858164720956
+    second: Nunito-ExtraBold_se_rep_edit_work_16
+  - first:
+      213: -2923217904532979098
+    second: Nunito-ExtraBold_se_rep_edit_work_17
+  - first:
+      213: 8247313361769728166
+    second: Nunito-ExtraBold_se_rep_edit_work_18
+  - first:
+      213: -6837557267818578814
+    second: Nunito-ExtraBold_se_rep_edit_work_19
+  - first:
+      213: 3195124784929999132
+    second: Nunito-ExtraBold_se_rep_edit_work_20
+  - first:
+      213: 2272375962304985298
+    second: Nunito-ExtraBold_se_rep_edit_work_21
+  - first:
+      213: -2919235488722083657
+    second: Nunito-ExtraBold_se_rep_edit_work_22
+  - first:
+      213: -1177224994604483439
+    second: Nunito-ExtraBold_se_rep_edit_work_23
+  - first:
+      213: 738102133828897677
+    second: Nunito-ExtraBold_se_rep_edit_work_24
+  - first:
+      213: 3614082000978588621
+    second: Nunito-ExtraBold_se_rep_edit_work_25
+  - first:
+      213: 8807771552411850289
+    second: Nunito-ExtraBold_se_rep_edit_work_26
+  - first:
+      213: 5842791149120867308
+    second: Nunito-ExtraBold_se_rep_edit_work_27
+  - first:
+      213: -8902889005196135259
+    second: Nunito-ExtraBold_se_rep_edit_work_28
+  - first:
+      213: 3215390016616646524
+    second: Nunito-ExtraBold_se_rep_edit_work_29
+  - first:
+      213: 5058440339910364726
+    second: Nunito-ExtraBold_se_rep_edit_work_30
+  - first:
+      213: -5184264068483389218
+    second: Nunito-ExtraBold_se_rep_edit_work_31
+  - first:
+      213: 4718351064207013228
+    second: Nunito-ExtraBold_se_rep_edit_work_32
+  - first:
+      213: -3027258738227989416
+    second: Nunito-ExtraBold_se_rep_edit_work_33
+  - first:
+      213: -1768922178015882232
+    second: Nunito-ExtraBold_se_rep_edit_work_34
+  - first:
+      213: -9081084865328469607
+    second: Nunito-ExtraBold_se_rep_edit_work_35
+  - first:
+      213: 491897785168042383
+    second: Nunito-ExtraBold_se_rep_edit_work_36
+  - first:
+      213: -2429645214059273522
+    second: Nunito-ExtraBold_se_rep_edit_work_37
+  - first:
+      213: 5073787186469497131
+    second: Nunito-ExtraBold_se_rep_edit_work_38
+  - first:
+      213: -8618853251119513462
+    second: Nunito-ExtraBold_se_rep_edit_work_39
+  - first:
+      213: -4712862594908468407
+    second: Nunito-ExtraBold_se_rep_edit_work_40
+  - first:
+      213: -4973484456932018095
+    second: Nunito-ExtraBold_se_rep_edit_work_41
+  - first:
+      213: 6570057517685441346
+    second: Nunito-ExtraBold_se_rep_edit_work_42
+  - first:
+      213: -1570652190338010596
+    second: Nunito-ExtraBold_se_rep_edit_work_43
+  - first:
+      213: 5682331956378988669
+    second: Nunito-ExtraBold_se_rep_edit_work_44
+  - first:
+      213: -5150690584398053310
+    second: Nunito-ExtraBold_se_rep_edit_work_45
+  - first:
+      213: 244147407965614385
+    second: Nunito-ExtraBold_se_rep_edit_work_46
+  - first:
+      213: 8568676953756049992
+    second: Nunito-ExtraBold_se_rep_edit_work_47
+  - first:
+      213: 3595070278498574726
+    second: Nunito-ExtraBold_se_rep_edit_work_48
+  - first:
+      213: 4097000617238129585
+    second: Nunito-ExtraBold_se_rep_edit_work_49
+  - first:
+      213: -2337000445274343326
+    second: Nunito-ExtraBold_se_rep_edit_work_50
+  - first:
+      213: -1767302955272142341
+    second: Nunito-ExtraBold_se_rep_edit_work_51
+  - first:
+      213: 3628748717530514719
+    second: Nunito-ExtraBold_se_rep_edit_work_52
+  - first:
+      213: -1053590038977114999
+    second: Nunito-ExtraBold_se_rep_edit_work_53
+  - first:
+      213: 6380421886515181149
+    second: Nunito-ExtraBold_se_rep_edit_work_54
+  - first:
+      213: -765495893717390296
+    second: Nunito-ExtraBold_se_rep_edit_work_55
+  - first:
+      213: -625149559847665755
+    second: Nunito-ExtraBold_se_rep_edit_work_56
+  - first:
+      213: -8013527824429524989
+    second: Nunito-ExtraBold_se_rep_edit_work_57
+  - first:
+      213: 1742379100205107486
+    second: Nunito-ExtraBold_se_rep_edit_work_58
+  - first:
+      213: 5989080472066753667
+    second: Nunito-ExtraBold_se_rep_edit_work_59
+  - first:
+      213: 5237686674290146881
+    second: Nunito-ExtraBold_se_rep_edit_work_60
+  - first:
+      213: 4074425245565939295
+    second: Nunito-ExtraBold_se_rep_edit_work_61
+  - first:
+      213: 2331915640803032747
+    second: Nunito-ExtraBold_se_rep_edit_work_62
+  - first:
+      213: 7133462205428839925
+    second: Nunito-ExtraBold_se_rep_edit_work_63
+  - first:
+      213: 197872101890618835
+    second: Nunito-ExtraBold_se_rep_edit_work_64
+  - first:
+      213: 1317617006405008631
+    second: Nunito-ExtraBold_se_rep_edit_work_65
+  - first:
+      213: 7016531251910597049
+    second: Nunito-ExtraBold_se_rep_edit_work_66
+  - first:
+      213: 8200379429957742815
+    second: Nunito-ExtraBold_se_rep_edit_work_67
+  - first:
+      213: -422428553473139120
+    second: Nunito-ExtraBold_se_rep_edit_work_68
+  - first:
+      213: -7117506048377424009
+    second: Nunito-ExtraBold_se_rep_edit_work_69
+  - first:
+      213: -6438634989536343653
+    second: Nunito-ExtraBold_se_rep_edit_work_70
+  - first:
+      213: 1314488322319853619
+    second: Nunito-ExtraBold_se_rep_edit_work_71
+  - first:
+      213: -8148157990249100023
+    second: Nunito-ExtraBold_se_rep_edit_work_72
+  - first:
+      213: -2316595983990034313
+    second: Nunito-ExtraBold_se_rep_edit_work_73
+  - first:
+      213: 1321432568164595220
+    second: Nunito-ExtraBold_se_rep_edit_work_74
+  - first:
+      213: 6160801310233609744
+    second: Nunito-ExtraBold_se_rep_edit_work_75
+  - first:
+      213: 1764050567810298553
+    second: Nunito-ExtraBold_se_rep_edit_work_76
+  - first:
+      213: 7028714237054309163
+    second: Nunito-ExtraBold_se_rep_edit_work_77
+  - first:
+      213: -3745629055383043193
+    second: Nunito-ExtraBold_se_rep_edit_work_78
+  - first:
+      213: 8079004277498862471
+    second: Nunito-ExtraBold_se_rep_edit_work_79
+  - first:
+      213: -3480619946567322809
+    second: Nunito-ExtraBold_se_rep_edit_work_80
+  - first:
+      213: 3482487526501413186
+    second: Nunito-ExtraBold_se_rep_edit_work_81
+  - first:
+      213: 620762164026380531
+    second: Nunito-ExtraBold_se_rep_edit_work_82
+  - first:
+      213: -211174022888911097
+    second: Nunito-ExtraBold_se_rep_edit_work_83
+  - first:
+      213: 1745445560253362589
+    second: Nunito-ExtraBold_se_rep_edit_work_84
+  - first:
+      213: -2243828953594164434
+    second: Nunito-ExtraBold_se_rep_edit_work_85
+  - first:
+      213: 5250325750997442761
+    second: Nunito-ExtraBold_se_rep_edit_work_86
+  - first:
+      213: -1274147631646664823
+    second: Nunito-ExtraBold_se_rep_edit_work_87
+  - first:
+      213: 9152330848945271055
+    second: Nunito-ExtraBold_se_rep_edit_work_88
+  - first:
+      213: 6364710063263885410
+    second: Nunito-ExtraBold_se_rep_edit_work_89
+  - first:
+      213: 4923495742573223664
+    second: Nunito-ExtraBold_se_rep_edit_work_90
+  - first:
+      213: -7314021584186640932
+    second: Nunito-ExtraBold_se_rep_edit_work_91
+  - first:
+      213: -5255237065482619977
+    second: Nunito-ExtraBold_se_rep_edit_work_92
+  - first:
+      213: 7224248738569772125
+    second: Nunito-ExtraBold_se_rep_edit_work_93
+  - first:
+      213: -2708803345479342639
+    second: Nunito-ExtraBold_se_rep_edit_work_94
+  - first:
+      213: 5002946917473275293
+    second: Nunito-ExtraBold_se_rep_edit_work_95
+  - first:
+      213: -2539189458244760519
+    second: Nunito-ExtraBold_se_rep_edit_work_96
+  - first:
+      213: 2466969961149023451
+    second: Nunito-ExtraBold_se_rep_edit_work_97
+  - first:
+      213: 4771371634795781110
+    second: Nunito-ExtraBold_se_rep_edit_work_98
+  - first:
+      213: -3171927363215186689
+    second: Nunito-ExtraBold_se_rep_edit_work_99
+  - first:
+      213: -2677698267428497246
+    second: Nunito-ExtraBold_se_rep_edit_work_100
+  - first:
+      213: -8034830401163980059
+    second: Nunito-ExtraBold_se_rep_edit_work_101
+  - first:
+      213: 5506275262624495795
+    second: Nunito-ExtraBold_se_rep_edit_work_102
+  - first:
+      213: 4474589323385009712
+    second: Nunito-ExtraBold_se_rep_edit_work_103
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 2
+    aniso: 0
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_0
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 677
+        width: 65
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 526ba50b440d13d60800000000000000
+      internalID: 7868299017428055589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_1
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 633
+        width: 54
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d0cc7616ab46c31a0800000000000000
+      internalID: -6828472183339627507
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_2
+      rect:
+        serializedVersion: 2
+        x: 365
+        y: 625
+        width: 44
+        height: 58
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 72a7342f7a4220d20800000000000000
+      internalID: 3243194985402825255
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_3
+      rect:
+        serializedVersion: 2
+        x: 71
+        y: 613
+        width: 47
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b082cea0ded731f50800000000000000
+      internalID: 6850957915204626443
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_4
+      rect:
+        serializedVersion: 2
+        x: 244
+        y: 597
+        width: 35
+        height: 60
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c71e5d502dafed9d0800000000000000
+      internalID: -2747482942701444740
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_5
+      rect:
+        serializedVersion: 2
+        x: 427
+        y: 644
+        width: 25
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39fb3f186afad27e0800000000000000
+      internalID: -1788580347316551789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_6
+      rect:
+        serializedVersion: 2
+        x: 439
+        y: 625
+        width: 31
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3bb9cac90c301a1b0800000000000000
+      internalID: -5647228331948729421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_7
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 626
+        width: 25
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1cecf9fd59cd70620800000000000000
+      internalID: 2740401434538266305
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_8
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 565
+        width: 44
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7a088dcb3dfde6ea0800000000000000
+      internalID: -5877514363172519769
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_9
+      rect:
+        serializedVersion: 2
+        x: 121
+        y: 549
+        width: 42
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11056d9b2cb0be900800000000000000
+      internalID: 714677896837746705
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_10
+      rect:
+        serializedVersion: 2
+        x: 181
+        y: 569
+        width: 45
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40f0e8cef96ffc170800000000000000
+      internalID: 8201044613193928452
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_11
+      rect:
+        serializedVersion: 2
+        x: 243
+        y: 533
+        width: 41
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad6fbd51d16004b70800000000000000
+      internalID: 8881105187165173466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_12
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 573
+        width: 45
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 42681b002823f45b0800000000000000
+      internalID: -5382027495745681884
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_13
+      rect:
+        serializedVersion: 2
+        x: 387
+        y: 561
+        width: 42
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c36f8ecf7925934a0800000000000000
+      internalID: -6613163765080197572
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_14
+      rect:
+        serializedVersion: 2
+        x: 447
+        y: 561
+        width: 42
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5df08f414c940e30800000000000000
+      internalID: 4468868534579035483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_15
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 473
+        width: 38
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d5dc11283d425840800000000000000
+      internalID: 5211312622290130393
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_16
+      rect:
+        serializedVersion: 2
+        x: 65
+        y: 501
+        width: 39
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4cae35ed8b24b5180800000000000000
+      internalID: -9125626858164720956
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_17
+      rect:
+        serializedVersion: 2
+        x: 129
+        y: 485
+        width: 38
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 662004fbdc4ae67d0800000000000000
+      internalID: -2923217904532979098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_18
+      rect:
+        serializedVersion: 2
+        x: 185
+        y: 505
+        width: 40
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a80e9f6ec7547270800000000000000
+      internalID: 8247313361769728166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_19
+      rect:
+        serializedVersion: 2
+        x: 273
+        y: 469
+        width: 38
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28c784054ed1c11a0800000000000000
+      internalID: -6837557267818578814
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_20
+      rect:
+        serializedVersion: 2
+        x: 329
+        y: 509
+        width: 40
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c198cca301d575c20800000000000000
+      internalID: 3195124784929999132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_21
+      rect:
+        serializedVersion: 2
+        x: 427
+        y: 497
+        width: 39
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2d8335de5e9198f10800000000000000
+      internalID: 2272375962304985298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_22
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 421
+        width: 49
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b0a10f2acacc77d0800000000000000
+      internalID: -2919235488722083657
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_23
+      rect:
+        serializedVersion: 2
+        x: 75
+        y: 437
+        width: 37
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19c73e7ca18a9afe0800000000000000
+      internalID: -1177224994604483439
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_24
+      rect:
+        serializedVersion: 2
+        x: 165
+        y: 421
+        width: 37
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d8b44d6eaf34e3a00800000000000000
+      internalID: 738102133828897677
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_25
+      rect:
+        serializedVersion: 2
+        x: 219
+        y: 441
+        width: 37
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc336718e6cc72230800000000000000
+      internalID: 3614082000978588621
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_26
+      rect:
+        serializedVersion: 2
+        x: 319
+        y: 405
+        width: 37
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1369c44bf8d7b3a70800000000000000
+      internalID: 8807771552411850289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_27
+      rect:
+        serializedVersion: 2
+        x: 373
+        y: 445
+        width: 37
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ceb452cf793c51150800000000000000
+      internalID: 5842791149120867308
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_28
+      rect:
+        serializedVersion: 2
+        x: 427
+        y: 445
+        width: 52
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a4bd8a8e95927480800000000000000
+      internalID: -8902889005196135259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_29
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 353
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c77c5ca2f2c5f9c20800000000000000
+      internalID: 3215390016616646524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_30
+      rect:
+        serializedVersion: 2
+        x: 61
+        y: 357
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 63e0dd930b0333640800000000000000
+      internalID: 5058440339910364726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_31
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 373
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed8e9301c4bcd08b0800000000000000
+      internalID: -5184264068483389218
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_32
+      rect:
+        serializedVersion: 2
+        x: 215
+        y: 357
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6535a34b43fa7140800000000000000
+      internalID: 4718351064207013228
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_33
+      rect:
+        serializedVersion: 2
+        x: 267
+        y: 377
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85439b877340df5d0800000000000000
+      internalID: -3027258738227989416
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_34
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 341
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8049d08b6a68377e0800000000000000
+      internalID: -1768922178015882232
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_35
+      rect:
+        serializedVersion: 2
+        x: 387
+        y: 381
+        width: 36
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 999abeabd6189f180800000000000000
+      internalID: -9081084865328469607
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_36
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 381
+        width: 37
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f891ebeed6293d600800000000000000
+      internalID: 491897785168042383
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_37
+      rect:
+        serializedVersion: 2
+        x: 59
+        y: 289
+        width: 34
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ec2e4c5fc8a284ed0800000000000000
+      internalID: -2429645214059273522
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_38
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 293
+        width: 34
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2961736096b96640800000000000000
+      internalID: 5073787186469497131
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_39
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 309
+        width: 34
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a800dcbf1aea36880800000000000000
+      internalID: -8618853251119513462
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_40
+      rect:
+        serializedVersion: 2
+        x: 231
+        y: 293
+        width: 34
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94b4143907c889eb0800000000000000
+      internalID: -4712862594908468407
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_41
+      rect:
+        serializedVersion: 2
+        x: 283
+        y: 313
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 158f3a0bc32aafab0800000000000000
+      internalID: -4973484456932018095
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_42
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 265
+        width: 26
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 243868fa0888d2b50800000000000000
+      internalID: 6570057517685441346
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_43
+      rect:
+        serializedVersion: 2
+        x: 429
+        y: 317
+        width: 34
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c12b631972ce33ae0800000000000000
+      internalID: -1570652190338010596
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_44
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 229
+        width: 32
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d70f1dbdec2bbde40800000000000000
+      internalID: 5682331956378988669
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_45
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 225
+        width: 32
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2404109f3321588b0800000000000000
+      internalID: -5150690584398053310
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_46
+      rect:
+        serializedVersion: 2
+        x: 131
+        y: 229
+        width: 32
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1317f9426c2636300800000000000000
+      internalID: 244147407965614385
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_47
+      rect:
+        serializedVersion: 2
+        x: 181
+        y: 245
+        width: 32
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 842a4b76a4e0ae670800000000000000
+      internalID: 8568676953756049992
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_48
+      rect:
+        serializedVersion: 2
+        x: 235
+        y: 229
+        width: 32
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 681e87cee5144e130800000000000000
+      internalID: 3595070278498574726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_49
+      rect:
+        serializedVersion: 2
+        x: 285
+        y: 249
+        width: 32
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1bbe803ca587bd830800000000000000
+      internalID: 4097000617238129585
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_50
+      rect:
+        serializedVersion: 2
+        x: 379
+        y: 265
+        width: 33
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2683e7b1a7e419fd0800000000000000
+      internalID: -2337000445274343326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_51
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 241
+        width: 25
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf1818463574977e0800000000000000
+      internalID: -1767302955272142341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_52
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 215
+        width: 13
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f158f8f8bb7eb5230800000000000000
+      internalID: 3628748717530514719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_53
+      rect:
+        serializedVersion: 2
+        x: 309
+        y: 177
+        width: 24
+        height: 53
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98c01e31175e061f0800000000000000
+      internalID: -1053590038977114999
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_54
+      rect:
+        serializedVersion: 2
+        x: 351
+        y: 201
+        width: 31
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d567dde96efcb8850800000000000000
+      internalID: 6380421886515181149
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_55
+      rect:
+        serializedVersion: 2
+        x: 399
+        y: 177
+        width: 24
+        height: 53
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82c64f95a896065f0800000000000000
+      internalID: -765495893717390296
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_56
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 191
+        width: 30
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5afb9c999c50357f0800000000000000
+      internalID: -625149559847665755
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_57
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 133
+        width: 17
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3085b23b6ea3ac090800000000000000
+      internalID: -8013527824429524989
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_58
+      rect:
+        serializedVersion: 2
+        x: 45
+        y: 153
+        width: 19
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e194ac36f8c2e2810800000000000000
+      internalID: 1742379100205107486
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_59
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 165
+        width: 28
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38484c435fc7d1350800000000000000
+      internalID: 5989080472066753667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_60
+      rect:
+        serializedVersion: 2
+        x: 161
+        y: 153
+        width: 19
+        height: 56
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14e7cd1a74000b840800000000000000
+      internalID: 5237686674290146881
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_61
+      rect:
+        serializedVersion: 2
+        x: 197
+        y: 169
+        width: 19
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5e67d17c244b8830800000000000000
+      internalID: 4074425245565939295
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_62
+      rect:
+        serializedVersion: 2
+        x: 265
+        y: 165
+        width: 27
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: baefd389be0ac5020800000000000000
+      internalID: 2331915640803032747
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_63
+      rect:
+        serializedVersion: 2
+        x: 366
+        y: 125
+        width: 16
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f5b245c4162ff260800000000000000
+      internalID: 7133462205428839925
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_64
+      rect:
+        serializedVersion: 2
+        x: 449
+        y: 177
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3d57628d0abfeb200800000000000000
+      internalID: 197872101890618835
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_65
+      rect:
+        serializedVersion: 2
+        x: 59
+        y: 101
+        width: 34
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7fcb8c0bfad194210800000000000000
+      internalID: 1317617006405008631
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_66
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 113
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b9de899ff9bf5160800000000000000
+      internalID: 7016531251910597049
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_67
+      rect:
+        serializedVersion: 2
+        x: 175
+        y: 89
+        width: 22
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd03d02e4a99dc170800000000000000
+      internalID: 8200379429957742815
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_68
+      rect:
+        serializedVersion: 2
+        x: 215
+        y: 117
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05e504ff77b332af0800000000000000
+      internalID: -422428553473139120
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_69
+      rect:
+        serializedVersion: 2
+        x: 265
+        y: 113
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 777f4cb85f9893d90800000000000000
+      internalID: -7117506048377424009
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_70
+      rect:
+        serializedVersion: 2
+        x: 315
+        y: 125
+        width: 32
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b990942279f55a6a0800000000000000
+      internalID: -6438634989536343653
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_71
+      rect:
+        serializedVersion: 2
+        x: 399
+        y: 125
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33826492a200e3210800000000000000
+      internalID: 1314488322319853619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_72
+      rect:
+        serializedVersion: 2
+        x: 451
+        y: 125
+        width: 34
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90d01798a7debee80800000000000000
+      internalID: -8148157990249100023
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_73
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 81
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7707d26f93cc9dfd0800000000000000
+      internalID: -2316595983990034313
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_74
+      rect:
+        serializedVersion: 2
+        x: 61
+        y: 72
+        width: 14
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41635146beba65210800000000000000
+      internalID: 1321432568164595220
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_75
+      rect:
+        serializedVersion: 2
+        x: 93
+        y: 49
+        width: 28
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0164c3c76209f7550800000000000000
+      internalID: 6160801310233609744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_76
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 49
+        width: 19
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b2b82425aa2b7810800000000000000
+      internalID: 1764050567810298553
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_77
+      rect:
+        serializedVersion: 2
+        x: 235
+        y: 41
+        width: 12
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b235a5fdb520b8160800000000000000
+      internalID: 7028714237054309163
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_78
+      rect:
+        serializedVersion: 2
+        x: 265
+        y: 61
+        width: 28
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7830385283ad40cc0800000000000000
+      internalID: -3745629055383043193
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_79
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 61
+        width: 28
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 78b5e2306936e1070800000000000000
+      internalID: 8079004277498862471
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_80
+      rect:
+        serializedVersion: 2
+        x: 357
+        y: 73
+        width: 31
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74337b6899a52bfc0800000000000000
+      internalID: -3480619946567322809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_81
+      rect:
+        serializedVersion: 2
+        x: 405
+        y: 73
+        width: 31
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24178df44f7445030800000000000000
+      internalID: 3482487526501413186
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_82
+      rect:
+        serializedVersion: 2
+        x: 453
+        y: 73
+        width: 31
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f09bc436e36d9800800000000000000
+      internalID: 620762164026380531
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_83
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 53
+        width: 34
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70f8ae35852c11df0800000000000000
+      internalID: -211174022888911097
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_84
+      rect:
+        serializedVersion: 2
+        x: 62
+        y: 37
+        width: 12
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d913fa14d71193810800000000000000
+      internalID: 1745445560253362589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_85
+      rect:
+        serializedVersion: 2
+        x: 193
+        y: 37
+        width: 24
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e2b884c74715cd0e0800000000000000
+      internalID: -2243828953594164434
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_86
+      rect:
+        serializedVersion: 2
+        x: 399
+        y: 9
+        width: 12
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9c0e94ff377ecd840800000000000000
+      internalID: 5250325750997442761
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_87
+      rect:
+        serializedVersion: 2
+        x: 473
+        y: 23
+        width: 13
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9879b40da71515ee0800000000000000
+      internalID: -1274147631646664823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_88
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 41
+        width: 34
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f017b3e7a6c930f70800000000000000
+      internalID: 9152330848945271055
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_89
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 29
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 268a233b41ef35850800000000000000
+      internalID: 6364710063263885410
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_90
+      rect:
+        serializedVersion: 2
+        x: 367
+        y: 37
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0fe9935ca45c35440800000000000000
+      internalID: 4923495742573223664
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_91
+      rect:
+        serializedVersion: 2
+        x: 29
+        y: 9
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd5f30bde106f7a90800000000000000
+      internalID: -7314021584186640932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_92
+      rect:
+        serializedVersion: 2
+        x: 59
+        y: 9
+        width: 22
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b3317d7bb5a117b0800000000000000
+      internalID: -5255237065482619977
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_93
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 9
+        width: 14
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d5cd387b3ffa14460800000000000000
+      internalID: 7224248738569772125
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_94
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 9
+        width: 12
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d5605a85b5686ad0800000000000000
+      internalID: -2708803345479342639
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_95
+      rect:
+        serializedVersion: 2
+        x: 161
+        y: 9
+        width: 14
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9d4126f6b90e6540800000000000000
+      internalID: 5002946917473275293
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_96
+      rect:
+        serializedVersion: 2
+        x: 193
+        y: 9
+        width: 32
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93c87e314acf2ccd0800000000000000
+      internalID: -2539189458244760519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_97
+      rect:
+        serializedVersion: 2
+        x: 243
+        y: 9
+        width: 32
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd4c8ddeb107c3220800000000000000
+      internalID: 2466969961149023451
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_98
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 9
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6fb9067d831573240800000000000000
+      internalID: 4771371634795781110
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_99
+      rect:
+        serializedVersion: 2
+        x: 324
+        y: 9
+        width: 12
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ff4a7366edc0bf3d0800000000000000
+      internalID: -3171927363215186689
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_100
+      rect:
+        serializedVersion: 2
+        x: 337
+        y: 9
+        width: 12
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a8de32ec97e6dad0800000000000000
+      internalID: -2677698267428497246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_101
+      rect:
+        serializedVersion: 2
+        x: 367
+        y: 9
+        width: 14
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5e29c1c025c8e7090800000000000000
+      internalID: -8034830401163980059
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_102
+      rect:
+        serializedVersion: 2
+        x: 429
+        y: 9
+        width: 27
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b8f0488d283a6c40800000000000000
+      internalID: 5506275262624495795
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Nunito-ExtraBold_se_rep_edit_work_103
+      rect:
+        serializedVersion: 2
+        x: 473
+        y: 9
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0367e10484fe81e30800000000000000
+      internalID: 4474589323385009712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      Nunito-ExtraBold_se_rep_edit_work_0: 7868299017428055589
+      Nunito-ExtraBold_se_rep_edit_work_1: -6828472183339627507
+      Nunito-ExtraBold_se_rep_edit_work_10: 8201044613193928452
+      Nunito-ExtraBold_se_rep_edit_work_100: -2677698267428497246
+      Nunito-ExtraBold_se_rep_edit_work_101: -8034830401163980059
+      Nunito-ExtraBold_se_rep_edit_work_102: 5506275262624495795
+      Nunito-ExtraBold_se_rep_edit_work_103: 4474589323385009712
+      Nunito-ExtraBold_se_rep_edit_work_11: 8881105187165173466
+      Nunito-ExtraBold_se_rep_edit_work_12: -5382027495745681884
+      Nunito-ExtraBold_se_rep_edit_work_13: -6613163765080197572
+      Nunito-ExtraBold_se_rep_edit_work_14: 4468868534579035483
+      Nunito-ExtraBold_se_rep_edit_work_15: 5211312622290130393
+      Nunito-ExtraBold_se_rep_edit_work_16: -9125626858164720956
+      Nunito-ExtraBold_se_rep_edit_work_17: -2923217904532979098
+      Nunito-ExtraBold_se_rep_edit_work_18: 8247313361769728166
+      Nunito-ExtraBold_se_rep_edit_work_19: -6837557267818578814
+      Nunito-ExtraBold_se_rep_edit_work_2: 3243194985402825255
+      Nunito-ExtraBold_se_rep_edit_work_20: 3195124784929999132
+      Nunito-ExtraBold_se_rep_edit_work_21: 2272375962304985298
+      Nunito-ExtraBold_se_rep_edit_work_22: -2919235488722083657
+      Nunito-ExtraBold_se_rep_edit_work_23: -1177224994604483439
+      Nunito-ExtraBold_se_rep_edit_work_24: 738102133828897677
+      Nunito-ExtraBold_se_rep_edit_work_25: 3614082000978588621
+      Nunito-ExtraBold_se_rep_edit_work_26: 8807771552411850289
+      Nunito-ExtraBold_se_rep_edit_work_27: 5842791149120867308
+      Nunito-ExtraBold_se_rep_edit_work_28: -8902889005196135259
+      Nunito-ExtraBold_se_rep_edit_work_29: 3215390016616646524
+      Nunito-ExtraBold_se_rep_edit_work_3: 6850957915204626443
+      Nunito-ExtraBold_se_rep_edit_work_30: 5058440339910364726
+      Nunito-ExtraBold_se_rep_edit_work_31: -5184264068483389218
+      Nunito-ExtraBold_se_rep_edit_work_32: 4718351064207013228
+      Nunito-ExtraBold_se_rep_edit_work_33: -3027258738227989416
+      Nunito-ExtraBold_se_rep_edit_work_34: -1768922178015882232
+      Nunito-ExtraBold_se_rep_edit_work_35: -9081084865328469607
+      Nunito-ExtraBold_se_rep_edit_work_36: 491897785168042383
+      Nunito-ExtraBold_se_rep_edit_work_37: -2429645214059273522
+      Nunito-ExtraBold_se_rep_edit_work_38: 5073787186469497131
+      Nunito-ExtraBold_se_rep_edit_work_39: -8618853251119513462
+      Nunito-ExtraBold_se_rep_edit_work_4: -2747482942701444740
+      Nunito-ExtraBold_se_rep_edit_work_40: -4712862594908468407
+      Nunito-ExtraBold_se_rep_edit_work_41: -4973484456932018095
+      Nunito-ExtraBold_se_rep_edit_work_42: 6570057517685441346
+      Nunito-ExtraBold_se_rep_edit_work_43: -1570652190338010596
+      Nunito-ExtraBold_se_rep_edit_work_44: 5682331956378988669
+      Nunito-ExtraBold_se_rep_edit_work_45: -5150690584398053310
+      Nunito-ExtraBold_se_rep_edit_work_46: 244147407965614385
+      Nunito-ExtraBold_se_rep_edit_work_47: 8568676953756049992
+      Nunito-ExtraBold_se_rep_edit_work_48: 3595070278498574726
+      Nunito-ExtraBold_se_rep_edit_work_49: 4097000617238129585
+      Nunito-ExtraBold_se_rep_edit_work_5: -1788580347316551789
+      Nunito-ExtraBold_se_rep_edit_work_50: -2337000445274343326
+      Nunito-ExtraBold_se_rep_edit_work_51: -1767302955272142341
+      Nunito-ExtraBold_se_rep_edit_work_52: 3628748717530514719
+      Nunito-ExtraBold_se_rep_edit_work_53: -1053590038977114999
+      Nunito-ExtraBold_se_rep_edit_work_54: 6380421886515181149
+      Nunito-ExtraBold_se_rep_edit_work_55: -765495893717390296
+      Nunito-ExtraBold_se_rep_edit_work_56: -625149559847665755
+      Nunito-ExtraBold_se_rep_edit_work_57: -8013527824429524989
+      Nunito-ExtraBold_se_rep_edit_work_58: 1742379100205107486
+      Nunito-ExtraBold_se_rep_edit_work_59: 5989080472066753667
+      Nunito-ExtraBold_se_rep_edit_work_6: -5647228331948729421
+      Nunito-ExtraBold_se_rep_edit_work_60: 5237686674290146881
+      Nunito-ExtraBold_se_rep_edit_work_61: 4074425245565939295
+      Nunito-ExtraBold_se_rep_edit_work_62: 2331915640803032747
+      Nunito-ExtraBold_se_rep_edit_work_63: 7133462205428839925
+      Nunito-ExtraBold_se_rep_edit_work_64: 197872101890618835
+      Nunito-ExtraBold_se_rep_edit_work_65: 1317617006405008631
+      Nunito-ExtraBold_se_rep_edit_work_66: 7016531251910597049
+      Nunito-ExtraBold_se_rep_edit_work_67: 8200379429957742815
+      Nunito-ExtraBold_se_rep_edit_work_68: -422428553473139120
+      Nunito-ExtraBold_se_rep_edit_work_69: -7117506048377424009
+      Nunito-ExtraBold_se_rep_edit_work_7: 2740401434538266305
+      Nunito-ExtraBold_se_rep_edit_work_70: -6438634989536343653
+      Nunito-ExtraBold_se_rep_edit_work_71: 1314488322319853619
+      Nunito-ExtraBold_se_rep_edit_work_72: -8148157990249100023
+      Nunito-ExtraBold_se_rep_edit_work_73: -2316595983990034313
+      Nunito-ExtraBold_se_rep_edit_work_74: 1321432568164595220
+      Nunito-ExtraBold_se_rep_edit_work_75: 6160801310233609744
+      Nunito-ExtraBold_se_rep_edit_work_76: 1764050567810298553
+      Nunito-ExtraBold_se_rep_edit_work_77: 7028714237054309163
+      Nunito-ExtraBold_se_rep_edit_work_78: -3745629055383043193
+      Nunito-ExtraBold_se_rep_edit_work_79: 8079004277498862471
+      Nunito-ExtraBold_se_rep_edit_work_8: -5877514363172519769
+      Nunito-ExtraBold_se_rep_edit_work_80: -3480619946567322809
+      Nunito-ExtraBold_se_rep_edit_work_81: 3482487526501413186
+      Nunito-ExtraBold_se_rep_edit_work_82: 620762164026380531
+      Nunito-ExtraBold_se_rep_edit_work_83: -211174022888911097
+      Nunito-ExtraBold_se_rep_edit_work_84: 1745445560253362589
+      Nunito-ExtraBold_se_rep_edit_work_85: -2243828953594164434
+      Nunito-ExtraBold_se_rep_edit_work_86: 5250325750997442761
+      Nunito-ExtraBold_se_rep_edit_work_87: -1274147631646664823
+      Nunito-ExtraBold_se_rep_edit_work_88: 9152330848945271055
+      Nunito-ExtraBold_se_rep_edit_work_89: 6364710063263885410
+      Nunito-ExtraBold_se_rep_edit_work_9: 714677896837746705
+      Nunito-ExtraBold_se_rep_edit_work_90: 4923495742573223664
+      Nunito-ExtraBold_se_rep_edit_work_91: -7314021584186640932
+      Nunito-ExtraBold_se_rep_edit_work_92: -5255237065482619977
+      Nunito-ExtraBold_se_rep_edit_work_93: 7224248738569772125
+      Nunito-ExtraBold_se_rep_edit_work_94: -2708803345479342639
+      Nunito-ExtraBold_se_rep_edit_work_95: 5002946917473275293
+      Nunito-ExtraBold_se_rep_edit_work_96: -2539189458244760519
+      Nunito-ExtraBold_se_rep_edit_work_97: 2466969961149023451
+      Nunito-ExtraBold_se_rep_edit_work_98: 4771371634795781110
+      Nunito-ExtraBold_se_rep_edit_work_99: -3171927363215186689
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Fonts/Nunito/Nunito-ExtraBold_0/Nunito-ExtraBold_0.png
+  uploadId: 886820

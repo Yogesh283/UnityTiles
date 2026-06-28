@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 364a3d647b965a540aa5652f0c7ec6ad
+timeCreated: 1490256105
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 200
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Scripts/MKUtils/Touch/TouchManager.cs
+  uploadId: 886820

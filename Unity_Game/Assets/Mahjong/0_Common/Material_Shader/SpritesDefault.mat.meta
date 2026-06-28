@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e96a7c83069742443bb09adf8ae62b8c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/0_Common/Material_Shader/SpritesDefault.mat
+  uploadId: 886820

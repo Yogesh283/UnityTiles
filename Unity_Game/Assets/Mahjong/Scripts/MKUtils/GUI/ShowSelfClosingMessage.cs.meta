@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 5a30bda7de2ddd64b922698c52027d07
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - messagePrefab: {fileID: 5602521218025798326, guid: 31eed22f7fd27164b845d715ef3a4683,
+      type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Scripts/MKUtils/GUI/ShowSelfClosingMessage.cs
+  uploadId: 886820

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 55fd78e68268f914ba1358a9e40cbd46
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Prefabs/Animations/CollectPrefab/part_confetti_white.mat
+  uploadId: 886820

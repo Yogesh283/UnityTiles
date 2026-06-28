@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 511150c74994fea458704c4de60b4784
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Prefabs/PopUps/Achievements/Lines/UseShuffleAchievementLine.prefab
+  uploadId: 886820

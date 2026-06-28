@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 8f57e4d50a9cbfb4386a23a9fbbc9167
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/0_Common/Material_Shader/particles/Add Particle.mat
+  uploadId: 886820

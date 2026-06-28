@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 30eec0893e8d6e44c846b6631fd4537e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Prefabs/PopUps/Profile_Theme/ThemeButton.prefab
+  uploadId: 886820

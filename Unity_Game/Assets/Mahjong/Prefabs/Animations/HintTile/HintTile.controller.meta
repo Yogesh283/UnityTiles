@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2483687096cad6e4e9536c8ae7a69363
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Prefabs/Animations/HintTile/HintTile.controller
+  uploadId: 886820

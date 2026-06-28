@@ -1,0 +1,26 @@
+# Unity
+Unity_Game/Library/
+Unity_Game/Logs/
+Unity_Game/Temp/
+Unity_Game/Obj/
+Unity_Game/Builds/*.apk
+Unity_Game/UserSettings/
+
+# Python
+Backend/venv/
+Backend/__pycache__/
+Backend/.env
+*.pyc
+
+# PHP / Laravel
+AdminPanel/vendor/
+AdminPanel/.env
+AdminPanel/storage/logs/
+AdminPanel/storage/framework/cache/
+
+# Database backups
+Database/backups/*.sql
+
+# OS
+.DS_Store
+Thumbs.db

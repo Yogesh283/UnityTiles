@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 68ffab9f3ef06644aa7aafdd258e7116
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Prefabs/Construct/ScrollPanel.prefab
+  uploadId: 886820

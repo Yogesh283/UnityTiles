@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b3da795ea05f99e48b75f66c844965e4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Resources/GameObjectSets/Theme/Themes/SimpleTheme_Sprites.asset
+  uploadId: 886820

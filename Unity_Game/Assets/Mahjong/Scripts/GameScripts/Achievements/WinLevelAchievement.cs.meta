@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 4dfa82f664eb7544ea614358c390bf9c
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Scripts/GameScripts/Achievements/WinLevelAchievement.cs
+  uploadId: 886820

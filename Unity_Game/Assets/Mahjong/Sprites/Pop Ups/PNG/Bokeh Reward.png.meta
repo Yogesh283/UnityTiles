@@ -1,0 +1,1773 @@
+fileFormatVersion: 2
+guid: f5587d4e458f5504785390978dff5743
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 6770607074997193261
+    second: Bokeh Reward_0
+  - first:
+      213: -1542670494083193809
+    second: Bokeh Reward_1
+  - first:
+      213: 3327978028749182715
+    second: Bokeh Reward_2
+  - first:
+      213: 3500027818538507630
+    second: Bokeh Reward_3
+  - first:
+      213: 4885090726484241368
+    second: Bokeh Reward_4
+  - first:
+      213: -2779230145420388840
+    second: Bokeh Reward_5
+  - first:
+      213: 2347530290053115079
+    second: Bokeh Reward_6
+  - first:
+      213: -1261232936296315769
+    second: Bokeh Reward_7
+  - first:
+      213: -147944183291911522
+    second: Bokeh Reward_8
+  - first:
+      213: -4034562472337902871
+    second: Bokeh Reward_9
+  - first:
+      213: -3235684598633643062
+    second: Bokeh Reward_10
+  - first:
+      213: 6534864925077932294
+    second: Bokeh Reward_11
+  - first:
+      213: -6106474718007900238
+    second: Bokeh Reward_12
+  - first:
+      213: 2395838685238307772
+    second: Bokeh Reward_13
+  - first:
+      213: 3898762693823925598
+    second: Bokeh Reward_14
+  - first:
+      213: -4849439407755018255
+    second: Bokeh Reward_15
+  - first:
+      213: 4203496002529992150
+    second: Bokeh Reward_16
+  - first:
+      213: 6683174058259655632
+    second: Bokeh Reward_17
+  - first:
+      213: -3748201534779642653
+    second: Bokeh Reward_18
+  - first:
+      213: 7393141028004918830
+    second: Bokeh Reward_19
+  - first:
+      213: -2954419100726542045
+    second: Bokeh Reward_20
+  - first:
+      213: 4369596565042263265
+    second: Bokeh Reward_21
+  - first:
+      213: -5796165889332352068
+    second: Bokeh Reward_22
+  - first:
+      213: 2406157970050203189
+    second: Bokeh Reward_23
+  - first:
+      213: -4558137088446956764
+    second: Bokeh Reward_24
+  - first:
+      213: -6605722940437067813
+    second: Bokeh Reward_25
+  - first:
+      213: 4674252158379583122
+    second: Bokeh Reward_26
+  - first:
+      213: 1066590518210259470
+    second: Bokeh Reward_27
+  - first:
+      213: 5331914655587652408
+    second: Bokeh Reward_28
+  - first:
+      213: 5235716301000501660
+    second: Bokeh Reward_29
+  - first:
+      213: -8368314159026626958
+    second: Bokeh Reward_30
+  - first:
+      213: 3762336545686235152
+    second: Bokeh Reward_31
+  - first:
+      213: -6493376007534486829
+    second: Bokeh Reward_32
+  - first:
+      213: 5908713937040712714
+    second: Bokeh Reward_33
+  - first:
+      213: 6776591746698873107
+    second: Bokeh Reward_34
+  - first:
+      213: 5812180986312014246
+    second: Bokeh Reward_35
+  - first:
+      213: 6822540607091134423
+    second: Bokeh Reward_36
+  - first:
+      213: -1876316854808391747
+    second: Bokeh Reward_37
+  - first:
+      213: 3734783454279417368
+    second: Bokeh Reward_38
+  - first:
+      213: 4764272716870234954
+    second: Bokeh Reward_39
+  - first:
+      213: 9204016420899516311
+    second: Bokeh Reward_40
+  - first:
+      213: 8590389730294743033
+    second: Bokeh Reward_41
+  - first:
+      213: 8050045221087668432
+    second: Bokeh Reward_42
+  - first:
+      213: -5923762715225136442
+    second: Bokeh Reward_43
+  - first:
+      213: -378943615281388576
+    second: Bokeh Reward_44
+  - first:
+      213: -2410985173540674288
+    second: Bokeh Reward_45
+  - first:
+      213: -134259638869003383
+    second: Bokeh Reward_46
+  - first:
+      213: -1675876900291651116
+    second: Bokeh Reward_47
+  - first:
+      213: 2366642961413088938
+    second: Bokeh Reward_48
+  - first:
+      213: -2202743721233016609
+    second: Bokeh Reward_49
+  - first:
+      213: -9033717496481980473
+    second: Bokeh Reward_50
+  - first:
+      213: 8146474957450719760
+    second: Bokeh Reward_51
+  - first:
+      213: -7382365308185497845
+    second: Bokeh Reward_52
+  - first:
+      213: -4706874825874169589
+    second: Bokeh Reward_53
+  - first:
+      213: -8969130654531507237
+    second: Bokeh Reward_54
+  - first:
+      213: 8309365410203734444
+    second: Bokeh Reward_55
+  - first:
+      213: -1508822322458253912
+    second: Bokeh Reward_56
+  - first:
+      213: -7691623997705570773
+    second: Bokeh Reward_57
+  - first:
+      213: 8965405709399504962
+    second: Bokeh Reward_58
+  - first:
+      213: 2070030217279212978
+    second: Bokeh Reward_59
+  - first:
+      213: -630252512642244901
+    second: Bokeh Reward_60
+  - first:
+      213: -9189101955761945837
+    second: Bokeh Reward_61
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Win64
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Bokeh Reward_0
+      rect:
+        serializedVersion: 2
+        x: 164
+        y: 235
+        width: 33
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d2a44f2334706fd50800000000000000
+      internalID: 6770607074997193261
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_1
+      rect:
+        serializedVersion: 2
+        x: 302
+        y: 270
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f24e1baeb55579ae0800000000000000
+      internalID: -1542670494083193809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_2
+      rect:
+        serializedVersion: 2
+        x: 66
+        y: 233
+        width: 36
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf656ef726a5f2e20800000000000000
+      internalID: 3327978028749182715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_3
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 232
+        width: 34
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6d19fbc1c8929030800000000000000
+      internalID: 3500027818538507630
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_4
+      rect:
+        serializedVersion: 2
+        x: 238
+        y: 253
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8dbe5a722245bc340800000000000000
+      internalID: 4885090726484241368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_5
+      rect:
+        serializedVersion: 2
+        x: 277
+        y: 240
+        width: 15
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 816192168e03e69d0800000000000000
+      internalID: -2779230145420388840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_6
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 223
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7cce51e6c5a149020800000000000000
+      internalID: 2347530290053115079
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_7
+      rect:
+        serializedVersion: 2
+        x: 123
+        y: 237
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7840905a3533f7ee0800000000000000
+      internalID: -1261232936296315769
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_8
+      rect:
+        serializedVersion: 2
+        x: 343
+        y: 219
+        width: 10
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e92ec449c8562fdf0800000000000000
+      internalID: -147944183291911522
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_9
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 201
+        width: 19
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e27d24beca5208c0800000000000000
+      internalID: -4034562472337902871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_10
+      rect:
+        serializedVersion: 2
+        x: 76
+        y: 185
+        width: 30
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac34d3d300a8813d0800000000000000
+      internalID: -3235684598633643062
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_11
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 166
+        width: 45
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6090e62b60180ba50800000000000000
+      internalID: 6534864925077932294
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_12
+      rect:
+        serializedVersion: 2
+        x: 259
+        y: 200
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b74c33f891714ba0800000000000000
+      internalID: -6106474718007900238
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_13
+      rect:
+        serializedVersion: 2
+        x: 57
+        y: 150
+        width: 32
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cbba4cc279abf3120800000000000000
+      internalID: 2395838685238307772
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_14
+      rect:
+        serializedVersion: 2
+        x: 90
+        y: 180
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e5d8be473003b1630800000000000000
+      internalID: 3898762693823925598
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_15
+      rect:
+        serializedVersion: 2
+        x: 118
+        y: 156
+        width: 31
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ff3bf45d8453bcb0800000000000000
+      internalID: -4849439407755018255
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_16
+      rect:
+        serializedVersion: 2
+        x: 164
+        y: 172
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6dd139dd751d55a30800000000000000
+      internalID: 4203496002529992150
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_17
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 138
+        width: 52
+        height: 49
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0db2ca2a5676fbc50800000000000000
+      internalID: 6683174058259655632
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_18
+      rect:
+        serializedVersion: 2
+        x: 274
+        y: 178
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3eca2ec1096bbfbc0800000000000000
+      internalID: -3748201534779642653
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_19
+      rect:
+        serializedVersion: 2
+        x: 301
+        y: 167
+        width: 31
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e26799c2896b99660800000000000000
+      internalID: 7393141028004918830
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_20
+      rect:
+        serializedVersion: 2
+        x: 355
+        y: 153
+        width: 36
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 321c0972b7bcff6d0800000000000000
+      internalID: -2954419100726542045
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_21
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 145
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e47c1fbcece3ac30800000000000000
+      internalID: 4369596565042263265
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_22
+      rect:
+        serializedVersion: 2
+        x: 39
+        y: 150
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cbbeb1345d1ef8fa0800000000000000
+      internalID: -5796165889332352068
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_23
+      rect:
+        serializedVersion: 2
+        x: 78
+        y: 147
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 53e3156ece3646120800000000000000
+      internalID: 2406157970050203189
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_24
+      rect:
+        serializedVersion: 2
+        x: 339
+        y: 139
+        width: 23
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 42bf595d77e3eb0c0800000000000000
+      internalID: -4558137088446956764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_25
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 135
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd7899afbf1c354a0800000000000000
+      internalID: -6605722940437067813
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_26
+      rect:
+        serializedVersion: 2
+        x: 116
+        y: 109
+        width: 32
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29661d2a2974ed040800000000000000
+      internalID: 4674252158379583122
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_27
+      rect:
+        serializedVersion: 2
+        x: 207
+        y: 120
+        width: 28
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e0ae8bedc6a4dce00800000000000000
+      internalID: 1066590518210259470
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_28
+      rect:
+        serializedVersion: 2
+        x: 263
+        y: 109
+        width: 42
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 833500b2124cef940800000000000000
+      internalID: 5331914655587652408
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_29
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 141
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c996bd95c3009a840800000000000000
+      internalID: 5235716301000501660
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_30
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 84
+        width: 35
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 27e985e0c96cddb80800000000000000
+      internalID: -8368314159026626958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_31
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 108
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 01829139721863430800000000000000
+      internalID: 3762336545686235152
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_32
+      rect:
+        serializedVersion: 2
+        x: 109
+        y: 94
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3dadcddace4e2e5a0800000000000000
+      internalID: -6493376007534486829
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_33
+      rect:
+        serializedVersion: 2
+        x: 114
+        y: 108
+        width: 11
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a0426b02508fff150800000000000000
+      internalID: 5908713937040712714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_34
+      rect:
+        serializedVersion: 2
+        x: 152
+        y: 105
+        width: 18
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31984d92a4a4b0e50800000000000000
+      internalID: 6776591746698873107
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_35
+      rect:
+        serializedVersion: 2
+        x: 218
+        y: 90
+        width: 26
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a9386310d309a050800000000000000
+      internalID: 5812180986312014246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_36
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 109
+        width: 20
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7df4857e8888eae50800000000000000
+      internalID: 6822540607091134423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_37
+      rect:
+        serializedVersion: 2
+        x: 273
+        y: 89
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dbf411ff2cbf5f5e0800000000000000
+      internalID: -1876316854808391747
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_38
+      rect:
+        serializedVersion: 2
+        x: 350
+        y: 108
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 81eb45193cd94d330800000000000000
+      internalID: 3734783454279417368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_39
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 97
+        width: 17
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a43b2263bc81e1240800000000000000
+      internalID: 4764272716870234954
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_40
+      rect:
+        serializedVersion: 2
+        x: 58
+        y: 87
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79fe39a7b2c3bbf70800000000000000
+      internalID: 9204016420899516311
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_41
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 58
+        width: 41
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ffb16422f1373770800000000000000
+      internalID: 8590389730294743033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_42
+      rect:
+        serializedVersion: 2
+        x: 278
+        y: 84
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0d8e2c44a7187bf60800000000000000
+      internalID: 8050045221087668432
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_43
+      rect:
+        serializedVersion: 2
+        x: 289
+        y: 88
+        width: 9
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c26d4922319acda0800000000000000
+      internalID: -5923762715225136442
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_44
+      rect:
+        serializedVersion: 2
+        x: 324
+        y: 73
+        width: 15
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e320452ac8bdbaf0800000000000000
+      internalID: -378943615281388576
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_45
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 84
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 015ef5432c57a8ed0800000000000000
+      internalID: -2410985173540674288
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_46
+      rect:
+        serializedVersion: 2
+        x: 54
+        y: 72
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9837a8dd193032ef0800000000000000
+      internalID: -134259638869003383
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_47
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 52
+        width: 28
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d955de96d61eb8e0800000000000000
+      internalID: -1675876900291651116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_48
+      rect:
+        serializedVersion: 2
+        x: 296
+        y: 65
+        width: 7
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa6a4310c3108d020800000000000000
+      internalID: 2366642961413088938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_49
+      rect:
+        serializedVersion: 2
+        x: 299
+        y: 36
+        width: 39
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd81fa491484e61e0800000000000000
+      internalID: -2202743721233016609
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_50
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 59
+        width: 13
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7cfd5f4bcc9c1a280800000000000000
+      internalID: -9033717496481980473
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_51
+      rect:
+        serializedVersion: 2
+        x: 53
+        y: 29
+        width: 35
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 012377adfc71e0170800000000000000
+      internalID: 8146474957450719760
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_52
+      rect:
+        serializedVersion: 2
+        x: 85
+        y: 52
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b0faf6b9dd19c8990800000000000000
+      internalID: -7382365308185497845
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_53
+      rect:
+        serializedVersion: 2
+        x: 158
+        y: 53
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b01aa81b842ddaeb0800000000000000
+      internalID: -4706874825874169589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_54
+      rect:
+        serializedVersion: 2
+        x: 175
+        y: 19
+        width: 41
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bdb2590b03f378380800000000000000
+      internalID: -8969130654531507237
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_55
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 56
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ca19c10d0dbc05370800000000000000
+      internalID: 8309365410203734444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_56
+      rect:
+        serializedVersion: 2
+        x: 213
+        y: 53
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a522b087169f0be0800000000000000
+      internalID: -1508822322458253912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_57
+      rect:
+        serializedVersion: 2
+        x: 238
+        y: 53
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b26b3eed9bcd14590800000000000000
+      internalID: -7691623997705570773
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_58
+      rect:
+        serializedVersion: 2
+        x: 147
+        y: 29
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2483400fdf48b6c70800000000000000
+      internalID: 8965405709399504962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_59
+      rect:
+        serializedVersion: 2
+        x: 248
+        y: 42
+        width: 18
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bd804fd3893abc10800000000000000
+      internalID: 2070030217279212978
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_60
+      rect:
+        serializedVersion: 2
+        x: 267
+        y: 20
+        width: 14
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bde5921dda4e047f0800000000000000
+      internalID: -630252512642244901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Bokeh Reward_61
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 0
+        width: 10
+        height: 5
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31346f90570c97080800000000000000
+      internalID: -9189101955761945837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      Bokeh Reward_0: 6770607074997193261
+      Bokeh Reward_1: -1542670494083193809
+      Bokeh Reward_10: -3235684598633643062
+      Bokeh Reward_11: 6534864925077932294
+      Bokeh Reward_12: -6106474718007900238
+      Bokeh Reward_13: 2395838685238307772
+      Bokeh Reward_14: 3898762693823925598
+      Bokeh Reward_15: -4849439407755018255
+      Bokeh Reward_16: 4203496002529992150
+      Bokeh Reward_17: 6683174058259655632
+      Bokeh Reward_18: -3748201534779642653
+      Bokeh Reward_19: 7393141028004918830
+      Bokeh Reward_2: 3327978028749182715
+      Bokeh Reward_20: -2954419100726542045
+      Bokeh Reward_21: 4369596565042263265
+      Bokeh Reward_22: -5796165889332352068
+      Bokeh Reward_23: 2406157970050203189
+      Bokeh Reward_24: -4558137088446956764
+      Bokeh Reward_25: -6605722940437067813
+      Bokeh Reward_26: 4674252158379583122
+      Bokeh Reward_27: 1066590518210259470
+      Bokeh Reward_28: 5331914655587652408
+      Bokeh Reward_29: 5235716301000501660
+      Bokeh Reward_3: 3500027818538507630
+      Bokeh Reward_30: -8368314159026626958
+      Bokeh Reward_31: 3762336545686235152
+      Bokeh Reward_32: -6493376007534486829
+      Bokeh Reward_33: 5908713937040712714
+      Bokeh Reward_34: 6776591746698873107
+      Bokeh Reward_35: 5812180986312014246
+      Bokeh Reward_36: 6822540607091134423
+      Bokeh Reward_37: -1876316854808391747
+      Bokeh Reward_38: 3734783454279417368
+      Bokeh Reward_39: 4764272716870234954
+      Bokeh Reward_4: 4885090726484241368
+      Bokeh Reward_40: 9204016420899516311
+      Bokeh Reward_41: 8590389730294743033
+      Bokeh Reward_42: 8050045221087668432
+      Bokeh Reward_43: -5923762715225136442
+      Bokeh Reward_44: -378943615281388576
+      Bokeh Reward_45: -2410985173540674288
+      Bokeh Reward_46: -134259638869003383
+      Bokeh Reward_47: -1675876900291651116
+      Bokeh Reward_48: 2366642961413088938
+      Bokeh Reward_49: -2202743721233016609
+      Bokeh Reward_5: -2779230145420388840
+      Bokeh Reward_50: -9033717496481980473
+      Bokeh Reward_51: 8146474957450719760
+      Bokeh Reward_52: -7382365308185497845
+      Bokeh Reward_53: -4706874825874169589
+      Bokeh Reward_54: -8969130654531507237
+      Bokeh Reward_55: 8309365410203734444
+      Bokeh Reward_56: -1508822322458253912
+      Bokeh Reward_57: -7691623997705570773
+      Bokeh Reward_58: 8965405709399504962
+      Bokeh Reward_59: 2070030217279212978
+      Bokeh Reward_6: 2347530290053115079
+      Bokeh Reward_60: -630252512642244901
+      Bokeh Reward_61: -9189101955761945837
+      Bokeh Reward_7: -1261232936296315769
+      Bokeh Reward_8: -147944183291911522
+      Bokeh Reward_9: -4034562472337902871
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Sprites/Pop Ups/PNG/Bokeh Reward.png
+  uploadId: 886820

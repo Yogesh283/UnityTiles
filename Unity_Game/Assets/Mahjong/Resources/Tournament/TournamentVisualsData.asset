@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1b2b3b4c5c6d7d8e9e0f1f2a3a4a5a6, type: 3}
+  m_Name: TournamentVisualsData
+  m_EditorClassIdentifier: 
+  background: {fileID: 21300000, guid: c983aae40f1a98045b154a674296781d, type: 3}
+  logo: {fileID: 21300000, guid: 6f124c0ec380f234cbf4b745049464ba, type: 3}
+  panelSprite: {fileID: 21300000, guid: 9f79cb42f59d56d4a888a05605c76802, type: 3}
+  popupPanel: {fileID: 21300000, guid: eb7e4a96b9e7cdc4d8f2629ad41b3b31, type: 3}
+  buttonNormal: {fileID: 21300000, guid: 4b8bedccdff2b6f4591f89f48510d5ff, type: 3}
+  buttonHover: {fileID: 21300000, guid: 51f0c901e761ad342ab5e4513ce9c836, type: 3}
+  buttonPressed: {fileID: 21300000, guid: 51f0c901e761ad342ab5e4513ce9c836, type: 3}
+  buttonDisabled: {fileID: 21300000, guid: 4b8bedccdff2b6f4591f89f48510d5ff, type: 3}
+  longButtonNormal: {fileID: 21300000, guid: 0f536c5666488fd45a678edd3f99a7a8, type: 3}
+  longButtonHover: {fileID: 21300000, guid: 3b630260923e1bd4f9df22351eb9dc1e, type: 3}
+  joinButtonNormal: {fileID: 21300000, guid: 4b16ae8e7ffb7684a87419bda7a177be, type: 3}
+  joinButtonHover: {fileID: 21300000, guid: cc5e974680935ee4f921d5843daf2da6, type: 3}
+  mapPlayButtonNormal: {fileID: 21300000, guid: 0f536c5666488fd45a678edd3f99a7a8, type: 3}
+  mapPlayButtonPressed: {fileID: 21300000, guid: 3b630260923e1bd4f9df22351eb9dc1e, type: 3}
