@@ -1,4 +1,4 @@
-# TilesClash Production Monorepo
+# Match IQ (UnityTiles) — Production Monorepo
 
 ## Structure
 
