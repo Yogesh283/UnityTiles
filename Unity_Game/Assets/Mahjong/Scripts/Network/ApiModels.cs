@@ -107,6 +107,8 @@ namespace Mkey.Network
         [JsonProperty("tournament_id")] public string tournamentId;
         [JsonProperty("level_index")] public int levelIndex;
         public string status;
+        [JsonProperty("paid_winner_slots")] public int paidWinnerSlots;
+        [JsonProperty("submitted_count")] public int submittedCount;
         public List<RoomPlayerDto> players;
     }
 
@@ -117,6 +119,16 @@ namespace Mkey.Network
         public int score;
         public int moves;
         [JsonProperty("elapsed_seconds")] public int elapsedSeconds;
+    }
+
+    [Serializable]
+    public class SubmitScoreResponseDto
+    {
+        public bool ok;
+        public bool finalized;
+        public int rank;
+        public int prize;
+        [JsonProperty("room_status")] public string roomStatus;
     }
 
     [Serializable]

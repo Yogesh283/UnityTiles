@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from database.models import LeaderboardEntry, RoomPlayer, TournamentResult, TournamentRoom, User
 from tournament.catalog import TournamentDefinition, get_tournament
 from tournament.level_selector import generate_room_seed, pick_level_index
-from tournament.prize_table import get_prize
+from tournament.prize_table import get_paid_rank_count, get_prize
 from tournament.ranking import RankedPlayer, rank_players
 from wallet.service import WalletService
 
@@ -105,24 +105,28 @@ class RoomManager:
         deadline = room.created_at + timedelta(seconds=wait_seconds)
         return count >= 2 and datetime.utcnow() >= deadline
 
-    def try_auto_finalize(self, room_id: str) -> bool:
+    def try_instant_finalize(self, room_id: str) -> list[dict] | None:
+        """Finalize as soon as paid winner slots are filled (first-N-to-finish model)."""
         room = self.db.query(TournamentRoom).filter(TournamentRoom.id == room_id).first()
-        if not room or room.status == "finished":
-            return False
+        if not room or room.status in {"finished", "locked"}:
+            return None
+
+        paid_slots = get_paid_rank_count(room.tournament_id)
+        if paid_slots <= 0:
+            return None
 
         players = self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room_id).all()
-        if not players:
-            return False
-
         submitted = [p for p in players if p.submitted_at is not None]
-        if len(submitted) >= len(players) or (
-            room.started_at
-            and datetime.utcnow() >= room.started_at + timedelta(hours=2)
-            and len(submitted) >= max(1, len(players) // 2)
-        ):
-            self.finalize_room(room_id)
-            return True
-        return False
+        required = min(paid_slots, len(players))
+        if len(submitted) < required:
+            return None
+
+        room.status = "locked"
+        self.db.commit()
+        return self.finalize_room(room_id)
+
+    def try_auto_finalize(self, room_id: str) -> bool:
+        return self.try_instant_finalize(room_id) is not None
 
     def finalize_room(self, room_id: str) -> list[dict]:
         room = self.db.query(TournamentRoom).filter(TournamentRoom.id == room_id).first()

@@ -50,10 +50,23 @@ namespace Mkey.Network
                 "tournaments/rooms/" + roomId, requireAuth: false);
         }
 
-        public static async Task<ApiResult<bool>> SubmitScoreAsync(string roomId, int score, int moves, int elapsedSeconds)
+        public static async Task<ApiResult<SubmitScoreResponseDto>> SubmitScoreAsync(
+            string roomId,
+            int score,
+            int moves,
+            int elapsedSeconds)
         {
             if (ApiConfig.Current.UseLocalSimulation || string.IsNullOrEmpty(roomId))
-                return ApiResult<bool>.Ok(true);
+            {
+                return ApiResult<SubmitScoreResponseDto>.Ok(new SubmitScoreResponseDto
+                {
+                    ok = true,
+                    finalized = true,
+                    rank = 1,
+                    prize = 0,
+                    roomStatus = "finished"
+                });
+            }
 
             var body = new SubmitScoreRequestDto
             {
@@ -63,13 +76,8 @@ namespace Mkey.Network
                 elapsedSeconds = elapsedSeconds
             };
 
-            var result = await NetworkManager.Instance.PostAsync<SubmitScoreRequestDto, OkResponseDto>(
+            return await NetworkManager.Instance.PostAsync<SubmitScoreRequestDto, SubmitScoreResponseDto>(
                 "tournaments/submit-score", body);
-
-            if (!result.Success)
-                return ApiResult<bool>.Fail(result.ErrorMessage, result.StatusCode, result.IsServerUnavailable);
-
-            return ApiResult<bool>.Ok(true);
         }
 
         public static async Task<ApiResult<List<TournamentHistoryDto>>> FetchHistoryAsync()
