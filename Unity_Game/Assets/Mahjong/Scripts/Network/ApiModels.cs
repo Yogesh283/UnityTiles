@@ -93,8 +93,11 @@ namespace Mkey.Network
     {
         [JsonProperty("user_id")] public int userId;
         public int score;
+        public int moves;
+        [JsonProperty("elapsed_seconds")] public int elapsedSeconds;
         public int rank;
         [JsonProperty("is_connected")] public bool isConnected;
+        [JsonProperty("has_submitted")] public bool hasSubmitted;
     }
 
     [Serializable]

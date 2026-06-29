@@ -1,6 +1,7 @@
 using System;
 using Mkey;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -114,6 +115,7 @@ namespace Mkey.Tournament
 
         public void Present(string title, string message, Action onClosed)
         {
+            EnsureEventSystem();
             pendingCloseAction = onClosed;
             titleText.text = title;
             messageText.text = message;
@@ -199,6 +201,16 @@ namespace Mkey.Tournament
             TournamentUIFactory.StretchRect(btnLabel.rectTransform);
 
             overlayRoot.gameObject.SetActive(false);
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (EventSystem.current) return;
+
+            GameObject eventSystem = new GameObject("EventSystem");
+            eventSystem.AddComponent<EventSystem>();
+            eventSystem.AddComponent<StandaloneInputModule>();
+            DontDestroyOnLoad(eventSystem);
         }
     }
 }

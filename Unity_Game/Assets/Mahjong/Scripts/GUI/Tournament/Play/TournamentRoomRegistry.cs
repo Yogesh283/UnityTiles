@@ -16,7 +16,7 @@ namespace Mkey.Tournament
         private static TournamentRoom localRoom;
         private static float localDisconnectStartedAt = -1f;
 
-        public const float ReconnectTimeoutSeconds = 45f;
+        public const float ReconnectTimeoutSeconds = 120f;
 
         public static TournamentRoom LocalRoom => localRoom;
 
