@@ -93,11 +93,14 @@ namespace Mkey
 
         private static void ShowRewardPopup(int balance, int rewardCoins)
         {
-            string body =
-                $"🪙 +{rewardCoins} Tournament Coins\n\n" +
-                $"Current Tournament Balance: {balance:N0} Coins";
-
-            AppMessageDialog.Show("🎉 LEVEL COMPLETE!", body);
+            Tournament.TournamentPremiumOverlay.Show(
+                "LEVEL COMPLETE!",
+                "Campaign Reward",
+                $"+{rewardCoins} COINS",
+                $"Current Tournament Balance: {balance:N0} Coins",
+                footer: string.Empty,
+                onClosed: null,
+                autoReturnSeconds: 3f);
         }
     }
 }
