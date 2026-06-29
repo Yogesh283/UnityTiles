@@ -189,12 +189,27 @@ namespace Mkey.Network
             if (string.IsNullOrWhiteSpace(body)) return null;
             try
             {
-                var err = JsonConvert.DeserializeObject<ErrorBody>(body);
-                return err?.detail;
+                var token = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(body);
+                if (token == null) return null;
+
+                var detail = token["detail"];
+                if (detail == null) return null;
+
+                if (detail.Type == Newtonsoft.Json.Linq.JTokenType.String)
+                    return detail.ToString();
+
+                if (detail.Type == Newtonsoft.Json.Linq.JTokenType.Array && detail.HasValues)
+                {
+                    var first = detail.First;
+                    if (first?["msg"] != null)
+                        return first["msg"].ToString();
+                }
+
+                return detail.ToString();
             }
             catch
             {
-                return body.Length > 120 ? body.Substring(0, 120) : body;
+                return body.Length > 160 ? body.Substring(0, 160) : body;
             }
         }
 

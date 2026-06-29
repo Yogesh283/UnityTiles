@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Mkey;
 using Mkey.Tournament;
 using UnityEngine;
@@ -25,15 +26,66 @@ namespace Mkey.Network
 
             try
             {
-                var joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
-                if (!joinResult.Success || joinResult.Data == null)
+                ApiResult<bool> authResult = await EnsureAuthenticatedAsync();
+                if (!authResult.Success)
                 {
-                    ShowServerError(dialog, tournament, dialogRef => ConfirmJoin(
-                        tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed), onJoinFailed);
+                    ShowJoinError(
+                        dialog,
+                        tournament,
+                        authResult.ErrorMessage,
+                        authResult.StatusCode,
+                        authResult.IsServerUnavailable,
+                        dialogRef => ConfirmJoin(
+                            tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed),
+                        refreshWallet,
+                        retryJoin,
+                        onJoinFailed);
                     return;
                 }
 
                 var walletResult = await WalletService.SyncToCoinsHolderAsync();
+                refreshWallet?.Invoke();
+
+                if (walletResult.Success &&
+                    CoinsHolder.Instance &&
+                    CoinsHolder.Count < tournament.entryFee)
+                {
+                    dialog.ShowInsufficientCoins(
+                        tournament.entryFee,
+                        CoinsHolder.Count,
+                        () => OpenDeposit(dialog, refreshWallet, () => retryJoin?.Invoke(tournament)),
+                        onJoinFailed);
+                    return;
+                }
+
+                var joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                if (!joinResult.Success || joinResult.Data == null)
+                {
+                    if (joinResult.StatusCode == 401)
+                    {
+                        AuthService.Logout();
+                        authResult = await EnsureAuthenticatedAsync();
+                        if (authResult.Success)
+                            joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                    }
+                }
+
+                if (!joinResult.Success || joinResult.Data == null)
+                {
+                    ShowJoinError(
+                        dialog,
+                        tournament,
+                        joinResult.ErrorMessage,
+                        joinResult.StatusCode,
+                        joinResult.IsServerUnavailable,
+                        dialogRef => ConfirmJoin(
+                            tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed),
+                        refreshWallet,
+                        retryJoin,
+                        onJoinFailed);
+                    return;
+                }
+
                 refreshWallet?.Invoke();
 
                 if (!walletResult.Success)
@@ -47,9 +99,33 @@ namespace Mkey.Network
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                ShowServerError(dialog, tournament, dialogRef => ConfirmJoin(
-                    tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed), onJoinFailed);
+                ShowJoinError(
+                    dialog,
+                    tournament,
+                    ex.Message,
+                    0,
+                    true,
+                    dialogRef => ConfirmJoin(
+                        tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed),
+                    refreshWallet,
+                    retryJoin,
+                    onJoinFailed);
             }
+        }
+
+        private static async Task<ApiResult<bool>> EnsureAuthenticatedAsync()
+        {
+            if (NetworkManager.Instance.IsAuthenticated)
+                return ApiResult<bool>.Ok(true);
+
+            var login = await AuthService.GuestLoginAsync();
+            if (!login.Success)
+                return ApiResult<bool>.Fail(
+                    login.ErrorMessage,
+                    login.StatusCode,
+                    login.IsServerUnavailable);
+
+            return ApiResult<bool>.Ok(true);
         }
 
         private static void ConfirmJoinLocal(
@@ -99,20 +175,64 @@ namespace Mkey.Network
             });
         }
 
-        private static void ShowServerError(
+        private static void ShowJoinError(
             TournamentDialog dialog,
             TournamentDefinition tournament,
+            string errorMessage,
+            int statusCode,
+            bool serverUnavailable,
             Action<TournamentDialog> retry,
+            Action refreshWallet,
+            Action<TournamentDefinition> retryJoin,
             Action onFailed)
         {
+            string detail = string.IsNullOrWhiteSpace(errorMessage) ? "Unknown error." : errorMessage;
+
+            if (IsInsufficientBalance(detail))
+            {
+                int balance = CoinsHolder.Instance ? CoinsHolder.Count : 0;
+                dialog.ShowInsufficientCoins(
+                    tournament.entryFee,
+                    balance,
+                    () => OpenDeposit(dialog, refreshWallet, () => retryJoin?.Invoke(tournament)),
+                    onFailed);
+                onFailed?.Invoke();
+                return;
+            }
+
+            string title;
+            string message;
+
+            if (serverUnavailable || statusCode == 0)
+            {
+                title = "Connection Problem";
+                message = "Could not reach the game server.\nPlease check internet and try again.";
+            }
+            else if (statusCode == 401 || detail.IndexOf("authenticated", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                title = "Sign In Required";
+                message = "Your session expired.\nPlease try again.";
+            }
+            else
+            {
+                title = "Could Not Join";
+                message = detail;
+            }
+
+            Debug.LogWarning($"[TournamentJoin] Failed ({statusCode}): {detail}");
+
             dialog.Show(
-                NetworkManager.ServerUnavailableMessage,
-                "Could not join the tournament.\nPlease check your connection and try again.",
+                title,
+                message,
                 true,
                 () => retry?.Invoke(dialog),
                 onFailed);
 
             onFailed?.Invoke();
         }
+
+        private static bool IsInsufficientBalance(string message) =>
+            !string.IsNullOrEmpty(message) &&
+            message.IndexOf("insufficient", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }

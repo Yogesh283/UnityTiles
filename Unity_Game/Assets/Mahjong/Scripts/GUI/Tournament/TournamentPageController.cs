@@ -344,8 +344,8 @@ namespace Mkey.Tournament
                 return;
 
             dialog.Show(
-                NetworkManager.ServerUnavailableMessage,
-                "Could not reach the game server.\nPlease check your connection and try again.",
+                "Connection Problem",
+                "Could not reach the game server.\nPlease check internet and try again.",
                 true,
                 () => retry?.Invoke(),
                 null);

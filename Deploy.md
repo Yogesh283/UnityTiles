@@ -58,7 +58,7 @@ JWT_EXPIRE_MINUTES=10080
 ENVIRONMENT=production
 REQUIRE_HTTPS=true
 CORS_ORIGINS=https://admin.matchiq.fun
-GOOGLE_PLAY_PACKAGE_NAME=com.YogeshKumar.Myproject
+GOOGLE_PLAY_PACKAGE_NAME=fun.matchiq.game
 GOOGLE_PLAY_SERVICE_ACCOUNT_JSON=secrets/google-play-service-account.json
 ```
 

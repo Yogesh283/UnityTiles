@@ -67,10 +67,17 @@ def login_user(db: Session, email: str, password: str) -> User | None:
     return user
 
 
+def _ensure_wallet(db: Session, user_id: int) -> None:
+    wallet = db.query(Wallet).filter(Wallet.user_id == user_id).first()
+    if not wallet:
+        db.add(Wallet(user_id=user_id, balance=500))
+
+
 def guest_login(db: Session, guest_id: str, display_name: str = "Guest") -> User:
     user = db.query(User).filter(User.guest_id == guest_id).first()
     if user:
         _ensure_uuid(user)
+        _ensure_wallet(db, user.id)
         db.commit()
         return user
 

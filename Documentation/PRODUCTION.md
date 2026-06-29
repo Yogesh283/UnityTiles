@@ -37,7 +37,7 @@ JWT_SECRET=change-me-use-long-random-string
 CORS_ORIGINS=https://admin.matchiq.fun
 ENVIRONMENT=production
 REQUIRE_HTTPS=true
-GOOGLE_PLAY_PACKAGE_NAME=com.YogeshKumar.Myproject
+GOOGLE_PLAY_PACKAGE_NAME=fun.matchiq.game
 GOOGLE_PLAY_SERVICE_ACCOUNT_JSON=/secrets/google-play.json
 ```
 

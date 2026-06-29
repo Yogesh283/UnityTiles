@@ -56,9 +56,29 @@ namespace Mkey
         {
             Caption = caption;
             Message = message;
+            ConfigureMessageTextLayout();
             if (yesButton) yesButton.gameObject.SetActive(yesButtonActive);
             if (cancelButton) cancelButton.gameObject.SetActive(cancelButtonActive);
             if (noButton) noButton.gameObject.SetActive(noButtonActive);
+        }
+
+        private void ConfigureMessageTextLayout()
+        {
+            if (!message) return;
+
+            message.horizontalOverflow = HorizontalWrapMode.Wrap;
+            message.verticalOverflow = VerticalWrapMode.Overflow;
+            message.resizeTextForBestFit = true;
+            message.resizeTextMinSize = 18;
+            message.resizeTextMaxSize = 28;
+
+            RectTransform rt = message.rectTransform;
+            rt.anchorMin = new Vector2(0f, 0.35f);
+            rt.anchorMax = new Vector2(1f, 0.88f);
+            rt.offsetMin = new Vector2(24f, 0f);
+            rt.offsetMax = new Vector2(-24f, 0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = Vector2.zero;
         }
     }
 }
