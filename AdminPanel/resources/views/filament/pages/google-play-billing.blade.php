@@ -1,9 +1,8 @@
 <x-filament-panels::page>
     <div class="space-y-6">
-        <x-filament::section>
-            <x-slot name="heading">Billing status</x-slot>
-
-            <div class="space-y-2 text-sm">
+        <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+            <h2 class="text-base font-semibold">Billing status</h2>
+            <div class="mt-3 space-y-2 text-sm">
                 <p>
                     <strong>Local key:</strong>
                     @if ($isActive)
@@ -14,24 +13,24 @@
                 </p>
                 <p><strong>API server:</strong> {{ $apiStatus ?? 'Unknown' }}</p>
                 <p class="text-gray-500">
-                    Key save hone ke baad server par
+                    After saving the key, run
                     <code>systemctl restart matchiq-api</code>
-                    chalao — billing active ho jayega.
+                    on the server.
                 </p>
             </div>
-        </x-filament::section>
+        </div>
 
         <form wire:submit="save" class="space-y-6">
-            <x-filament::section>
-                <x-slot name="heading">Google Play service account</x-slot>
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <h2 class="text-base font-semibold">Google Play service account</h2>
 
-                <div class="space-y-4">
+                <div class="mt-4 space-y-4">
                     <div>
                         <label class="text-sm font-medium">Package name</label>
                         <input
                             type="text"
                             wire:model="packageName"
-                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm"
+                            class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-950"
                             placeholder="fun.matchiq.game"
                         />
                     </div>
@@ -41,12 +40,12 @@
                         <textarea
                             wire:model="serviceAccountJson"
                             rows="14"
-                            class="mt-1 block w-full rounded-lg border-gray-300 font-mono text-xs shadow-sm"
-                            placeholder='Paste Google Play Console service account JSON here'
+                            class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm dark:border-gray-700 dark:bg-gray-950"
+                            placeholder="Paste Google Play Console service account JSON here"
                         ></textarea>
                     </div>
                 </div>
-            </x-filament::section>
+            </div>
 
             <div class="flex gap-3">
                 <x-filament::button type="submit">
