@@ -107,8 +107,8 @@ namespace Mkey.Tournament
             labelRt.pivot = new Vector2(0.5f, 0.5f);
             labelRt.anchoredPosition = new Vector2(0f, 7f);
             labelRt.sizeDelta = Vector2.zero;
-            labelRt.offsetMin = new Vector2(52f, 18f);
-            labelRt.offsetMax = new Vector2(-52f, -10f);
+            labelRt.offsetMin = new Vector2(44f, 18f);
+            labelRt.offsetMax = new Vector2(-44f, -10f);
 
             Text label = labelGo.AddComponent<Text>();
             label.font = levelText ? levelText.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.Android;
 using UnityEditor.Build;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ public static class MatchIQAppIconSetup
     public static void ApplyFromMenu()
     {
         if (ApplyAppLogo())
-            Debug.Log("[Match IQ] AppLogo.png applied to all Android icon slots.");
+            Debug.Log("[Match IQ] AppLogo.png applied to Android adaptive icon slots.");
     }
 
     [InitializeOnLoadMethod]
@@ -29,11 +30,13 @@ public static class MatchIQAppIconSetup
 
     private static bool HasAndroidIconsConfigured()
     {
-        var icons = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive);
+        PlatformIconKind kind = AndroidPlatformIconKind.Adaptive;
+        var icons = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, kind);
         if (icons == null || icons.Length == 0)
             return false;
 
-        return icons[0].GetTexture() != null;
+        var textures = icons[0].GetTextures();
+        return textures != null && textures.Length > 0 && textures[0] != null;
     }
 
     private static bool ApplyAppLogo()
@@ -45,20 +48,15 @@ public static class MatchIQAppIconSetup
             return false;
         }
 
-        ApplyKind(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive, logo);
-        ApplyKind(NamedBuildTarget.Android, AndroidPlatformIconKind.Round, logo);
-        ApplyKind(NamedBuildTarget.Android, AndroidPlatformIconKind.Legacy, logo);
-        AssetDatabase.SaveAssets();
-        return true;
-    }
-
-    private static void ApplyKind(NamedBuildTarget target, AndroidPlatformIconKind kind, Texture2D logo)
-    {
+        PlatformIconKind kind = AndroidPlatformIconKind.Adaptive;
+        var target = NamedBuildTarget.Android;
         var icons = PlayerSettings.GetPlatformIcons(target, kind);
         for (var i = 0; i < icons.Length; i++)
-            icons[i].SetTexture(logo);
+            icons[i].SetTextures(new[] { logo, logo });
 
         PlayerSettings.SetPlatformIcons(target, kind, icons);
+        AssetDatabase.SaveAssets();
+        return true;
     }
 }
 #endif

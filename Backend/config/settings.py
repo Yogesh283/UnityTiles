@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 10080
 
     google_client_id: str = ""
-    google_play_package_name: str = "com.YogeshKumar.Myproject"
+    google_play_package_name: str = "fun.matchiq.game"
     google_play_service_account_json: str = ""
     cors_origins: str = "*"
     environment: str = "development"

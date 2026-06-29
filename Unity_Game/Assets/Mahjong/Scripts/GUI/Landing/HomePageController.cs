@@ -13,6 +13,8 @@ namespace Mkey
     {
         private const int MapSceneIndex = 1;
         private const float ButtonSpacing = 12f;
+        private const float MinPlayButtonWidth = 580f;
+        private const float TextHorizontalPadding = 44f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -109,6 +111,9 @@ namespace Mkey
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(groupRt);
             ApplyPlayPrefixLabels(levelButton, tournamentButton);
+            EnsurePlayButtonLayout(levelButton);
+            EnsurePlayButtonLayout(tournamentButton);
+            NormalizePlayButtonWidths(levelButton, tournamentButton);
             HighlightButton(levelButton);
             HighlightButton(tournamentButton);
         }
@@ -128,6 +133,53 @@ namespace Mkey
             if (label.text.StartsWith("Play ")) return;
 
             label.text = "Play " + label.text;
+        }
+
+        private static void EnsurePlayButtonLayout(Transform button)
+        {
+            if (!button) return;
+
+            RectTransform rt = button as RectTransform;
+            if (rt && rt.sizeDelta.x < MinPlayButtonWidth)
+                rt.sizeDelta = new Vector2(MinPlayButtonWidth, rt.sizeDelta.y);
+
+            Text label = button.GetComponentInChildren<Text>();
+            if (!label) return;
+
+            RectTransform labelRt = label.rectTransform;
+            labelRt.anchorMin = Vector2.zero;
+            labelRt.anchorMax = Vector2.one;
+            labelRt.pivot = new Vector2(0.5f, 0.5f);
+            labelRt.anchoredPosition = Vector2.zero;
+            labelRt.sizeDelta = Vector2.zero;
+            labelRt.offsetMin = new Vector2(TextHorizontalPadding, 14f);
+            labelRt.offsetMax = new Vector2(-TextHorizontalPadding, -10f);
+
+            label.alignment = TextAnchor.MiddleCenter;
+            label.horizontalOverflow = HorizontalWrapMode.Wrap;
+            label.verticalOverflow = VerticalWrapMode.Truncate;
+            label.resizeTextForBestFit = true;
+            label.resizeTextMinSize = 32;
+            if (label.resizeTextMaxSize < 56)
+                label.resizeTextMaxSize = 56;
+        }
+
+        private static void NormalizePlayButtonWidths(Transform levelButton, Transform tournamentButton)
+        {
+            float width = MinPlayButtonWidth;
+            if (levelButton is RectTransform levelRt)
+                width = Mathf.Max(width, levelRt.sizeDelta.x);
+            if (tournamentButton is RectTransform tourRt)
+                width = Mathf.Max(width, tourRt.sizeDelta.x);
+
+            ApplyButtonWidth(levelButton, width);
+            ApplyButtonWidth(tournamentButton, width);
+        }
+
+        private static void ApplyButtonWidth(Transform button, float width)
+        {
+            if (button is RectTransform rt)
+                rt.sizeDelta = new Vector2(width, rt.sizeDelta.y);
         }
 
         private static void HighlightButton(Transform button)
