@@ -138,6 +138,21 @@ namespace Mkey.Network
     }
 
     [Serializable]
+    public class LevelCompleteRequestDto
+    {
+        [JsonProperty("user_uuid")] public string userUuid;
+        [JsonProperty("level_number")] public int levelNumber;
+    }
+
+    [Serializable]
+    public class LevelCompleteResponseDto
+    {
+        [JsonProperty("reward_given")] public bool rewardGiven;
+        [JsonProperty("reward_coins")] public int rewardCoins;
+        [JsonProperty("current_wallet_balance")] public int currentWalletBalance;
+    }
+
+    [Serializable]
     public class TournamentHistoryDto
     {
         [JsonProperty("tournament_id")] public string tournamentId;

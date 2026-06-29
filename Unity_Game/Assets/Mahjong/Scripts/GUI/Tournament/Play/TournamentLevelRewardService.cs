@@ -11,11 +11,13 @@ namespace Mkey.Tournament
     public static class TournamentLevelRewardService
     {
         public const int CoinsPerLevel = 50;
+        public const int RewardLevelNumber = 300;
         private const string GuardPrefix = "mk_tournament_level_reward_";
 
         public static void GrantOnLevelComplete()
         {
             if (!TournamentSession.IsActive) return;
+            if (!IsEligibleTournamentRewardLevel()) return;
 
             string roomId = TournamentMatchManager.ActiveRoomId;
             if (!TryClaimLevelReward(roomId)) return;
@@ -48,6 +50,15 @@ namespace Mkey.Tournament
             LevelCoinRewardEffect.Play(CoinsPerLevel);
             if (CoinsHolder.Instance)
                 CoinsHolder.Instance.SetCount(task.Result.Data);
+        }
+
+        private static bool IsEligibleTournamentRewardLevel()
+        {
+            int levelIndex = TournamentSession.MatchLevelIndex;
+            if (levelIndex < 0) return false;
+
+            int levelNumber = LevelCompletionRewardService.ToLevelNumber(levelIndex);
+            return levelNumber == RewardLevelNumber;
         }
 
         private static bool TryClaimLevelReward(string roomId)

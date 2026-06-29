@@ -228,8 +228,16 @@ class LevelReward(Base):
     __tablename__ = "level_rewards"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    level_index: Mapped[int] = mapped_column(Integer, unique=True)
+    # Legacy columns (kept nullable for backward compatibility with existing DBs)
+    level_index: Mapped[int | None] = mapped_column(Integer, unique=True, nullable=True)
     coin_reward: Mapped[int] = mapped_column(Integer, default=50)
+
+    # Permanent claim tracking (one reward per user per level)
+    user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), index=True, nullable=True)
+    user_uuid: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
+    level_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reward_coins: Mapped[int] = mapped_column(Integer, default=50)
+    rewarded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class DeviceBan(Base):

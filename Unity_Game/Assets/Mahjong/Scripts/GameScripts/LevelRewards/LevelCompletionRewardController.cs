@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 namespace Mkey
 {
@@ -47,37 +48,39 @@ namespace Mkey
             if (Tournament.TournamentSession.IsActive) return;
 
             int levelIndex = GameLevelHolder.CurrentLevel;
-            if (!LevelCompletionRewardService.TryGrantReward(levelIndex, out int levelNumber, out int balance))
-                return;
-
-            LevelCoinRewardEffect.Play(LevelCompletionRewardService.CoinsPerLevel);
-            ShowRewardPopup(balance);
+            StartCoroutine(GrantRewardRoutine(levelIndex));
         }
 
-        private static void ShowRewardPopup(int balance)
+        private static IEnumerator GrantRewardRoutine(int levelIndex)
         {
-            GuiController gui = GuiController.Instance;
-            if (!gui)
-                gui = Object.FindFirstObjectByType<GuiController>();
+            var task = LevelCompletionRewardService.TryGrantRewardAsync(levelIndex);
+            while (!task.IsCompleted)
+                yield return null;
 
-            WarningMessController messagePrefab = Resources.Load<WarningMessController>("PopUps/Message");
-            if (!gui || !messagePrefab)
+            var result = task.Result;
+            if (!result.Success || result.Data == null)
             {
-                Debug.LogWarning("LevelCompletionReward: popup unavailable — coins were still added.");
-                return;
+                Debug.LogWarning("LevelCompletionReward: server reward request failed: " + result.ErrorMessage);
+                yield break;
             }
 
-            string body =
-                $"+{LevelCompletionRewardService.CoinsPerLevel} Coins Added\n" +
-                $"Current Balance: {balance:N0} Coins";
+            if (!result.Data.rewardGiven)
+                yield break;
 
-            gui.ShowMessageWithYesNoCloseButton(
-                messagePrefab,
-                "🎉 Level Complete!",
-                body,
-                () => { },
-                null,
-                null);
+            if (CoinsHolder.Instance)
+                CoinsHolder.Instance.SetCount(result.Data.currentWalletBalance);
+
+            LevelCoinRewardEffect.Play(result.Data.rewardCoins);
+            ShowRewardPopup(result.Data.currentWalletBalance, result.Data.rewardCoins);
+        }
+
+        private static void ShowRewardPopup(int balance, int rewardCoins)
+        {
+            string body =
+                $"🪙 +{rewardCoins} Tournament Coins\n\n" +
+                $"Current Tournament Balance: {balance:N0} Coins";
+
+            AppMessageDialog.Show("🎉 LEVEL COMPLETE!", body);
         }
     }
 }
