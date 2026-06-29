@@ -14,6 +14,9 @@ namespace Mkey.Tournament
         private static TournamentGameSessionController instance;
         private static TournamentTimerHud timerHud;
 
+        private float resultDialogWatchdog;
+        private const float ResultDialogWatchdogSeconds = 2f;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
@@ -58,7 +61,20 @@ namespace Mkey.Tournament
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex != TournamentSession.GameSceneIndex)
                 return;
             if (TournamentResultDialog.IsVisible || TournamentMatchManager.IsMatchResolved)
+            {
+                if (TournamentMatchManager.IsMatchResolved && !TournamentResultDialog.IsVisible)
+                {
+                    resultDialogWatchdog += Time.unscaledDeltaTime;
+                    if (resultDialogWatchdog >= ResultDialogWatchdogSeconds)
+                    {
+                        resultDialogWatchdog = 0f;
+                        TournamentMatchManager.ShowPendingResultDialog();
+                    }
+                }
                 return;
+            }
+
+            resultDialogWatchdog = 0f;
 
             if (Input.GetKeyDown(KeyCode.Escape))
                 TournamentMatchManager.ForfeitAsLoss();

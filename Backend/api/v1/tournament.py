@@ -99,8 +99,11 @@ def room_snapshot(room_id: str, db: Session = Depends(get_db)):
             {
                 "user_id": p.user_id,
                 "score": p.score,
+                "moves": p.moves,
+                "elapsed_seconds": p.elapsed_seconds,
                 "rank": p.rank,
                 "is_connected": p.is_connected,
+                "has_submitted": p.submitted_at is not None,
             }
             for p in players
         ],

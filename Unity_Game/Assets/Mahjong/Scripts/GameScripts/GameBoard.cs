@@ -184,7 +184,15 @@ namespace Mkey
 
                 NoMatchesAction += () =>
                 {
-                    MGui.ShowPopUp(noMatchesPrefab);    // show no matches popup
+                    if (Tournament.TournamentSession.IsActive)
+                    {
+                        // Tournament scene may not have GuiController — auto-shuffle instead of blocking popup.
+                        ShuffleGrid(() => { });
+                        return;
+                    }
+
+                    if (MGui)
+                        MGui.ShowPopUp(noMatchesPrefab);
                 };
 
                 WinAction += () =>
@@ -375,23 +383,36 @@ namespace Mkey
         private IEnumerator CollectMatchC(MahjongTile mahjongTile_1, MahjongTile mahjongTile_2)
         {
             SetControlActivity(false, false);
-            GridCell gridCell_1 = mahjongTile_1.GetComponentInParent<GridCell>();
-            GridCell gridCell_2 = mahjongTile_2.GetComponentInParent<GridCell>();
+            try
+            {
+                GridCell gridCell_1 = mahjongTile_1.GetComponentInParent<GridCell>();
+                GridCell gridCell_2 = mahjongTile_2.GetComponentInParent<GridCell>();
 
-            BeforeCollectAction?.Invoke(gridCell_1, gridCell_2, mahjongTile_1, mahjongTile_2);
-            Sprite sprite_1 = mahjongTile_1.MSprite;
-            Sprite sprite_2 = mahjongTile_2.MSprite;
+                BeforeCollectAction?.Invoke(gridCell_1, gridCell_2, mahjongTile_1, mahjongTile_2);
+                Sprite sprite_1 = mahjongTile_1.MSprite;
+                Sprite sprite_2 = mahjongTile_2.MSprite;
 
-            gridCell_1.UnLinkObject(mahjongTile_1.Layer);
-            gridCell_2.UnLinkObject(mahjongTile_2.Layer);
+                gridCell_1.UnLinkObject(mahjongTile_1.Layer);
+                gridCell_2.UnLinkObject(mahjongTile_2.Layer);
 
-            yield return CollectAnimationC(mahjongTile_1, mahjongTile_2);
-            EndCollectAnimatioAction?.Invoke();
-            Destroy(mahjongTile_1.gameObject);
-            Destroy(mahjongTile_2.gameObject);
-            yield return new WaitForEndOfFrame();
-            CollectAction?.Invoke(sprite_1, sprite_2);
-            SetControlActivity(true, true);
+                yield return CollectAnimationC(mahjongTile_1, mahjongTile_2);
+                EndCollectAnimatioAction?.Invoke();
+                Destroy(mahjongTile_1.gameObject);
+                Destroy(mahjongTile_2.gameObject);
+                yield return new WaitForEndOfFrame();
+                CollectAction?.Invoke(sprite_1, sprite_2);
+            }
+            finally
+            {
+                if (!this || !isActiveAndEnabled) return;
+
+                if (Tournament.TournamentSession.IsActive &&
+                    (Tournament.TournamentMatchManager.IsMatchResolved ||
+                     Tournament.TournamentMatchManager.IsMatchLocked))
+                    return;
+
+                SetControlActivity(true, true);
+            }
         }
 
         private IEnumerator CollectAnimationC(MahjongTile mahjongTile_1, MahjongTile mahjongTile_2)

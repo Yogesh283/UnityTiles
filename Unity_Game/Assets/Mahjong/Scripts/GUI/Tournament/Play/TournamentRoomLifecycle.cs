@@ -46,12 +46,5 @@ namespace Mkey.Tournament
                 TournamentRoomRegistry.TryReconnectLocal();
         }
 
-        private void OnApplicationFocus(bool hasFocus)
-        {
-            if (!hasFocus)
-                TournamentRoomRegistry.NotifyLocalDisconnect();
-            else
-                TournamentRoomRegistry.TryReconnectLocal();
-        }
     }
 }
