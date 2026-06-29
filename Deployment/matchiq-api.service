@@ -1,0 +1,13 @@
+[Unit]
+Description=Match IQ FastAPI Backend
+After=network.target mysql.service
+
+[Service]
+User=root
+WorkingDirectory=/var/www/UnityTiles/Backend
+ExecStart=/var/www/UnityTiles/Backend/venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

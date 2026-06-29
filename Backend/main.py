@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from api.v1.router import router as api_router
 from config import get_settings
 from middleware.rate_limit import RateLimitMiddleware
+from payments.google_play import get_google_play_verifier
 from websocket.tournament_ws import router as ws_router
 
 settings = get_settings()
@@ -43,12 +44,23 @@ if legal_dir.is_dir():
     app.mount("/legal", StaticFiles(directory=str(legal_dir), html=True), name="legal")
 
 
+@app.on_event("startup")
+def log_google_play_status() -> None:
+    verifier = get_google_play_verifier()
+    if verifier.is_configured:
+        print("[Match IQ] Google Play billing: configured")
+    else:
+        print(f"[Match IQ] Google Play billing: NOT configured — {verifier.config_error}")
+
+
 @app.get("/health")
 def health():
+    verifier = get_google_play_verifier()
     return {
         "status": "ok",
         "service": "match-iq-api",
         "version": "2.0.0",
+        "google_play_billing": verifier.is_configured,
         "legal_pages": {
             "privacy": "/legal/privacy.html",
             "terms": "/legal/terms.html",

@@ -128,7 +128,7 @@ namespace Mkey
                         string prodID = consumable[i].kProductID;
                         builder.AddProduct(prodID, ProductType.Consumable, new IDs() {
                             { appKey + "." + prodID, AppleAppStore.Name },
-                            { googleKey + "." + prodID, GooglePlay.Name } }); // com.company.slotgame.productID
+                            { prodID, GooglePlay.Name } });
                         consumable[i].clickEvent.RemoveAllListeners();
                         consumable[i].clickEvent.AddListener(() => { BuyProductID(prodID); });
                     }
@@ -144,7 +144,7 @@ namespace Mkey
                         string prodID = nonConsumable[i].kProductID;
                         builder.AddProduct(prodID, ProductType.NonConsumable, new IDs() {
                             { appKey + "." + prodID, AppleAppStore.Name },
-                            { googleKey + "." + prodID, GooglePlay.Name }});
+                            { prodID, GooglePlay.Name }});
 
                         nonConsumable[i].clickEvent.RemoveAllListeners();
                         nonConsumable[i].clickEvent.AddListener(() => { BuyProductID(prodID); });
@@ -161,7 +161,7 @@ namespace Mkey
 
                         builder.AddProduct(prodID, ProductType.Subscription, new IDs() {
                             { appKey + "." + prodID, AppleAppStore.Name },
-                            { googleKey + "." + prodID, GooglePlay.Name }, });// Kick off the remainder of the set-up with an asynchrounous call, passing the configuration and this class' instance. Expect a response either in OnInitialized or OnInitializeFailed.
+                            { prodID, GooglePlay.Name }, });// Kick off the remainder of the set-up with an asynchrounous call, passing the configuration and this class' instance. Expect a response either in OnInitialized or OnInitializeFailed.
 
                         nonConsumable[i].clickEvent.RemoveAllListeners();
                         nonConsumable[i].clickEvent.AddListener(() => { BuyProductID(prodID); });

@@ -15,7 +15,7 @@ TilesClash/
 ## Architecture
 
 ```
-Unity APK  →  api.tilesclash.com  →  FastAPI  →  MySQL (game)  ←  Laravel Admin
+Unity APK  →  api.matchiq.fun  →  FastAPI  →  MySQL (Game)  ←  Laravel Admin
                                               ↘ Redis (optional)
 ```
 

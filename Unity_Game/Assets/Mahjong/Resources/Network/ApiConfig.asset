@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ApiConfig
   m_EditorClassIdentifier: 
   baseUrl: http://localhost:8000
-  productionUrl: https://api.tilesclash.com
-  useProductionUrl: 0
+  productionUrl: https://api.matchiq.fun
+  useProductionUrl: 1
   developmentMode: 0
   requestTimeoutSeconds: 15

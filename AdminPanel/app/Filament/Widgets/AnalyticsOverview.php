@@ -2,31 +2,43 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\IapPurchase;
-use App\Models\Player;
-use App\Models\TournamentRoom;
-use App\Models\Wallet;
-use App\Models\WalletTransaction;
+use App\Support\DashboardMetrics;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\DB;
 
 class AnalyticsOverview extends StatsOverviewWidget
 {
+    protected static bool $isDiscovered = false;
+
+    protected static ?int $sort = 2;
+
+    protected ?string $heading = 'Daily Report';
+
+    protected function getDescription(): ?string
+    {
+        return 'Today\'s activity ('.now()->toFormattedDateString().')';
+    }
+
     protected function getStats(): array
     {
-        $txToday = WalletTransaction::query()->whereDate('created_at', today())->count();
-        $iapRevenue = IapPurchase::query()->whereDate('created_at', today())->sum('coins_added');
+        $m = DashboardMetrics::daily();
 
         return [
-            Stat::make('DAU (approx)', Player::query()->whereDate('updated_at', today())->count())
-                ->description('Players active today'),
-            Stat::make('Wallet TX Today', $txToday)
-                ->description('Coin transactions'),
-            Stat::make('Coins Purchased Today', number_format($iapRevenue))
-                ->description('Via Play Store'),
-            Stat::make('Active Rooms', TournamentRoom::query()->whereIn('status', ['waiting', 'starting', 'active'])->count())
-                ->description('Live tournaments'),
+            Stat::make('New Players', number_format($m['new_players']))
+                ->description(number_format($m['active_players']).' active today')
+                ->color('success'),
+            Stat::make('Matches Today', number_format($m['matches']))
+                ->description(number_format($m['rooms_created']).' new rooms')
+                ->color('warning'),
+            Stat::make('IAP Today', number_format($m['iap_purchases']))
+                ->description(number_format($m['iap_coins']).' coins · '.number_format($m['wallet_tx']).' wallet TX')
+                ->color('info'),
+            Stat::make('Entry Fees Today', number_format($m['entry_fees']))
+                ->description(number_format($m['prizes_paid']).' coins paid as prizes')
+                ->color('primary'),
+            Stat::make('Active Rooms', number_format($m['active_rooms']))
+                ->description('Live tournament rooms right now')
+                ->color('danger'),
         ];
     }
 }

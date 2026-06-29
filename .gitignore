@@ -5,11 +5,13 @@ Unity_Game/Temp/
 Unity_Game/Obj/
 Unity_Game/Builds/*.apk
 Unity_Game/UserSettings/
+Unity_Game/Assets/_Recovery/
 
 # Python
 Backend/venv/
 Backend/__pycache__/
 Backend/.env
+Backend/secrets/google-play-service-account.json
 *.pyc
 
 # PHP / Laravel

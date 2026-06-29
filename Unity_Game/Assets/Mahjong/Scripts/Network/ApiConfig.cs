@@ -14,7 +14,7 @@ namespace Mkey.Network
         public string baseUrl = "http://localhost:8000";
 
         [Tooltip("Production API")]
-        public string productionUrl = "https://api.tilesclash.com";
+        public string productionUrl = "https://api.matchiq.fun";
 
         public bool useProductionUrl;
 

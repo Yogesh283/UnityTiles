@@ -29,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('TilesClash Admin')
+            ->brandName('Match IQ Admin')
             ->colors([
                 'primary' => Color::Amber,
             ])

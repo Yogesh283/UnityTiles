@@ -11,7 +11,7 @@ from models.schemas import (
     IapProductResponse,
 )
 from payments.catalog import IAP_PRODUCTS
-from payments.google_play import GooglePlayVerifier
+from payments.google_play import get_google_play_verifier
 from payments.service import PaymentService
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -33,10 +33,11 @@ def list_products():
 @router.get("/google/status")
 def google_play_status():
     settings = get_settings()
-    verifier = GooglePlayVerifier()
+    verifier = get_google_play_verifier()
     return {
         "configured": verifier.is_configured,
         "package_name": settings.google_play_package_name,
+        "error": verifier.config_error,
     }
 
 
@@ -46,11 +47,11 @@ def verify_google_play(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    verifier = GooglePlayVerifier()
+    verifier = get_google_play_verifier()
     if not verifier.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Google Play billing is not configured on the server",
+            detail=verifier.config_error or "Google Play billing is not configured on the server",
         )
 
     try:

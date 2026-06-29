@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class TournamentResult extends Model
 {
+    protected $table = 'tournament_results';
+
     public $timestamps = false;
 
     protected $fillable = ['room_id', 'tournament_id', 'user_id', 'rank', 'score', 'prize'];

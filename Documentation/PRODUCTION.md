@@ -5,9 +5,9 @@
 ```
 Unity APK (Match IQ)
     ↓ HTTPS
-api.matchiq.com (FastAPI + Redis rate limit + JWT)
+api.matchiq.fun (FastAPI + Redis rate limit + JWT)
     ↓
-MySQL (game) ← Filament Admin (admin.matchiq.com)
+MySQL (Game) ← Filament Admin (admin.matchiq.fun)
 ```
 
 ## Security Features
@@ -34,7 +34,7 @@ mysql -u root game < Database/migrations/003_production_upgrade.sql
 DATABASE_URL=mysql+pymysql://root:@localhost:3306/game
 REDIS_URL=redis://localhost:6379/0
 JWT_SECRET=change-me-use-long-random-string
-CORS_ORIGINS=https://admin.matchiq.com
+CORS_ORIGINS=https://admin.matchiq.fun
 ENVIRONMENT=production
 REQUIRE_HTTPS=true
 GOOGLE_PLAY_PACKAGE_NAME=com.YogeshKumar.Myproject
@@ -44,7 +44,7 @@ GOOGLE_PLAY_SERVICE_ACCOUNT_JSON=/secrets/google-play.json
 ## Unity Online Mode
 
 1. `ApiConfig.asset` → `developmentMode = false`
-2. `productionUrl = https://api.matchiq.com`
+2. `productionUrl = https://api.matchiq.fun`
 3. Coins display synced from server only (`WalletService.SyncToCoinsHolderAsync`)
 4. Firebase: add SDK, define `FIREBASE` scripting symbol
 

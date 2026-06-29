@@ -7,7 +7,7 @@ Edit `Assets/Mahjong/Resources/Network/ApiConfig.asset`:
 | Field | Purpose |
 |-------|---------|
 | `baseUrl` | Local API root (`http://localhost:8000`) |
-| `productionUrl` | Production API (`https://api.tilesclash.com`) |
+| `productionUrl` | Production API (`https://api.matchiq.fun`) |
 | `useProductionUrl` | Switch to production |
 | `developmentMode` | **ON** = local simulation, no API calls |
 | `requestTimeoutSeconds` | HTTP timeout |
