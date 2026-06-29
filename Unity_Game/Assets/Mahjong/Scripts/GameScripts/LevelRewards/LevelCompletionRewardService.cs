@@ -25,10 +25,10 @@ namespace Mkey
             if (ApiConfig.Current.UseLocalSimulation)
                 return ApiResult<LevelCompleteResponseDto>.Fail("Development mode enabled.");
 
-            NetworkManager.EnsureExists();
-            string userUuid = NetworkManager.Instance.UserUuid;
-            if (string.IsNullOrEmpty(userUuid))
+            if (!await AuthService.EnsureSessionAsync())
                 return ApiResult<LevelCompleteResponseDto>.Fail("Not authenticated.");
+
+            string userUuid = NetworkManager.Instance.UserUuid;
 
             var body = new LevelCompleteRequestDto
             {

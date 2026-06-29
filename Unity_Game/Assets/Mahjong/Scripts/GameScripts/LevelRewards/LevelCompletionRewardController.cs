@@ -60,12 +60,24 @@ namespace Mkey
             var result = task.Result;
             if (!result.Success || result.Data == null)
             {
-                Debug.LogWarning("LevelCompletionReward: server reward request failed: " + result.ErrorMessage);
+                string error = result.ErrorMessage ?? "Unknown error";
+                Debug.LogWarning("LevelCompletionReward: server reward request failed: " + error);
+                AppMessageDialog.Show(
+                    "Reward failed",
+                    "Could not add tournament coins.\n\n" + error);
                 yield break;
             }
 
             if (!result.Data.rewardGiven)
+            {
+                Debug.LogWarning(
+                    "LevelCompletionReward: server returned reward_given=false for level " +
+                    LevelCompletionRewardService.ToLevelNumber(levelIndex));
+                AppMessageDialog.Show(
+                    "Reward unavailable",
+                    "Tournament coins were not added. Please update the app or try again later.");
                 yield break;
+            }
 
             if (CoinsHolder.Instance)
                 CoinsHolder.Instance.SetCount(result.Data.currentWalletBalance);

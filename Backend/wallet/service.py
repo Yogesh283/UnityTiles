@@ -13,6 +13,15 @@ class WalletService:
         wallet = self.db.query(Wallet).filter(Wallet.user_id == user_id).first()
         return wallet.balance if wallet else 0
 
+    def ensure_wallet(self, user_id: int) -> Wallet:
+        wallet = self.db.query(Wallet).filter(Wallet.user_id == user_id).first()
+        if wallet:
+            return wallet
+        wallet = Wallet(user_id=user_id, balance=0)
+        self.db.add(wallet)
+        self.db.flush()
+        return wallet
+
     def _apply(
         self,
         user_id: int,
