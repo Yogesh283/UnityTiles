@@ -6,19 +6,19 @@ using UnityEditor.Build;
 using UnityEngine;
 
 /// <summary>
-/// Builds padded Android launcher icons from AppLogo.png (in-app logo stays unchanged).
+/// Builds Android launcher icons from AppLogo.png.
+/// Icons are stored outside Assets/Editor so they are included in player builds.
 /// </summary>
 public static class MatchIQAppIconSetup
 {
     private const string LogoPath = "Assets/Mahjong/Resources/Landing/AppLogo.png";
-    private const string GeneratedFolder = "Assets/Editor/Generated";
+    private const string GeneratedFolder = "Assets/Mahjong/AppIcons";
     private const string ForegroundPath = GeneratedFolder + "/AndroidAppIconForeground.png";
     private const string BackgroundPath = GeneratedFolder + "/AndroidAppIconBackground.png";
     private const string LegacyPath = GeneratedFolder + "/AndroidAppIconLegacy.png";
 
-    /// <summary>Fit logo inside Android adaptive icon safe zone (~66%).</summary>
-    private const float IconContentScale = 0.68f;
-    private const int IconTextureSize = 512;
+    private const float IconContentScale = 0.88f;
+    private const int IconTextureSize = 1024;
 
     private static readonly Color BackgroundColor = new Color(0.04f, 0.09f, 0.05f, 1f);
 
@@ -26,7 +26,9 @@ public static class MatchIQAppIconSetup
     public static void ApplyFromMenu()
     {
         if (ApplyAppLogo())
-            Debug.Log("[Match IQ] Padded Android app icons generated and applied.");
+            Debug.Log("[Match IQ] Android app icons updated from AppLogo.png.");
+        else
+            Debug.LogError("[Match IQ] Failed to apply AppLogo.png as Android icon.");
     }
 
     [InitializeOnLoadMethod]
@@ -51,46 +53,74 @@ public static class MatchIQAppIconSetup
             return false;
 
         var foreground = AssetDatabase.LoadAssetAtPath<Texture2D>(ForegroundPath);
-        return foreground != null && textures[0] == foreground;
+        var background = AssetDatabase.LoadAssetAtPath<Texture2D>(BackgroundPath);
+        return foreground != null && background != null &&
+               textures[0] == foreground && textures[1] == background;
     }
 
     private static bool ApplyAppLogo()
     {
-        var logo = AssetDatabase.LoadAssetAtPath<Texture2D>(LogoPath);
+        Texture2D logo = LoadLogoFromDisk();
         if (logo == null)
         {
             Debug.LogWarning("[Match IQ] AppLogo.png not found at " + LogoPath);
             return false;
         }
 
-        EnsureGeneratedFolder();
+        try
+        {
+            EnsureGeneratedFolder();
 
-        Texture2D foreground = BuildScaledForeground(logo);
-        Texture2D background = BuildSolidTexture(BackgroundColor);
-        Texture2D legacy = BuildCompositeIcon(logo);
+            Texture2D background = BuildSolidTexture(BackgroundColor);
+            Texture2D foreground = BuildForegroundIcon(logo);
+            Texture2D legacy = BuildCompositeIcon(logo);
 
-        SaveTexture(foreground, ForegroundPath);
-        SaveTexture(background, BackgroundPath);
-        SaveTexture(legacy, LegacyPath);
+            SaveTexture(background, BackgroundPath);
+            SaveTexture(foreground, ForegroundPath);
+            SaveTexture(legacy, LegacyPath);
 
-        Object.DestroyImmediate(foreground);
-        Object.DestroyImmediate(background);
-        Object.DestroyImmediate(legacy);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
 
-        var iconForeground = AssetDatabase.LoadAssetAtPath<Texture2D>(ForegroundPath);
-        var iconBackground = AssetDatabase.LoadAssetAtPath<Texture2D>(BackgroundPath);
-        var iconLegacy = AssetDatabase.LoadAssetAtPath<Texture2D>(LegacyPath);
-        if (!iconForeground || !iconBackground || !iconLegacy)
-            return false;
+            var iconBackground = AssetDatabase.LoadAssetAtPath<Texture2D>(BackgroundPath);
+            var iconForeground = AssetDatabase.LoadAssetAtPath<Texture2D>(ForegroundPath);
+            var iconLegacy = AssetDatabase.LoadAssetAtPath<Texture2D>(LegacyPath);
+            if (!iconForeground || !iconBackground || !iconLegacy)
+                return false;
 
-        var target = NamedBuildTarget.Android;
+            var target = NamedBuildTarget.Android;
 
-        SetAllIcons(target, AndroidPlatformIconKind.Adaptive, iconForeground, iconBackground);
-        SetAllIcons(target, AndroidPlatformIconKind.Round, iconLegacy, null);
-        SetAllIcons(target, AndroidPlatformIconKind.Legacy, iconLegacy, null);
+            SetAllIcons(target, AndroidPlatformIconKind.Adaptive, iconForeground, iconBackground);
+            SetAllIcons(target, AndroidPlatformIconKind.Round, iconLegacy, null);
+            SetAllIcons(target, AndroidPlatformIconKind.Legacy, iconLegacy, null);
 
-        AssetDatabase.SaveAssets();
-        return true;
+            AssetDatabase.SaveAssets();
+            return true;
+        }
+        finally
+        {
+            Object.DestroyImmediate(logo);
+        }
+    }
+
+    private static Texture2D LoadLogoFromDisk()
+    {
+        string fullPath = Path.Combine(
+            Application.dataPath,
+            "Mahjong/Resources/Landing/AppLogo.png");
+
+        if (!File.Exists(fullPath))
+            return null;
+
+        byte[] bytes = File.ReadAllBytes(fullPath);
+        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!tex.LoadImage(bytes))
+        {
+            Object.DestroyImmediate(tex);
+            return null;
+        }
+
+        return tex;
     }
 
     private static void SetAllIcons(
@@ -113,18 +143,14 @@ public static class MatchIQAppIconSetup
 
     private static void EnsureGeneratedFolder()
     {
-        if (!AssetDatabase.IsValidFolder("Assets/Editor/Generated"))
-        {
-            if (!AssetDatabase.IsValidFolder("Assets/Editor"))
-                AssetDatabase.CreateFolder("Assets", "Editor");
-            AssetDatabase.CreateFolder("Assets/Editor", "Generated");
-        }
+        if (!AssetDatabase.IsValidFolder("Assets/Mahjong/AppIcons"))
+            AssetDatabase.CreateFolder("Assets/Mahjong", "AppIcons");
     }
 
-    private static Texture2D BuildScaledForeground(Texture2D source)
+    private static Texture2D BuildForegroundIcon(Texture2D source)
     {
         var canvas = NewClearTexture(IconTextureSize);
-        BlitScaled(source, canvas, IconContentScale);
+        BlitScaled(source, canvas, IconContentScale, keyDarkBackground: true);
         return canvas;
     }
 
@@ -132,7 +158,7 @@ public static class MatchIQAppIconSetup
     {
         var canvas = NewClearTexture(IconTextureSize);
         FillColor(canvas, BackgroundColor);
-        BlitScaled(source, canvas, IconContentScale);
+        BlitScaled(source, canvas, IconContentScale, keyDarkBackground: true);
         return canvas;
     }
 
@@ -164,15 +190,24 @@ public static class MatchIQAppIconSetup
         tex.Apply();
     }
 
-    private static void BlitScaled(Texture2D source, Texture2D target, float scale)
+    private static void BlitScaled(
+        Texture2D source,
+        Texture2D target,
+        float scale,
+        bool keyDarkBackground)
     {
         int size = target.width;
         int drawW = Mathf.RoundToInt(size * scale);
         int drawH = Mathf.RoundToInt(size * scale);
+
+        float aspect = (float)source.width / Mathf.Max(1, source.height);
+        if (aspect > 1f)
+            drawH = Mathf.RoundToInt(drawW / aspect);
+        else
+            drawW = Mathf.RoundToInt(drawH * aspect);
+
         int offsetX = (size - drawW) / 2;
         int offsetY = (size - drawH) / 2;
-
-        bool restoreReadable = EnsureReadable(source);
 
         for (int y = 0; y < drawH; y++)
         {
@@ -181,16 +216,25 @@ public static class MatchIQAppIconSetup
             {
                 float u = drawW <= 1 ? 0.5f : x / (float)(drawW - 1);
                 Color sample = source.GetPixelBilinear(u, v);
+                if (keyDarkBackground && IsKeyedBackground(sample))
+                    continue;
+
                 int tx = offsetX + x;
                 int ty = offsetY + y;
+                if (tx < 0 || ty < 0 || tx >= size || ty >= size)
+                    continue;
+
                 Color existing = target.GetPixel(tx, ty);
                 target.SetPixel(tx, ty, AlphaBlend(existing, sample));
             }
         }
 
         target.Apply();
-        RestoreReadable(source, restoreReadable);
     }
+
+    private static bool IsKeyedBackground(Color color) =>
+        color.a < 0.05f ||
+        (color.r < 0.12f && color.g < 0.12f && color.b < 0.12f);
 
     private static Color AlphaBlend(Color under, Color over)
     {
@@ -205,35 +249,6 @@ public static class MatchIQAppIconSetup
             alpha);
     }
 
-    private static bool EnsureReadable(Texture2D source)
-    {
-        string path = AssetDatabase.GetAssetPath(source);
-        if (string.IsNullOrEmpty(path))
-            return false;
-
-        var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-        if (importer == null || importer.isReadable)
-            return false;
-
-        importer.isReadable = true;
-        importer.SaveAndReimport();
-        return true;
-    }
-
-    private static void RestoreReadable(Texture2D source, bool wasChanged)
-    {
-        if (!wasChanged)
-            return;
-
-        string path = AssetDatabase.GetAssetPath(source);
-        var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-        if (importer == null)
-            return;
-
-        importer.isReadable = false;
-        importer.SaveAndReimport();
-    }
-
     private static void SaveTexture(Texture2D texture, string assetPath)
     {
         byte[] png = texture.EncodeToPNG();
@@ -245,10 +260,35 @@ public static class MatchIQAppIconSetup
             return;
 
         importer.textureType = TextureImporterType.Default;
+        importer.spriteImportMode = SpriteImportMode.None;
         importer.alphaIsTransparency = true;
         importer.mipmapEnabled = false;
+        importer.npotScale = TextureImporterNPOTScale.None;
         importer.maxTextureSize = IconTextureSize;
-        importer.textureCompression = TextureImporterCompression.Compressed;
+        importer.textureCompression = TextureImporterCompression.Uncompressed;
+        importer.filterMode = FilterMode.Bilinear;
+        importer.isReadable = false;
+
+        var android = new TextureImporterPlatformSettings
+        {
+            name = "Android",
+            overridden = true,
+            maxTextureSize = IconTextureSize,
+            format = TextureImporterFormat.RGBA32,
+            textureCompression = TextureImporterCompression.Uncompressed,
+        };
+        importer.SetPlatformTextureSettings(android);
+
+        var standalone = new TextureImporterPlatformSettings
+        {
+            name = "Standalone",
+            overridden = true,
+            maxTextureSize = IconTextureSize,
+            format = TextureImporterFormat.RGBA32,
+            textureCompression = TextureImporterCompression.Uncompressed,
+        };
+        importer.SetPlatformTextureSettings(standalone);
+
         importer.SaveAndReimport();
     }
 }

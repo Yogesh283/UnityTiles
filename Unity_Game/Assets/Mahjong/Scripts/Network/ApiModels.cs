@@ -132,6 +132,12 @@ namespace Mkey.Network
     }
 
     [Serializable]
+    public class TournamentLevelRewardRequestDto
+    {
+        [JsonProperty("room_id")] public string roomId;
+    }
+
+    [Serializable]
     public class TournamentHistoryDto
     {
         [JsonProperty("tournament_id")] public string tournamentId;

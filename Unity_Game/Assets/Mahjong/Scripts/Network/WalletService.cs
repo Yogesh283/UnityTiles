@@ -28,5 +28,25 @@ namespace Mkey.Network
 
             return result;
         }
+
+        public static async Task<ApiResult<int>> CreditTournamentLevelRewardAsync(string roomId, int coins)
+        {
+            if (ApiConfig.Current.UseLocalSimulation)
+            {
+                if (CoinsHolder.Instance)
+                    CoinsHolder.Add(coins);
+                return ApiResult<int>.Ok(CoinsHolder.Instance ? CoinsHolder.Count : 0);
+            }
+
+            var body = new TournamentLevelRewardRequestDto { roomId = roomId };
+            var result = await NetworkManager.Instance.PostAsync<TournamentLevelRewardRequestDto, WalletBalanceDto>(
+                "tournaments/level-reward", body);
+
+            if (!result.Success || result.Data == null)
+                return ApiResult<int>.Fail(result.ErrorMessage, result.StatusCode, result.IsServerUnavailable);
+
+            CachedBalance = result.Data.balance;
+            return ApiResult<int>.Ok(CachedBalance);
+        }
     }
 }

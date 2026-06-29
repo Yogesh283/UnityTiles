@@ -101,6 +101,10 @@ class SubmitScoreResponse(BaseModel):
     room_status: str = "active"
 
 
+class TournamentLevelRewardRequest(BaseModel):
+    room_id: str = Field(min_length=1, max_length=128)
+
+
 class LeaderboardEntryResponse(BaseModel):
     user_id: int
     display_name: str
