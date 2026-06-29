@@ -35,6 +35,7 @@ def google_play_status():
     settings = get_settings()
     verifier = get_google_play_verifier()
     return {
+        "active": verifier.is_configured,
         "configured": verifier.is_configured,
         "package_name": settings.google_play_package_name,
         "error": verifier.config_error,

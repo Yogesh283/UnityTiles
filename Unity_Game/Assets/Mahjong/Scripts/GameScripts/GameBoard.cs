@@ -404,14 +404,20 @@ namespace Mkey
             }
             finally
             {
-                if (!this || !isActiveAndEnabled) return;
-
-                if (Tournament.TournamentSession.IsActive &&
-                    (Tournament.TournamentMatchManager.IsMatchResolved ||
-                     Tournament.TournamentMatchManager.IsMatchLocked))
-                    return;
-
-                SetControlActivity(true, true);
+                if (!this || !isActiveAndEnabled)
+                {
+                    // Coroutine ended — leave controls as-is.
+                }
+                else if (Tournament.TournamentSession.IsActive &&
+                         (Tournament.TournamentMatchManager.IsMatchResolved ||
+                          Tournament.TournamentMatchManager.IsMatchLocked))
+                {
+                    // Match ended — keep board locked until result dialog.
+                }
+                else
+                {
+                    SetControlActivity(true, true);
+                }
             }
         }
 

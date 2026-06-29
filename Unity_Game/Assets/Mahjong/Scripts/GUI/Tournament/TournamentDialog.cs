@@ -71,6 +71,29 @@ namespace Mkey.Tournament
                 return;
             }
 
+            StartCoroutine(ShowDepositMenuRoutine(onComplete));
+        }
+
+        private IEnumerator ShowDepositMenuRoutine(Action onComplete)
+        {
+            if (!PaymentService.BillingActive)
+            {
+                var statusTask = PaymentService.FetchBillingStatusAsync();
+                while (!statusTask.IsCompleted)
+                    yield return null;
+            }
+
+            if (!PaymentService.BillingActive)
+            {
+                Show(
+                    "Deposit Coins",
+                    "Play Store payments are not active yet.\n" + PaymentService.BillingStatusMessage,
+                    false,
+                    null,
+                    null);
+                yield break;
+            }
+
             TournamentDepositService.EnsurePurchaser();
             ShowDepositPack(0, onComplete);
         }

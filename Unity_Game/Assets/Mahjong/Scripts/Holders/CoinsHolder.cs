@@ -20,7 +20,7 @@ namespace Mkey
         [Header("Default data", order = 1)]
         [Tooltip("Default count at start")]
         [SerializeField]
-        private int defCount = 500;
+        private int defCount = 0;
 
         [Tooltip("Default facebook coins")]
         [SerializeField]
