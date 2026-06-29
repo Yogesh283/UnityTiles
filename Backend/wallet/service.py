@@ -139,11 +139,12 @@ class WalletService:
         *,
         completion_id: str,
     ) -> Wallet:
+        # transaction_id column is CHAR(36) — use the UUID only, not a composite key.
         return self._apply(
             user_id,
             amount,
             "level_complete_reward",
             str(level_number),
             f"Level {level_number} completion reward",
-            idempotency_key=f"level_complete:{user_id}:{completion_id}",
+            idempotency_key=completion_id,
         )

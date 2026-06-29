@@ -27,14 +27,19 @@ def complete_level(
     if body.level_number < MIN_LEVEL or body.level_number > MAX_LEVEL:
         raise HTTPException(status_code=400, detail="Invalid level number")
 
-    wallet_service = WalletService(db)
-    wallet_service.ensure_wallet(user.id)
-    wallet = wallet_service.credit_level_complete(
-        user.id,
-        REWARD_COINS,
-        body.level_number,
-        completion_id=new_transaction_id(),
-    )
+    try:
+        wallet_service = WalletService(db)
+        wallet_service.ensure_wallet(user.id)
+        wallet = wallet_service.credit_level_complete(
+            user.id,
+            REWARD_COINS,
+            body.level_number,
+            completion_id=new_transaction_id(),
+        )
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     return LevelCompleteResponse(
         reward_given=True,
         reward_coins=REWARD_COINS,
