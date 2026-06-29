@@ -3,11 +3,12 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.Android;
 using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
 /// Builds Android launcher icons from AppLogo.png.
-/// Icons are stored outside Assets/Editor so they are included in player builds.
+/// Icons live in Assets/Mahjong/AppIcons so they are included in player builds.
 /// </summary>
 public static class MatchIQAppIconSetup
 {
@@ -17,7 +18,7 @@ public static class MatchIQAppIconSetup
     private const string BackgroundPath = GeneratedFolder + "/AndroidAppIconBackground.png";
     private const string LegacyPath = GeneratedFolder + "/AndroidAppIconLegacy.png";
 
-    private const float IconContentScale = 0.88f;
+    private const float IconContentScale = 0.92f;
     private const int IconTextureSize = 1024;
 
     private static readonly Color BackgroundColor = new Color(0.04f, 0.09f, 0.05f, 1f);
@@ -37,28 +38,17 @@ public static class MatchIQAppIconSetup
         if (EditorApplication.isPlayingOrWillChangePlaymode)
             return;
 
-        if (!File.Exists(ForegroundPath) || !HasAndroidIconsConfigured())
-            ApplyAppLogo();
+        EditorApplication.delayCall += () =>
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            if (!File.Exists(ForegroundPath) || !HasAndroidIconsConfigured())
+                ApplyAppLogo();
+        };
     }
 
-    private static bool HasAndroidIconsConfigured()
-    {
-        PlatformIconKind kind = AndroidPlatformIconKind.Adaptive;
-        var icons = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, kind);
-        if (icons == null || icons.Length == 0)
-            return false;
-
-        var textures = icons[0].GetTextures();
-        if (textures == null || textures.Length < 2 || textures[0] == null || textures[1] == null)
-            return false;
-
-        var foreground = AssetDatabase.LoadAssetAtPath<Texture2D>(ForegroundPath);
-        var background = AssetDatabase.LoadAssetAtPath<Texture2D>(BackgroundPath);
-        return foreground != null && background != null &&
-               textures[0] == foreground && textures[1] == background;
-    }
-
-    private static bool ApplyAppLogo()
+    public static bool ApplyAppLogo()
     {
         Texture2D logo = LoadLogoFromDisk();
         if (logo == null)
@@ -72,28 +62,25 @@ public static class MatchIQAppIconSetup
             EnsureGeneratedFolder();
 
             Texture2D background = BuildSolidTexture(BackgroundColor);
-            Texture2D foreground = BuildForegroundIcon(logo);
-            Texture2D legacy = BuildCompositeIcon(logo);
+            Texture2D composite = BuildCompositeIcon(logo);
 
             SaveTexture(background, BackgroundPath);
-            SaveTexture(foreground, ForegroundPath);
-            SaveTexture(legacy, LegacyPath);
+            SaveTexture(composite, ForegroundPath);
+            SaveTexture(composite, LegacyPath);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            var iconBackground = AssetDatabase.LoadAssetAtPath<Texture2D>(BackgroundPath);
-            var iconForeground = AssetDatabase.LoadAssetAtPath<Texture2D>(ForegroundPath);
-            var iconLegacy = AssetDatabase.LoadAssetAtPath<Texture2D>(LegacyPath);
+            var iconBackground = LoadIconTexture(BackgroundPath);
+            var iconForeground = LoadIconTexture(ForegroundPath);
+            var iconLegacy = LoadIconTexture(LegacyPath);
             if (!iconForeground || !iconBackground || !iconLegacy)
+            {
+                Debug.LogError("[Match IQ] Generated icon textures are missing or invalid.");
                 return false;
+            }
 
-            var target = NamedBuildTarget.Android;
-
-            SetAllIcons(target, AndroidPlatformIconKind.Adaptive, iconForeground, iconBackground);
-            SetAllIcons(target, AndroidPlatformIconKind.Round, iconLegacy, null);
-            SetAllIcons(target, AndroidPlatformIconKind.Legacy, iconLegacy, null);
-
+            ConfigureAndroidIcons(iconForeground, iconBackground, iconLegacy);
             AssetDatabase.SaveAssets();
             return true;
         }
@@ -101,6 +88,56 @@ public static class MatchIQAppIconSetup
         {
             Object.DestroyImmediate(logo);
         }
+    }
+
+    private static bool HasAndroidIconsConfigured()
+    {
+        var adaptive = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive);
+        if (adaptive == null || adaptive.Length == 0)
+            return false;
+
+        var adaptiveTextures = adaptive[0].GetTextures();
+        if (adaptiveTextures == null || adaptiveTextures.Length < 2 ||
+            adaptiveTextures[0] == null || adaptiveTextures[1] == null)
+            return false;
+
+        if (adaptiveTextures[0] is not Texture2D || adaptiveTextures[1] is not Texture2D)
+            return false;
+
+        var foreground = LoadIconTexture(ForegroundPath);
+        var background = LoadIconTexture(BackgroundPath);
+
+        return foreground != null && background != null &&
+               adaptiveTextures[0] == foreground &&
+               adaptiveTextures[1] == background;
+    }
+
+    private static void ConfigureAndroidIcons(Texture2D foreground, Texture2D background, Texture2D legacy)
+    {
+        var target = NamedBuildTarget.Android;
+
+        // Unity 6: adaptive icons cover all launcher densities (mdpi-xxxhdpi).
+        SetAllIcons(target, AndroidPlatformIconKind.Adaptive, foreground, background);
+
+#if !UNITY_6000_0_OR_NEWER
+        SetAllIcons(target, AndroidPlatformIconKind.Round, legacy, null);
+        SetAllIcons(target, AndroidPlatformIconKind.Legacy, legacy, null);
+#endif
+    }
+
+    private static Texture2D LoadIconTexture(string assetPath)
+    {
+        var main = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+        if (main)
+            return main;
+
+        foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(assetPath))
+        {
+            if (asset is Texture2D texture)
+                return texture;
+        }
+
+        return null;
     }
 
     private static Texture2D LoadLogoFromDisk()
@@ -147,18 +184,11 @@ public static class MatchIQAppIconSetup
             AssetDatabase.CreateFolder("Assets/Mahjong", "AppIcons");
     }
 
-    private static Texture2D BuildForegroundIcon(Texture2D source)
-    {
-        var canvas = NewClearTexture(IconTextureSize);
-        BlitScaled(source, canvas, IconContentScale, keyDarkBackground: true);
-        return canvas;
-    }
-
     private static Texture2D BuildCompositeIcon(Texture2D source)
     {
         var canvas = NewClearTexture(IconTextureSize);
         FillColor(canvas, BackgroundColor);
-        BlitScaled(source, canvas, IconContentScale, keyDarkBackground: true);
+        BlitScaled(source, canvas, IconContentScale, keyBlackBackground: true);
         return canvas;
     }
 
@@ -194,7 +224,7 @@ public static class MatchIQAppIconSetup
         Texture2D source,
         Texture2D target,
         float scale,
-        bool keyDarkBackground)
+        bool keyBlackBackground)
     {
         int size = target.width;
         int drawW = Mathf.RoundToInt(size * scale);
@@ -216,7 +246,7 @@ public static class MatchIQAppIconSetup
             {
                 float u = drawW <= 1 ? 0.5f : x / (float)(drawW - 1);
                 Color sample = source.GetPixelBilinear(u, v);
-                if (keyDarkBackground && IsKeyedBackground(sample))
+                if (keyBlackBackground && IsPureBlackBackground(sample))
                     continue;
 
                 int tx = offsetX + x;
@@ -232,9 +262,9 @@ public static class MatchIQAppIconSetup
         target.Apply();
     }
 
-    private static bool IsKeyedBackground(Color color) =>
+    private static bool IsPureBlackBackground(Color color) =>
         color.a < 0.05f ||
-        (color.r < 0.12f && color.g < 0.12f && color.b < 0.12f);
+        (color.r < 0.03f && color.g < 0.03f && color.b < 0.03f);
 
     private static Color AlphaBlend(Color under, Color over)
     {
@@ -268,28 +298,44 @@ public static class MatchIQAppIconSetup
         importer.textureCompression = TextureImporterCompression.Uncompressed;
         importer.filterMode = FilterMode.Bilinear;
         importer.isReadable = false;
+        importer.wrapMode = TextureWrapMode.Clamp;
 
-        var android = new TextureImporterPlatformSettings
-        {
-            name = "Android",
-            overridden = true,
-            maxTextureSize = IconTextureSize,
-            format = TextureImporterFormat.RGBA32,
-            textureCompression = TextureImporterCompression.Uncompressed,
-        };
-        importer.SetPlatformTextureSettings(android);
-
-        var standalone = new TextureImporterPlatformSettings
-        {
-            name = "Standalone",
-            overridden = true,
-            maxTextureSize = IconTextureSize,
-            format = TextureImporterFormat.RGBA32,
-            textureCompression = TextureImporterCompression.Uncompressed,
-        };
-        importer.SetPlatformTextureSettings(standalone);
+        ApplyUncompressedPlatform(importer, "Android");
+        ApplyUncompressedPlatform(importer, "Standalone");
+        ApplyUncompressedPlatform(importer, "DefaultTexturePlatform");
 
         importer.SaveAndReimport();
+    }
+
+    private static void ApplyUncompressedPlatform(TextureImporter importer, string platform)
+    {
+        var settings = new TextureImporterPlatformSettings
+        {
+            name = platform,
+            overridden = platform != "DefaultTexturePlatform",
+            maxTextureSize = IconTextureSize,
+            format = TextureImporterFormat.RGBA32,
+            textureCompression = TextureImporterCompression.Uncompressed,
+            resizeAlgorithm = TextureResizeAlgorithm.Mitchell,
+        };
+        importer.SetPlatformTextureSettings(settings);
+    }
+}
+
+/// <summary>
+/// Regenerates Android launcher icons from AppLogo.png before every APK/AAB build.
+/// </summary>
+public class MatchIQAndroidIconBuildProcessor : IPreprocessBuildWithReport
+{
+    public int callbackOrder => -1000;
+
+    public void OnPreprocessBuild(BuildReport report)
+    {
+        if (report.summary.platform != BuildTarget.Android)
+            return;
+
+        if (!MatchIQAppIconSetup.ApplyAppLogo())
+            throw new BuildFailedException("[Match IQ] Failed to configure Android application icons.");
     }
 }
 #endif

@@ -31,6 +31,7 @@ namespace Mkey.Network
         public bool IsAuthenticated => !string.IsNullOrEmpty(AccessToken);
         public string AccessToken { get; private set; }
         public int UserId { get; private set; }
+        public string UserUuid { get; private set; }
 
         public event Action<bool> ServerAvailabilityChanged;
 
@@ -61,14 +62,17 @@ namespace Mkey.Network
         {
             AccessToken = PlayerPrefs.GetString("mk_api_token", string.Empty);
             UserId = PlayerPrefs.GetInt("mk_user_id", 0);
+            UserUuid = PlayerPrefs.GetString("mk_user_uuid", string.Empty);
         }
 
-        public void SaveSession(string token, int userId)
+        public void SaveSession(string token, int userId, string userUuid = null)
         {
             AccessToken = token ?? string.Empty;
             UserId = userId;
+            UserUuid = userUuid ?? string.Empty;
             PlayerPrefs.SetString("mk_api_token", AccessToken);
             PlayerPrefs.SetInt("mk_user_id", UserId);
+            PlayerPrefs.SetString("mk_user_uuid", UserUuid);
             PlayerPrefs.Save();
         }
 
@@ -76,8 +80,10 @@ namespace Mkey.Network
         {
             AccessToken = string.Empty;
             UserId = 0;
+            UserUuid = string.Empty;
             PlayerPrefs.DeleteKey("mk_api_token");
             PlayerPrefs.DeleteKey("mk_user_id");
+            PlayerPrefs.DeleteKey("mk_user_uuid");
             PlayerPrefs.Save();
         }
 

@@ -105,6 +105,17 @@ class TournamentLevelRewardRequest(BaseModel):
     room_id: str = Field(min_length=1, max_length=128)
 
 
+class LevelCompleteRequest(BaseModel):
+    user_uuid: str = Field(min_length=1, max_length=36)
+    level_number: int = Field(ge=1, le=300)
+
+
+class LevelCompleteResponse(BaseModel):
+    reward_given: bool
+    reward_coins: int
+    current_wallet_balance: int
+
+
 class LeaderboardEntryResponse(BaseModel):
     user_id: int
     display_name: str

@@ -62,7 +62,10 @@ namespace Mkey.Network
             if (!result.Success || result.Data == null)
                 return result;
 
-            NetworkManager.Instance.SaveSession(result.Data.accessToken, result.Data.userId);
+            NetworkManager.Instance.SaveSession(
+                result.Data.accessToken,
+                result.Data.userId,
+                result.Data.userUuid);
 
             if (PlayerDataHolder.Instance && !string.IsNullOrEmpty(result.Data.displayName))
                 PlayerDataHolder.Instance.SetFullName(result.Data.displayName);

@@ -121,3 +121,13 @@ class WalletService:
             f"Tournament level complete bonus for room {room_id}",
             idempotency_key=f"tournament_level:{room_id}:{user_id}",
         )
+
+    def credit_level_complete(self, user_id: int, amount: int, level_number: int) -> Wallet:
+        return self._apply(
+            user_id,
+            amount,
+            "level_complete_reward",
+            str(level_number),
+            f"Level {level_number} first-time completion reward",
+            idempotency_key=f"level_complete:{user_id}:{level_number}",
+        )

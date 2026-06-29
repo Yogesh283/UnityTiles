@@ -212,6 +212,11 @@ def tournament_level_reward(
     if room.status not in {"active", "locked", "finished"}:
         raise HTTPException(status_code=400, detail="Room is not active")
 
+    level_number = room.level_index + 1
+    if level_number != 300:
+        balance = WalletService(db).get_balance(user.id)
+        return WalletResponse(balance=balance)
+
     wallet = WalletService(db).credit_tournament_level(user.id, 50, body.room_id)
     return WalletResponse(balance=wallet.balance)
 
