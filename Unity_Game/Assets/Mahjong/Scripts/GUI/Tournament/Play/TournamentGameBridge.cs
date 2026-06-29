@@ -45,6 +45,8 @@ namespace Mkey.Tournament
 
                 TournamentSession.PrepareGameLevel();
 
+                TournamentGlobalWaitingRoom.Hide();
+
                 if (SceneLoader.Instance)
                     SceneLoader.Instance.LoadScene(TournamentSession.GameSceneIndex);
                 else

@@ -11,6 +11,8 @@ namespace Mkey.Tournament
     {
         private Text titleText;
         private Text playersText;
+        private Text localIdText;
+        private Text opponentIdText;
         private Text countdownText;
         private Text statusText;
         private TournamentDefinition tournament;
@@ -54,7 +56,7 @@ namespace Mkey.Tournament
             RectTransform panel = TournamentUIFactory.CreateRect(overlay, "Panel");
             panel.anchorMin = new Vector2(0.5f, 0.5f);
             panel.anchorMax = new Vector2(0.5f, 0.5f);
-            panel.sizeDelta = new Vector2(TournamentLayoutMetrics.S(820f), TournamentLayoutMetrics.S(580f));
+            panel.sizeDelta = new Vector2(TournamentLayoutMetrics.S(820f), TournamentLayoutMetrics.S(640f));
 
             TournamentPremiumUI.CreateDialogPanel(panel);
 
@@ -71,17 +73,27 @@ namespace Mkey.Tournament
             players.rectTransform.anchorMin = new Vector2(0.1f, 0.48f);
             players.rectTransform.anchorMax = new Vector2(0.9f, 0.62f);
 
+            Text localId = TournamentUIFactory.CreateText(panel, "LocalId", "", TournamentLayoutMetrics.Font(24f), FontStyle.Normal, TournamentPremiumTheme.TextSoft, TextAnchor.MiddleCenter);
+            localId.rectTransform.anchorMin = new Vector2(0.08f, 0.38f);
+            localId.rectTransform.anchorMax = new Vector2(0.92f, 0.47f);
+
+            Text opponentId = TournamentUIFactory.CreateText(panel, "OpponentId", "", TournamentLayoutMetrics.Font(24f), FontStyle.Normal, TournamentPremiumTheme.TextSoft, TextAnchor.MiddleCenter);
+            opponentId.rectTransform.anchorMin = new Vector2(0.08f, 0.29f);
+            opponentId.rectTransform.anchorMax = new Vector2(0.92f, 0.38f);
+
             Text countdown = TournamentUIFactory.CreateText(panel, "Countdown", "", TournamentLayoutMetrics.Font(50f), FontStyle.Bold, TournamentPremiumTheme.GoldBright, TextAnchor.MiddleCenter);
-            countdown.rectTransform.anchorMin = new Vector2(0.1f, 0.28f);
-            countdown.rectTransform.anchorMax = new Vector2(0.9f, 0.46f);
+            countdown.rectTransform.anchorMin = new Vector2(0.1f, 0.14f);
+            countdown.rectTransform.anchorMax = new Vector2(0.9f, 0.28f);
 
             Text status = TournamentUIFactory.CreateText(panel, "Status", "Finding players...", 26, FontStyle.Italic, TournamentPremiumTheme.TextMuted, TextAnchor.LowerCenter);
-            status.rectTransform.anchorMin = new Vector2(0.1f, 0.08f);
-            status.rectTransform.anchorMax = new Vector2(0.9f, 0.2f);
+            status.rectTransform.anchorMin = new Vector2(0.1f, 0.04f);
+            status.rectTransform.anchorMax = new Vector2(0.9f, 0.12f);
 
             TournamentWaitingRoomPanel view = overlay.gameObject.AddComponent<TournamentWaitingRoomPanel>();
             view.titleText = tournamentName;
             view.playersText = players;
+            view.localIdText = localId;
+            view.opponentIdText = opponentId;
             view.countdownText = countdown;
             view.statusText = status;
             overlay.gameObject.SetActive(false);
@@ -165,6 +177,36 @@ namespace Mkey.Tournament
             countdownText.text = $"{minutes:00}:{seconds:00}";
             statusText.text = snap.hasRoom ? snap.statusMessage :
                 (currentPlayers >= tournament.maxPlayers ? "Lobby full — starting soon" : "Finding players...");
+
+            string localUuid = snap.localPlayerUuid;
+            if (string.IsNullOrEmpty(localUuid) && NetworkManager.HasInstance)
+                localUuid = NetworkManager.Instance.UserUuid;
+
+            if (localIdText)
+            {
+                localIdText.text = string.IsNullOrEmpty(localUuid)
+                    ? "Your ID: —"
+                    : "Your ID: " + TournamentRoom.FormatShortId(localUuid);
+            }
+
+            if (opponentIdText)
+            {
+                if (!string.IsNullOrEmpty(snap.opponentUuid))
+                {
+                    string label = string.IsNullOrEmpty(snap.opponentName)
+                        ? TournamentRoom.FormatShortId(snap.opponentUuid)
+                        : snap.opponentName;
+                    opponentIdText.text = "Opponent: " + label + " (" + TournamentRoom.FormatShortId(snap.opponentUuid) + ")";
+                }
+                else if (tournament.maxPlayers <= 2)
+                {
+                    opponentIdText.text = "Opponent: searching...";
+                }
+                else
+                {
+                    opponentIdText.text = string.Empty;
+                }
+            }
         }
 
         private IEnumerator RefreshApiRoomCoroutine()

@@ -26,6 +26,50 @@ from wallet.service import WalletService
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
 
+def _serialize_room_players(db: Session, players: list[RoomPlayer]) -> list[dict]:
+    if not players:
+        return []
+
+    user_ids = [p.user_id for p in players]
+    users = {
+        u.id: u
+        for u in db.query(User).filter(User.id.in_(user_ids)).all()
+    }
+
+    payload = []
+    for player in players:
+        user = users.get(player.user_id)
+        payload.append(
+            {
+                "user_id": player.user_id,
+                "user_uuid": user.user_uuid if user else None,
+                "display_name": user.display_name if user else f"Player {player.user_id}",
+                "score": player.score,
+                "moves": player.moves,
+                "elapsed_seconds": player.elapsed_seconds,
+                "rank": player.rank,
+                "is_connected": player.is_connected,
+                "has_submitted": player.submitted_at is not None,
+            }
+        )
+    return payload
+
+
+def _build_room_response(db: Session, room: TournamentRoom, waiting_seconds: int) -> RoomResponse:
+    players = db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).all()
+    return RoomResponse(
+        room_id=room.id,
+        tournament_id=room.tournament_id,
+        level_index=room.level_index,
+        level_seed=room.level_seed,
+        status=room.status,
+        player_count=len(players),
+        max_players=room.max_players,
+        waiting_seconds=waiting_seconds,
+        players=_serialize_room_players(db, players),
+    )
+
+
 @router.get("", response_model=list[TournamentResponse])
 def list_tournaments():
     return [
@@ -74,18 +118,8 @@ def join_tournament(
     )
     db.commit()
 
-    count = db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).count()
     room = db.query(TournamentRoom).filter(TournamentRoom.id == room.id).first()
-    return RoomResponse(
-        room_id=room.id,
-        tournament_id=room.tournament_id,
-        level_index=room.level_index,
-        level_seed=room.level_seed,
-        status=room.status,
-        player_count=count,
-        max_players=room.max_players,
-        waiting_seconds=tournament.waiting_seconds,
-    )
+    return _build_room_response(db, room, tournament.waiting_seconds)
 
 
 @router.get("/rooms/{room_id}")
@@ -106,18 +140,7 @@ def room_snapshot(room_id: str, db: Session = Depends(get_db)):
         "status": room.status,
         "paid_winner_slots": paid_slots,
         "submitted_count": submitted_count,
-        "players": [
-            {
-                "user_id": p.user_id,
-                "score": p.score,
-                "moves": p.moves,
-                "elapsed_seconds": p.elapsed_seconds,
-                "rank": p.rank,
-                "is_connected": p.is_connected,
-                "has_submitted": p.submitted_at is not None,
-            }
-            for p in players
-        ],
+        "players": _serialize_room_players(db, players),
     }
 
 

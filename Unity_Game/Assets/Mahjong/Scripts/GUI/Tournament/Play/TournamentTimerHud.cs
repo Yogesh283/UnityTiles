@@ -42,6 +42,16 @@ namespace Mkey.Tournament
             timerRt.anchorMin = new Vector2(0.05f, 0.08f);
             timerRt.anchorMax = new Vector2(0.95f, 0.55f);
             timerRt.offsetMin = timerRt.offsetMax = Vector2.zero;
+
+            if (TournamentMatchManager.IsDuelMode)
+            {
+                rt.sizeDelta = new Vector2(320f, 96f);
+                TournamentMatchParticipant opponent = TournamentMatchManager.GetDuelOpponentForHud();
+                if (opponent != null && !string.IsNullOrEmpty(opponent.id))
+                {
+                    labelText.text = "VS " + TournamentRoom.FormatShortId(opponent.id);
+                }
+            }
         }
 
         private void Update()

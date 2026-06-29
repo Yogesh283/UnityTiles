@@ -75,6 +75,18 @@ class JoinTournamentRequest(BaseModel):
     tournament_id: str
 
 
+class RoomPlayerResponse(BaseModel):
+    user_id: int
+    user_uuid: str | None = None
+    display_name: str
+    score: int = 0
+    moves: int = 0
+    elapsed_seconds: int = 0
+    rank: int | None = None
+    is_connected: bool = True
+    has_submitted: bool = False
+
+
 class RoomResponse(BaseModel):
     room_id: str
     tournament_id: str
@@ -84,6 +96,7 @@ class RoomResponse(BaseModel):
     player_count: int
     max_players: int
     waiting_seconds: int
+    players: list[RoomPlayerResponse] = []
 
 
 class SubmitScoreRequest(BaseModel):

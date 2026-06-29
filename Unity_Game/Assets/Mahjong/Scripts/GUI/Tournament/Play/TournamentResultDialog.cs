@@ -29,6 +29,7 @@ namespace Mkey.Tournament
         {
             Show(
                 "❌ YOU LOSE",
+                "Game Over\n\n" +
                 "Your opponent completed the level first.\n\n" +
                 "Better luck next time.\n\n" +
                 "Reward: 0 Coins",

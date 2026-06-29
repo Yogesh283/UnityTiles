@@ -86,12 +86,15 @@ namespace Mkey.Network
         [JsonProperty("player_count")] public int playerCount;
         [JsonProperty("max_players")] public int maxPlayers;
         [JsonProperty("waiting_seconds")] public int waitingSeconds;
+        public List<RoomPlayerDto> players;
     }
 
     [Serializable]
     public class RoomPlayerDto
     {
         [JsonProperty("user_id")] public int userId;
+        [JsonProperty("user_uuid")] public string userUuid;
+        [JsonProperty("display_name")] public string displayName;
         public int score;
         public int moves;
         [JsonProperty("elapsed_seconds")] public int elapsedSeconds;

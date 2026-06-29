@@ -92,9 +92,8 @@ namespace Mkey.Network
                     Debug.LogWarning("[TournamentJoin] Wallet sync failed after join: " + walletResult.ErrorMessage);
 
                 TournamentApiBridge.ApplyJoinResponse(tournament, joinResult.Data);
-                waitingRoom.transform.SetAsLastSibling();
                 TournamentSession.Begin(tournament);
-                waitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
+                TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
             }
             catch (Exception ex)
             {
@@ -154,10 +153,9 @@ namespace Mkey.Network
 
             CoinsHolder.Add(-tournament.entryFee);
             refreshWallet?.Invoke();
-            waitingRoom.transform.SetAsLastSibling();
             TournamentSession.Begin(tournament);
             TournamentRoomRegistry.JoinOrGetRoom(tournament);
-            waitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
+            TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
         }
 
         private static void OpenDeposit(

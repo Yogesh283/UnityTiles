@@ -249,6 +249,46 @@ namespace Mkey.Tournament
             }
         }
 
+        public void ApplyOnlinePlayers(System.Collections.Generic.List<Mkey.Network.RoomPlayerDto> players)
+        {
+            if (players == null || players.Count == 0 || !IsDuel) return;
+
+            int localUserId = Mkey.Network.NetworkManager.HasInstance
+                ? Mkey.Network.NetworkManager.Instance.UserId
+                : 0;
+
+            Mkey.Network.RoomPlayerDto opponentDto = null;
+            foreach (Mkey.Network.RoomPlayerDto player in players)
+            {
+                if (player == null) continue;
+                if (player.userId == localUserId) continue;
+                opponentDto = player;
+                break;
+            }
+
+            if (opponentDto == null) return;
+
+            remotePlayers.Clear();
+            string opponentId = !string.IsNullOrEmpty(opponentDto.userUuid)
+                ? opponentDto.userUuid
+                : "player_" + opponentDto.userId;
+
+            remotePlayers.Add(new TournamentMatchParticipant
+            {
+                id = opponentId,
+                displayName = string.IsNullOrEmpty(opponentDto.displayName)
+                    ? FormatShortId(opponentId)
+                    : opponentDto.displayName,
+                isLocal = false
+            });
+        }
+
+        public static string FormatShortId(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "???";
+            return value.Length <= 8 ? value : value.Substring(0, 8);
+        }
+
         public void MarkMatchPlaying()
         {
             state = TournamentRoomState.Playing;

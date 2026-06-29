@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Mkey.Tournament;
 using UnityEngine;
@@ -29,6 +30,7 @@ namespace Mkey.Network
                 room.playerCount,
                 room.status,
                 room.waitingSeconds);
+            registryRoom?.ApplyOnlinePlayers(room.players);
             TournamentSession.BindRoom(room.roomId, room.levelIndex);
         }
 
@@ -39,7 +41,12 @@ namespace Mkey.Network
             var result = await TournamentService.FetchRoomSnapshotAsync(CurrentRoom.roomId);
             if (!result.Success || result.Data == null) return false;
 
-            CurrentRoom.playerCount = result.Data.players != null ? result.Data.players.Count : CurrentRoom.playerCount;
+            if (result.Data.players != null)
+            {
+                CurrentRoom.players = result.Data.players;
+                CurrentRoom.playerCount = result.Data.players.Count;
+            }
+
             CurrentRoom.status = result.Data.status;
 
             TournamentRoom local = TournamentRoomRegistry.LocalRoom;
@@ -50,6 +57,7 @@ namespace Mkey.Network
                 CurrentRoom.playerCount,
                 result.Data.status,
                 CurrentRoom.waitingSeconds);
+            local?.ApplyOnlinePlayers(result.Data.players);
 
             return true;
         }
@@ -63,6 +71,8 @@ namespace Mkey.Network
                                 CurrentRoom.status == "active" ||
                                 CurrentRoom.playerCount >= CurrentRoom.maxPlayers;
 
+            BuildPlayerLabels(CurrentRoom.players, out string localUuid, out string opponentUuid, out string opponentName);
+
             return new TournamentRoomSnapshot
             {
                 hasRoom = true,
@@ -70,13 +80,50 @@ namespace Mkey.Network
                 maxPlayers = tournament.maxPlayers,
                 countdownSeconds = CurrentRoom.waitingSeconds,
                 statusMessage = GetStatusMessage(CurrentRoom.status, CurrentRoom.playerCount, tournament.maxPlayers),
-                shouldLaunch = shouldLaunch
+                shouldLaunch = shouldLaunch,
+                localPlayerUuid = localUuid,
+                opponentUuid = opponentUuid,
+                opponentName = opponentName
             };
         }
 
         public static void Clear()
         {
             CurrentRoom = null;
+        }
+
+        private static void BuildPlayerLabels(
+            List<RoomPlayerDto> players,
+            out string localUuid,
+            out string opponentUuid,
+            out string opponentName)
+        {
+            localUuid = NetworkManager.HasInstance ? NetworkManager.Instance.UserUuid : string.Empty;
+            opponentUuid = string.Empty;
+            opponentName = string.Empty;
+
+            if (players == null || players.Count == 0) return;
+
+            int localUserId = NetworkManager.HasInstance ? NetworkManager.Instance.UserId : 0;
+            foreach (RoomPlayerDto player in players)
+            {
+                if (player == null) continue;
+
+                if (player.userId == localUserId)
+                {
+                    if (!string.IsNullOrEmpty(player.userUuid))
+                        localUuid = player.userUuid;
+                    continue;
+                }
+
+                opponentUuid = !string.IsNullOrEmpty(player.userUuid)
+                    ? player.userUuid
+                    : "player_" + player.userId;
+                opponentName = string.IsNullOrEmpty(player.displayName)
+                    ? TournamentRoom.FormatShortId(opponentUuid)
+                    : player.displayName;
+                return;
+            }
         }
 
         private static string GetStatusMessage(string status, int players, int maxPlayers)

@@ -9,5 +9,8 @@ namespace Mkey.Tournament
         public float countdownSeconds;
         public string statusMessage;
         public bool shouldLaunch;
+        public string localPlayerUuid;
+        public string opponentUuid;
+        public string opponentName;
     }
 }

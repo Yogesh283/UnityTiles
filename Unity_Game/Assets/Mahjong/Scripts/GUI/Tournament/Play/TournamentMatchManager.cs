@@ -25,6 +25,7 @@ namespace Mkey.Tournament
         private bool onlineRoomPollInFlight;
 
         private const float OnlineRoomPollIntervalSeconds = 2.5f;
+        private const float DuelOnlinePollIntervalSeconds = 0.8f;
 
         private static bool duelServerScoreSubmitted;
 
@@ -127,7 +128,7 @@ namespace Mkey.Tournament
 
         private void Update()
         {
-            if (!HasActiveRoom || room.isResolved || room.isLocked) return;
+            if (!HasActiveRoom || room.isResolved) return;
             if (room.state != TournamentRoomState.Playing) return;
 
             if (UseSimulatedDuelOpponent)
@@ -141,8 +142,9 @@ namespace Mkey.Tournament
 
             if (!TournamentApiBridge.IsOnlineMode || string.IsNullOrEmpty(room.roomId)) return;
 
+            float pollInterval = room.IsDuel ? DuelOnlinePollIntervalSeconds : OnlineRoomPollIntervalSeconds;
             onlineRoomPollTimer += Time.unscaledDeltaTime;
-            if (onlineRoomPollTimer < OnlineRoomPollIntervalSeconds || onlineRoomPollInFlight)
+            if (onlineRoomPollTimer < pollInterval || onlineRoomPollInFlight)
                 return;
 
             onlineRoomPollTimer = 0f;
@@ -198,7 +200,7 @@ namespace Mkey.Tournament
         {
             try
             {
-                if (!HasActiveRoom || room.isResolved || room.isLocked)
+                if (!HasActiveRoom || room.isResolved)
                     yield break;
 
                 var fetchTask = TournamentService.FetchRoomSnapshotAsync(room.roomId);
@@ -207,6 +209,9 @@ namespace Mkey.Tournament
 
                 if (!fetchTask.Result.Success || fetchTask.Result.Data == null)
                     yield break;
+
+                if (fetchTask.Result.Data.players != null)
+                    TournamentRoomRegistry.LocalRoom?.ApplyOnlinePlayers(fetchTask.Result.Data.players);
 
                 ApplyOnlineRoomSnapshot(fetchTask.Result.Data);
             }
@@ -263,12 +268,18 @@ namespace Mkey.Tournament
 
         private static void ApplyDuelOpponentSubmission(RoomSnapshotDto snapshot)
         {
-            if (room.localPlayer.hasCompleted) return;
+            if (room.localPlayer.hasCompleted || room.isResolved) return;
 
             RoomPlayerDto opponentDto = FindOpponentPlayer(snapshot);
             if (opponentDto == null || !opponentDto.hasSubmitted) return;
 
             TournamentMatchParticipant opponent = GetDuelOpponent();
+            if (opponent == null)
+            {
+                room.ApplyOnlinePlayers(snapshot.players);
+                opponent = GetDuelOpponent();
+            }
+
             if (opponent == null || opponent.hasCompleted) return;
 
             double finishMs = room.synchronizedStartServerMs +
@@ -317,11 +328,13 @@ namespace Mkey.Tournament
 
             if (!room.localPlayer.hasCompleted)
             {
+                FreezeLocalGameplay();
                 TournamentSession.FinishGameplay(ScoreHolder.Instance ? ScoreHolder.Count : 0);
                 TournamentGameSessionController.StopTracking();
             }
 
-            ApplyServerFinish(localDto.rank, prize, room.IsDuel && localDto.rank == 1);
+            bool duelWin = room.IsDuel && localDto.rank == 1;
+            ApplyServerFinish(localDto.rank, prize, duelWin);
         }
 
         private static RoomPlayerDto FindOpponentPlayer(RoomSnapshotDto snapshot)
@@ -790,8 +803,24 @@ namespace Mkey.Tournament
         private static TournamentMatchParticipant GetDuelOpponent() =>
             room.remotePlayers.Count > 0 ? room.remotePlayers[0] : null;
 
+        public static TournamentMatchParticipant GetDuelOpponentForHud() => GetDuelOpponent();
+
         private static void PrepareDuelOpponent()
         {
+            if (TournamentApiBridge.IsOnlineMode && !UseSimulatedDuelOpponent)
+            {
+                if (GetDuelOpponent() == null)
+                {
+                    room.remotePlayers.Add(new TournamentMatchParticipant
+                    {
+                        id = TournamentRoom.RemotePlayerId,
+                        displayName = "Opponent",
+                        isLocal = false
+                    });
+                }
+                return;
+            }
+
             room.remotePlayers.Clear();
             var rng = new System.Random(room.roomSeed);
             float opponentSeconds = 40f + (float)rng.NextDouble() * 80f;
