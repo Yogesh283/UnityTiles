@@ -12,13 +12,16 @@ from models.schemas import (
     RoomResponse,
     SubmitScoreRequest,
     SubmitScoreResponse,
+    TournamentLevelRewardRequest,
     TournamentResponse,
+    WalletResponse,
 )
 from tournament.anti_cheat import AntiCheatError, ScoreSubmission, validate_score_submission
 from tournament.broadcast import schedule_match_finished_broadcast
 from tournament.catalog import TOURNAMENT_CATALOG, get_tournament
 from tournament.prize_table import get_paid_rank_count
 from tournament.room_manager import RoomManager
+from wallet.service import WalletService
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
@@ -186,6 +189,31 @@ def submit_score(
         prize=player.prize or 0,
         room_status=room.status,
     )
+
+
+@router.post("/level-reward", response_model=WalletResponse)
+def tournament_level_reward(
+    body: TournamentLevelRewardRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    room = db.query(TournamentRoom).filter(TournamentRoom.id == body.room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    player = (
+        db.query(RoomPlayer)
+        .filter(RoomPlayer.room_id == body.room_id, RoomPlayer.user_id == user.id)
+        .first()
+    )
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not in room")
+
+    if room.status not in {"active", "locked", "finished"}:
+        raise HTTPException(status_code=400, detail="Room is not active")
+
+    wallet = WalletService(db).credit_tournament_level(user.id, 50, body.room_id)
+    return WalletResponse(balance=wallet.balance)
 
 
 @router.get("/history")

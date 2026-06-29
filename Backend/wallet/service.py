@@ -111,3 +111,13 @@ class WalletService:
             f"Google Play purchase: {product_id}",
             idempotency_key=f"iap:{order_id}",
         )
+
+    def credit_tournament_level(self, user_id: int, amount: int, room_id: str) -> Wallet:
+        return self._apply(
+            user_id,
+            amount,
+            "tournament_level_reward",
+            room_id,
+            f"Tournament level complete bonus for room {room_id}",
+            idempotency_key=f"tournament_level:{room_id}:{user_id}",
+        )

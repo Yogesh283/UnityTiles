@@ -65,6 +65,8 @@ namespace Mkey.Tournament
             if (TournamentMatchManager.IsMatchResolved || TournamentMatchManager.IsMatchLocked)
                 return;
 
+            TournamentLevelRewardService.GrantOnLevelComplete();
+
             int score = ScoreHolder.Instance ? ScoreHolder.Count : 0;
             TournamentMatchManager.OnLocalPlayerCompleted(
                 score,
