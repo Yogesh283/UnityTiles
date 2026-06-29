@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Mkey.Network;
 
 namespace Mkey
 {
@@ -70,12 +71,16 @@ namespace Mkey
 
             if (!result.Data.rewardGiven)
             {
+                string server = ApiConfig.Current.ServerRoot;
                 Debug.LogWarning(
                     "LevelCompletionReward: server returned reward_given=false for level " +
-                    LevelCompletionRewardService.ToLevelNumber(levelIndex));
+                    LevelCompletionRewardService.ToLevelNumber(levelIndex) +
+                    " (API: " + server + ")");
                 AppMessageDialog.Show(
                     "Reward unavailable",
-                    "Tournament coins were not added. Please update the app or try again later.");
+                    "Tournament coins were not added.\n\n" +
+                    "API: " + server + "\n\n" +
+                    "Local test: start backend on localhost:8000 and set Use Production Url = OFF in ApiConfig.");
                 yield break;
             }
 
