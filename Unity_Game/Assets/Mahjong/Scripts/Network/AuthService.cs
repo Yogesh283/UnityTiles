@@ -41,6 +41,22 @@ namespace Mkey.Network
                 await NetworkManager.Instance.PostAsync<LoginRequestDto, TokenResponseDto>("auth/login", body, false));
         }
 
+        /// <summary>
+        /// Ensures a valid API session with user UUID (re-login if token exists but UUID is missing).
+        /// </summary>
+        public static async Task<bool> EnsureSessionAsync()
+        {
+            NetworkManager.EnsureExists();
+            if (!NetworkManager.Instance.IsAuthenticated ||
+                string.IsNullOrEmpty(NetworkManager.Instance.UserUuid))
+            {
+                ApiResult<TokenResponseDto> result = await GuestLoginAsync();
+                return result.Success && !string.IsNullOrEmpty(NetworkManager.Instance.UserUuid);
+            }
+
+            return true;
+        }
+
         public static async Task<ApiResult<TokenResponseDto>> GuestLoginAsync(string displayName = null)
         {
             string guestId = GetOrCreateGuestId();

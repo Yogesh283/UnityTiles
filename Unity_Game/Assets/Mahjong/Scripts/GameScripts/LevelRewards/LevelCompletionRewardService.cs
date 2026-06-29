@@ -4,7 +4,7 @@ using Mkey.Network;
 namespace Mkey
 {
     /// <summary>
-    /// Requests backend level-complete rewards (50 coins for first-time completion, levels 1-300).
+    /// Requests backend level-complete rewards (50 coins every time a level is won, levels 1-300).
     /// </summary>
     public static class LevelCompletionRewardService
     {
@@ -25,10 +25,10 @@ namespace Mkey
             if (ApiConfig.Current.UseLocalSimulation)
                 return ApiResult<LevelCompleteResponseDto>.Fail("Development mode enabled.");
 
-            NetworkManager.EnsureExists();
-            string userUuid = NetworkManager.Instance.UserUuid;
-            if (string.IsNullOrEmpty(userUuid))
+            if (!await AuthService.EnsureSessionAsync())
                 return ApiResult<LevelCompleteResponseDto>.Fail("Not authenticated.");
+
+            string userUuid = NetworkManager.Instance.UserUuid;
 
             var body = new LevelCompleteRequestDto
             {

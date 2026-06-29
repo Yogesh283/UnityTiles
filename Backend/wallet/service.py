@@ -13,6 +13,15 @@ class WalletService:
         wallet = self.db.query(Wallet).filter(Wallet.user_id == user_id).first()
         return wallet.balance if wallet else 0
 
+    def ensure_wallet(self, user_id: int) -> Wallet:
+        wallet = self.db.query(Wallet).filter(Wallet.user_id == user_id).first()
+        if wallet:
+            return wallet
+        wallet = Wallet(user_id=user_id, balance=0)
+        self.db.add(wallet)
+        self.db.flush()
+        return wallet
+
     def _apply(
         self,
         user_id: int,
@@ -122,12 +131,19 @@ class WalletService:
             idempotency_key=f"tournament_level:{room_id}:{user_id}",
         )
 
-    def credit_level_complete(self, user_id: int, amount: int, level_number: int) -> Wallet:
+    def credit_level_complete(
+        self,
+        user_id: int,
+        amount: int,
+        level_number: int,
+        *,
+        completion_id: str,
+    ) -> Wallet:
         return self._apply(
             user_id,
             amount,
             "level_complete_reward",
             str(level_number),
-            f"Level {level_number} first-time completion reward",
-            idempotency_key=f"level_complete:{user_id}:{level_number}",
+            f"Level {level_number} completion reward",
+            idempotency_key=f"level_complete:{user_id}:{completion_id}",
         )

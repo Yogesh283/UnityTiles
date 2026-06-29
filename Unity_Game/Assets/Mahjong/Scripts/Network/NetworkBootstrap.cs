@@ -48,6 +48,20 @@ namespace Mkey.Network
             }
             else
             {
+                if (string.IsNullOrEmpty(NetworkManager.Instance.UserUuid))
+                {
+                    Task<ApiResult<TokenResponseDto>> reloginTask = AuthService.GuestLoginAsync();
+                    while (!reloginTask.IsCompleted)
+                        yield return null;
+
+                    if (!reloginTask.Result.Success)
+                    {
+                        Debug.LogWarning(
+                            "[NetworkBootstrap] Re-login for user UUID failed: " +
+                            reloginTask.Result.ErrorMessage);
+                    }
+                }
+
                 Task<ApiResult<UserProfileDto>> profileTask = ProfileService.RefreshProfileAsync();
                 while (!profileTask.IsCompleted)
                     yield return null;

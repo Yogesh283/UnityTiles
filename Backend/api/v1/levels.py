@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from auth.jwt import get_current_user
+from core.identifiers import new_transaction_id
 from database.connection import get_db
-from database.models import LevelReward, User
+from database.models import User
 from models.schemas import LevelCompleteRequest, LevelCompleteResponse
 from wallet.service import WalletService
 
@@ -27,42 +27,14 @@ def complete_level(
     if body.level_number < MIN_LEVEL or body.level_number > MAX_LEVEL:
         raise HTTPException(status_code=400, detail="Invalid level number")
 
-    existing = (
-        db.query(LevelReward)
-        .filter(
-            LevelReward.user_id == user.id,
-            LevelReward.level_number == body.level_number,
-        )
-        .first()
+    wallet_service = WalletService(db)
+    wallet_service.ensure_wallet(user.id)
+    wallet = wallet_service.credit_level_complete(
+        user.id,
+        REWARD_COINS,
+        body.level_number,
+        completion_id=new_transaction_id(),
     )
-    if existing:
-        balance = WalletService(db).get_balance(user.id)
-        return LevelCompleteResponse(
-            reward_given=False,
-            reward_coins=0,
-            current_wallet_balance=balance,
-        )
-
-    claim = LevelReward(
-        user_id=user.id,
-        user_uuid=user.user_uuid,
-        level_number=body.level_number,
-        reward_coins=REWARD_COINS,
-    )
-    db.add(claim)
-
-    try:
-        db.flush()
-    except IntegrityError:
-        db.rollback()
-        balance = WalletService(db).get_balance(user.id)
-        return LevelCompleteResponse(
-            reward_given=False,
-            reward_coins=0,
-            current_wallet_balance=balance,
-        )
-
-    wallet = WalletService(db).credit_level_complete(user.id, REWARD_COINS, body.level_number)
     return LevelCompleteResponse(
         reward_given=True,
         reward_coins=REWARD_COINS,

@@ -32,6 +32,7 @@ namespace Mkey
 
         public void Click()
         {
+            Tournament.TournamentSession.Clear();
             GameLevelHolder.CurrentLevel  = nextLevel;
            // if (LifesHolder.Count <= 0 && !GCSet.UnLimited) { MGui.ShowMessage("Sorry!", "You have no lifes.", 1.5f, () => { MGui.ShowPopUpByDescription("lifeshop"); }); return; }
             Debug.Log("load scene : " + sceneNumber+ " ;CurrentLevel: " + GameLevelHolder.CurrentLevel);
