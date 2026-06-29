@@ -31,9 +31,15 @@ class GooglePlayBilling extends Page
 
     public function mount(GooglePlayBillingManager $manager): void
     {
-        $this->serviceAccountJson = $manager->readCredentialsJson() ?? '';
-        $this->packageName = $manager->readPackageName();
-        $this->syncStatus($manager);
+        try {
+            $this->serviceAccountJson = $manager->readCredentialsJson() ?? '';
+            $this->packageName = $manager->readPackageName();
+            $this->isActive = $manager->isConfigured();
+            $this->apiStatus = 'Click Refresh status to check API server.';
+        } catch (\Throwable $e) {
+            report($e);
+            $this->apiStatus = 'Could not load billing settings: '.$e->getMessage();
+        }
     }
 
     public function save(GooglePlayBillingManager $manager): void
@@ -68,7 +74,12 @@ class GooglePlayBilling extends Page
 
     private function syncStatus(GooglePlayBillingManager $manager): void
     {
-        $this->isActive = $manager->isConfigured();
-        $this->apiStatus = $manager->fetchApiStatus();
+        try {
+            $this->isActive = $manager->isConfigured();
+            $this->apiStatus = $manager->fetchApiStatus();
+        } catch (\Throwable $e) {
+            report($e);
+            $this->apiStatus = 'Status check failed: '.$e->getMessage();
+        }
     }
 }
