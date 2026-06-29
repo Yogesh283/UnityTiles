@@ -1,4 +1,5 @@
-﻿using UnityEngine.UI;
+﻿using UnityEngine;
+using UnityEngine.UI;
 /*
  *changes
  * 02102019 Fix
@@ -73,10 +74,10 @@ namespace Mkey
             message.resizeTextMaxSize = 28;
 
             RectTransform rt = message.rectTransform;
-            rt.anchorMin = new Vector2(0f, 0.35f);
-            rt.anchorMax = new Vector2(1f, 0.88f);
-            rt.offsetMin = new Vector2(24f, 0f);
-            rt.offsetMax = new Vector2(-24f, 0f);
+            rt.anchorMin = new Vector2(0.06f, 0.22f);
+            rt.anchorMax = new Vector2(0.94f, 0.62f);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
             rt.anchoredPosition = Vector2.zero;
             rt.sizeDelta = Vector2.zero;
         }
