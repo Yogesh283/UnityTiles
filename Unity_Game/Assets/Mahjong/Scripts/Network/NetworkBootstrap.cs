@@ -37,6 +37,13 @@ namespace Mkey.Network
                     Task<ApiResult<int>> walletTask = WalletService.SyncToCoinsHolderAsync();
                     while (!walletTask.IsCompleted)
                         yield return null;
+
+                    Task billingTask = PaymentService.FetchBillingStatusAsync();
+                    while (!billingTask.IsCompleted)
+                        yield return null;
+
+                    Debug.Log("[NetworkBootstrap] Billing: " +
+                              (PaymentService.BillingActive ? "active" : PaymentService.BillingStatusMessage));
                 }
             }
             else

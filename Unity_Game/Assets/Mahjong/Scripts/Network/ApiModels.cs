@@ -182,4 +182,13 @@ namespace Mkey.Network
         [JsonProperty("coins_added")] public int coinsAdded;
         public int balance;
     }
+
+    [Serializable]
+    public class GooglePlayBillingStatusDto
+    {
+        public bool active;
+        public bool configured;
+        [JsonProperty("package_name")] public string packageName;
+        public string error;
+    }
 }

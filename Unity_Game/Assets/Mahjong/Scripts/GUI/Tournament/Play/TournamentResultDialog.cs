@@ -15,7 +15,7 @@ namespace Mkey.Tournament
         {
             Show(
                 "🏆 YOU WIN!",
-                $"Tournament Won\n\nReward: {prizeCoins:N0} Coins\nRank: #1",
+                $"Fastest finish!\n\nReward: {prizeCoins:N0} Coins\nRank: #1",
                 onClosed);
         }
 
@@ -23,8 +23,21 @@ namespace Mkey.Tournament
         {
             Show(
                 "❌ GAME OVER",
-                "Your opponent completed the level first.\n\nBetter Luck Next Time.\n\nReward: 0 Coins",
+                "Your opponent finished faster.\n\nBetter Luck Next Time.\n\nReward: 0 Coins",
                 onClosed);
+        }
+
+        public static void ShowDuelWaiting()
+        {
+            TournamentResultOverlayHost.EnsureInstance().PresentWaiting(
+                "⏳ WAITING",
+                "You finished the level.\n\nWaiting for your opponent...");
+        }
+
+        public static void HideWaitingIfVisible()
+        {
+            if (TournamentResultOverlayHost.Instance != null)
+                TournamentResultOverlayHost.Instance.HideWaiting();
         }
 
         public static void ShowRankWin(int rank, int prizeCoins, Action onClosed)
@@ -75,6 +88,8 @@ namespace Mkey.Tournament
 
         public bool IsShowing { get; private set; }
 
+        private bool isWaitingMode;
+
         private RectTransform overlayRoot;
         private RectTransform panel;
         private Text titleText;
@@ -116,6 +131,8 @@ namespace Mkey.Tournament
         public void Present(string title, string message, Action onClosed)
         {
             EnsureEventSystem();
+            isWaitingMode = false;
+            if (okButton) okButton.gameObject.SetActive(true);
             pendingCloseAction = onClosed;
             titleText.text = title;
             messageText.text = message;
@@ -130,9 +147,32 @@ namespace Mkey.Tournament
                 .SetOnUpdate(t => panel.localScale = Vector3.LerpUnclamped(Vector3.one * 0.92f, Vector3.one, t));
         }
 
+        public void PresentWaiting(string title, string message)
+        {
+            EnsureEventSystem();
+            isWaitingMode = true;
+            pendingCloseAction = null;
+            if (okButton) okButton.gameObject.SetActive(false);
+            titleText.text = title;
+            messageText.text = message;
+            overlayRoot.gameObject.SetActive(true);
+            overlayRoot.SetAsLastSibling();
+            IsShowing = true;
+            panel.localScale = Vector3.one;
+        }
+
+        public void HideWaiting()
+        {
+            if (!isWaitingMode) return;
+            isWaitingMode = false;
+            IsShowing = false;
+            overlayRoot.gameObject.SetActive(false);
+            if (okButton) okButton.gameObject.SetActive(true);
+        }
+
         private void OnOkClicked()
         {
-            if (!IsShowing) return;
+            if (!IsShowing || isWaitingMode) return;
 
             IsShowing = false;
             overlayRoot.gameObject.SetActive(false);

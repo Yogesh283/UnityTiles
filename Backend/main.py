@@ -61,6 +61,7 @@ def health():
         "service": "match-iq-api",
         "version": "2.0.0",
         "google_play_billing": verifier.is_configured,
+        "billing_active": verifier.is_configured,
         "legal_pages": {
             "privacy": "/legal/privacy.html",
             "terms": "/legal/terms.html",

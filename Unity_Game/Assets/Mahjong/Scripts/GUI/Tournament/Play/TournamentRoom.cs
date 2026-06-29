@@ -56,6 +56,7 @@ namespace Mkey.Tournament
         public bool rewardGranted;
         public bool levelGenerated;
         public string winnerId;
+        public bool duelWaitingForOpponent;
 
         public float countdownDuration;
         public float countdownRemaining;
@@ -94,6 +95,7 @@ namespace Mkey.Tournament
             levelGenerated = false;
             localPlayerJoined = false;
             winnerId = null;
+            duelWaitingForOpponent = false;
             joinedPlayerCount = 0;
             simulatedRemoteCount = 0;
             selectedLevelIndex = -1;

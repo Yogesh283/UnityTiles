@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 CREATE TABLE IF NOT EXISTS `wallet` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT UNSIGNED NOT NULL UNIQUE,
-  `balance` INT NOT NULL DEFAULT 500,
+  `balance` INT NOT NULL DEFAULT 0,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_wallet_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -220,5 +220,5 @@ ON DUPLICATE KEY UPDATE email = VALUES(email);
 INSERT INTO `settings` (`key`, `value`) VALUES
 ('app_name', 'TilesClash'),
 ('maintenance_mode', '0'),
-('default_coins', '500')
+('default_coins', '0')
 ON DUPLICATE KEY UPDATE value = VALUES(value);

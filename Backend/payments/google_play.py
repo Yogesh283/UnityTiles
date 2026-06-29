@@ -45,11 +45,15 @@ def _load_credentials():
     raw = settings.google_play_service_account_json.strip()
 
     if raw.startswith("{"):
-        info = json.loads(raw)
-        return service_account.Credentials.from_service_account_info(
-            info,
-            scopes=[ANDROID_PUBLISHER_SCOPE],
-        )
+        try:
+            info = json.loads(raw)
+            return service_account.Credentials.from_service_account_info(
+                info,
+                scopes=[ANDROID_PUBLISHER_SCOPE],
+            )
+        except json.JSONDecodeError as exc:
+            logger.error("Invalid inline Google Play JSON: %s", exc)
+            return _load_default_credentials()
 
     if raw:
         path = _resolve_credentials_path(raw)
@@ -58,15 +62,20 @@ def _load_credentials():
                 str(path),
                 scopes=[ANDROID_PUBLISHER_SCOPE],
             )
-        logger.error("Google Play credentials path not found: %s", raw)
-        return None
+        logger.warning(
+            "Google Play credentials path not found: %s — trying default file",
+            raw,
+        )
 
+    return _load_default_credentials()
+
+
+def _load_default_credentials():
     if DEFAULT_CREDENTIALS_PATH.is_file():
         return service_account.Credentials.from_service_account_file(
             str(DEFAULT_CREDENTIALS_PATH),
             scopes=[ANDROID_PUBLISHER_SCOPE],
         )
-
     return None
 
 
@@ -156,6 +165,11 @@ class GooglePlayVerifier:
 @lru_cache
 def get_google_play_verifier() -> GooglePlayVerifier:
     return GooglePlayVerifier()
+
+
+def reload_google_play_verifier() -> GooglePlayVerifier:
+    get_google_play_verifier.cache_clear()
+    return get_google_play_verifier()
 
 
 def _extract_http_error(exc: HttpError) -> str:
