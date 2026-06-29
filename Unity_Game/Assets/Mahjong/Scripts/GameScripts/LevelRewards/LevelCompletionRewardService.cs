@@ -4,7 +4,7 @@ using Mkey.Network;
 namespace Mkey
 {
     /// <summary>
-    /// Requests backend level-complete rewards (50 coins for first-time completion, levels 1-300).
+    /// Requests backend level-complete rewards (50 coins every time a level is won, levels 1-300).
     /// </summary>
     public static class LevelCompletionRewardService
     {

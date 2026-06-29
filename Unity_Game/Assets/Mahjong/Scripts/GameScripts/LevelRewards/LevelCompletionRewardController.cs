@@ -4,7 +4,7 @@ using System.Collections;
 namespace Mkey
 {
     /// <summary>
-    /// Listens for level wins and grants one-time coin rewards (levels 1–300).
+    /// Grants 50 tournament coins every time a campaign level is won (levels 1–300).
     /// </summary>
     [DefaultExecutionOrder(-95)]
     public class LevelCompletionRewardController : MonoBehaviour
