@@ -93,6 +93,14 @@ class SubmitScoreRequest(BaseModel):
     elapsed_seconds: int
 
 
+class SubmitScoreResponse(BaseModel):
+    ok: bool = True
+    finalized: bool = False
+    rank: int | None = None
+    prize: int = 0
+    room_status: str = "active"
+
+
 class LeaderboardEntryResponse(BaseModel):
     user_id: int
     display_name: str

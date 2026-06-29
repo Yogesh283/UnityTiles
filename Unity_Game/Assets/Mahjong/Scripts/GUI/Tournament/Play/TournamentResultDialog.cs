@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Mkey;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,60 +10,54 @@ namespace Mkey.Tournament
 {
     public static class TournamentResultDialog
     {
-        public static bool IsVisible => TournamentResultOverlayHost.Instance != null && TournamentResultOverlayHost.Instance.IsShowing;
+        private const float AutoReturnSeconds = 3f;
+
+        public static bool IsVisible =>
+            TournamentResultOverlayHost.Instance != null && TournamentResultOverlayHost.Instance.IsShowing;
 
         public static void ShowDuelWin(int prizeCoins, Action onClosed)
         {
             Show(
                 "🏆 YOU WIN!",
-                $"Fastest finish!\n\nReward: {prizeCoins:N0} Coins\nRank: #1",
+                "Congratulations!\n\n" +
+                $"Reward: {prizeCoins:N0} Coins\n" +
+                "Rank: #1",
                 onClosed);
         }
 
         public static void ShowDuelLoss(Action onClosed)
         {
             Show(
-                "❌ GAME OVER",
-                "Your opponent finished faster.\n\nBetter Luck Next Time.\n\nReward: 0 Coins",
+                "❌ YOU LOSE",
+                "Your opponent completed the level first.\n\n" +
+                "Better luck next time.\n\n" +
+                "Reward: 0 Coins",
                 onClosed);
-        }
-
-        public static void ShowDuelWaiting()
-        {
-            TournamentResultOverlayHost.EnsureInstance().PresentWaiting(
-                "⏳ WAITING",
-                "You finished the level.\n\nWaiting for your opponent...");
-        }
-
-        public static void HideWaitingIfVisible()
-        {
-            if (TournamentResultOverlayHost.Instance != null)
-                TournamentResultOverlayHost.Instance.HideWaiting();
         }
 
         public static void ShowRankWin(int rank, int prizeCoins, Action onClosed)
         {
             Show(
-                "CONGRATULATIONS!",
-                $"Rank: #{rank:N0}\n\nPrize Won: {prizeCoins:N0} Coins\nCoins Added to Wallet",
+                "🏆 YOU WIN!",
+                "Congratulations!\n\n" +
+                $"Rank: #{rank:N0}\n" +
+                $"Prize: {prizeCoins:N0} Coins",
                 onClosed);
         }
 
         public static void ShowRankLoss(string tournamentId, int rank, Action onClosed)
         {
-            string extra = tournamentId == "quick_cup" && rank >= 4 && rank <= 10
-                ? "Thank you for participating.\n\n"
-                : "Better Luck Next Time\n\n";
-
             Show(
-                "GAME OVER",
-                $"{extra}Your Rank: #{rank:N0}\nPrize: 0 Coins",
+                "❌ YOU LOSE",
+                "Better Luck Next Time\n\n" +
+                $"Rank: #{rank:N0}\n" +
+                "Reward: 0 Coins",
                 onClosed);
         }
 
         private static void Show(string title, string message, Action onClosed)
         {
-            TournamentResultOverlayHost.EnsureInstance().Present(title, message, onClosed);
+            TournamentResultOverlayHost.EnsureInstance().Present(title, message, onClosed, AutoReturnSeconds);
         }
 
         public static void ReturnToTournamentPage()
@@ -78,7 +73,7 @@ namespace Mkey.Tournament
     }
 
     /// <summary>
-    /// Self-contained tournament result popup (works without GuiController — both winner and loser devices).
+    /// Self-contained tournament result popup with automatic return countdown.
     /// </summary>
     internal class TournamentResultOverlayHost : MonoBehaviour
     {
@@ -88,14 +83,14 @@ namespace Mkey.Tournament
 
         public bool IsShowing { get; private set; }
 
-        private bool isWaitingMode;
-
         private RectTransform overlayRoot;
         private RectTransform panel;
         private Text titleText;
         private Text messageText;
         private Button okButton;
         private Action pendingCloseAction;
+        private Coroutine countdownRoutine;
+        private string baseMessage;
 
         public static TournamentResultOverlayHost EnsureInstance()
         {
@@ -128,14 +123,14 @@ namespace Mkey.Tournament
                 Instance = null;
         }
 
-        public void Present(string title, string message, Action onClosed)
+        public void Present(string title, string message, Action onClosed, float autoReturnSeconds)
         {
             EnsureEventSystem();
-            isWaitingMode = false;
-            if (okButton) okButton.gameObject.SetActive(true);
             pendingCloseAction = onClosed;
+            baseMessage = message;
             titleText.text = title;
             messageText.text = message;
+            if (okButton) okButton.gameObject.SetActive(false);
             overlayRoot.gameObject.SetActive(true);
             overlayRoot.SetAsLastSibling();
             IsShowing = true;
@@ -145,34 +140,36 @@ namespace Mkey.Tournament
             SimpleTween.Value(gameObject, 0f, 1f, 0.22f)
                 .SetEase(EaseAnim.EaseOutBack)
                 .SetOnUpdate(t => panel.localScale = Vector3.LerpUnclamped(Vector3.one * 0.92f, Vector3.one, t));
+
+            if (countdownRoutine != null)
+                StopCoroutine(countdownRoutine);
+            countdownRoutine = StartCoroutine(AutoReturnCountdown(autoReturnSeconds));
         }
 
-        public void PresentWaiting(string title, string message)
+        private IEnumerator AutoReturnCountdown(float seconds)
         {
-            EnsureEventSystem();
-            isWaitingMode = true;
-            pendingCloseAction = null;
-            if (okButton) okButton.gameObject.SetActive(false);
-            titleText.text = title;
-            messageText.text = message;
-            overlayRoot.gameObject.SetActive(true);
-            overlayRoot.SetAsLastSibling();
-            IsShowing = true;
-            panel.localScale = Vector3.one;
+            int remaining = Mathf.CeilToInt(seconds);
+            while (remaining > 0)
+            {
+                messageText.text = baseMessage + "\n\n" + remaining + "...\nReturning to Tournament...";
+                yield return new WaitForSecondsRealtime(1f);
+                remaining--;
+            }
+
+            messageText.text = baseMessage + "\n\nReturning to Tournament...";
+            yield return new WaitForSecondsRealtime(0.15f);
+            CompleteAndClose();
         }
 
-        public void HideWaiting()
+        private void CompleteAndClose()
         {
-            if (!isWaitingMode) return;
-            isWaitingMode = false;
-            IsShowing = false;
-            overlayRoot.gameObject.SetActive(false);
-            if (okButton) okButton.gameObject.SetActive(true);
-        }
+            if (!IsShowing) return;
 
-        private void OnOkClicked()
-        {
-            if (!IsShowing || isWaitingMode) return;
+            if (countdownRoutine != null)
+            {
+                StopCoroutine(countdownRoutine);
+                countdownRoutine = null;
+            }
 
             IsShowing = false;
             overlayRoot.gameObject.SetActive(false);
@@ -202,7 +199,7 @@ namespace Mkey.Tournament
 
             panel = TournamentUIFactory.CreateRect(overlayRoot, "Panel");
             panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
-            panel.sizeDelta = new Vector2(TournamentLayoutMetrics.S(820f), TournamentLayoutMetrics.S(580f));
+            panel.sizeDelta = new Vector2(TournamentLayoutMetrics.S(820f), TournamentLayoutMetrics.S(620f));
             TournamentPremiumUI.CreateDialogPanel(panel);
 
             titleText = TournamentUIFactory.CreateText(
@@ -218,7 +215,7 @@ namespace Mkey.Tournament
                 panel, "Message", string.Empty,
                 TournamentLayoutMetrics.Font(26f), FontStyle.Normal,
                 TournamentPremiumTheme.TextWhite, TextAnchor.MiddleCenter);
-            messageText.rectTransform.anchorMin = new Vector2(0.08f, 0.28f);
+            messageText.rectTransform.anchorMin = new Vector2(0.08f, 0.22f);
             messageText.rectTransform.anchorMax = new Vector2(0.92f, 0.68f);
             messageText.rectTransform.offsetMin = messageText.rectTransform.offsetMax = Vector2.zero;
 
@@ -232,7 +229,8 @@ namespace Mkey.Tournament
 
             okButton = btnRt.gameObject.AddComponent<Button>();
             okButton.targetGraphic = btnBg;
-            okButton.onClick.AddListener(OnOkClicked);
+            okButton.onClick.AddListener(CompleteAndClose);
+            okButton.gameObject.SetActive(false);
 
             Text btnLabel = TournamentUIFactory.CreateText(
                 btnRt, "Label", "OK",

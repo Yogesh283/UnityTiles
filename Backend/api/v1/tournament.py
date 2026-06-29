@@ -11,10 +11,13 @@ from models.schemas import (
     JoinTournamentRequest,
     RoomResponse,
     SubmitScoreRequest,
+    SubmitScoreResponse,
     TournamentResponse,
 )
 from tournament.anti_cheat import AntiCheatError, ScoreSubmission, validate_score_submission
+from tournament.broadcast import schedule_match_finished_broadcast
 from tournament.catalog import TOURNAMENT_CATALOG, get_tournament
+from tournament.prize_table import get_paid_rank_count
 from tournament.room_manager import RoomManager
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
@@ -89,12 +92,17 @@ def room_snapshot(room_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Room not found")
 
     players = db.query(RoomPlayer).filter(RoomPlayer.room_id == room_id).all()
+    tournament = get_tournament(room.tournament_id)
+    paid_slots = get_paid_rank_count(room.tournament_id) if tournament else 0
+    submitted_count = sum(1 for p in players if p.submitted_at is not None)
     return {
         "room_id": room.id,
         "tournament_id": room.tournament_id,
         "level_index": room.level_index,
         "level_seed": room.level_seed,
         "status": room.status,
+        "paid_winner_slots": paid_slots,
+        "submitted_count": submitted_count,
         "players": [
             {
                 "user_id": p.user_id,
@@ -110,7 +118,7 @@ def room_snapshot(room_id: str, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/submit-score")
+@router.post("/submit-score", response_model=SubmitScoreResponse)
 def submit_score(
     payload: SubmitScoreRequest,
     user: User = Depends(get_current_user),
@@ -163,8 +171,21 @@ def submit_score(
     db.commit()
 
     manager = RoomManager(db)
-    finalized = manager.try_auto_finalize(payload.room_id)
-    return {"ok": True, "finalized": finalized}
+    results = manager.try_instant_finalize(payload.room_id)
+
+    db.refresh(room)
+    db.refresh(player)
+
+    if results:
+        schedule_match_finished_broadcast(payload.room_id, results)
+
+    return SubmitScoreResponse(
+        ok=True,
+        finalized=results is not None,
+        rank=player.rank,
+        prize=player.prize or 0,
+        room_status=room.status,
+    )
 
 
 @router.get("/history")
