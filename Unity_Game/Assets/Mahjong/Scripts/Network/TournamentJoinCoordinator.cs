@@ -203,7 +203,12 @@ namespace Mkey.Network
             string title;
             string message;
 
-            if (serverUnavailable || statusCode == 0)
+            if (statusCode >= 500)
+            {
+                title = "Server Error";
+                message = "The game server had a problem.\nPlease try again in a moment.";
+            }
+            else if (serverUnavailable || statusCode == 0)
             {
                 title = "Connection Problem";
                 message = "Could not reach the game server.\nPlease check internet and try again.";

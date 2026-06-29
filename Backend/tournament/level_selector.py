@@ -13,8 +13,18 @@ def _csharp_string_hash(value: str) -> int:
     return h
 
 
+def _to_int32(value: int) -> int:
+    """Match C# unchecked 32-bit integer overflow for cross-platform room seeds."""
+    value &= 0xFFFFFFFF
+    if value >= 0x80000000:
+        value -= 0x100000000
+    return value
+
+
 def generate_room_seed(tournament_id: str, room_id: str) -> int:
-    return _csharp_string_hash(tournament_id) * 397 ^ _csharp_string_hash(room_id)
+    a = _csharp_string_hash(tournament_id)
+    b = _csharp_string_hash(room_id)
+    return _to_int32(_to_int32(a * 397) ^ b)
 
 
 def pick_level_index(room_seed: int, tournament: TournamentDefinition, level_count: int = 100) -> int:

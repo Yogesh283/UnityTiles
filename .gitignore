@@ -6,6 +6,12 @@ Unity_Game/Obj/
 Unity_Game/Builds/*.apk
 Unity_Game/UserSettings/
 Unity_Game/Assets/_Recovery/
+Unity_Game/.utmp/
+Unity_Game/*.apk
+Unity_Game/*_BackUpThisFolder_ButDontShipItWithYourGame/
+Unity_Game/*_BurstDebugInformation_DoNotShip/
+Unity_Game/Assets/Resources/BillingMode.json
+Unity_Game/Assets/Resources/PerformanceTestRun*.json
 
 # Python
 Backend/venv/
