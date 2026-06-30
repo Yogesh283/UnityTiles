@@ -122,7 +122,7 @@ namespace Mkey.Tournament
                     timeLeft = snap.countdownSeconds;
                 }
 
-                if (snap.status == "starting" || snap.status == "active")
+                if (snap.status == "starting" || snap.status == "active" || snap.shouldLaunch)
                 {
                     launchStarted = true;
                     yield return RunMatchStartSequence(snap);

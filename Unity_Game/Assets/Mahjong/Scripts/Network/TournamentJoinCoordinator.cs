@@ -92,16 +92,15 @@ namespace Mkey.Network
                     return;
                 }
 
-                refreshWallet?.Invoke();
-
-                ApplyWalletFromJoinResponse(joinResult.Data);
-                await WalletService.SyncToCoinsHolderAsync();
-                refreshWallet?.Invoke();
-
                 TournamentApiBridge.ApplyJoinResponse(tournament, joinResult.Data);
                 TournamentSession.Begin(tournament);
                 TournamentJoinFlowGuard.Reset();
                 TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
+
+                ApplyWalletFromJoinResponse(joinResult.Data);
+                refreshWallet?.Invoke();
+                await WalletService.SyncToCoinsHolderAsync();
+                refreshWallet?.Invoke();
             }
             catch (Exception ex)
             {
