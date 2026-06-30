@@ -68,6 +68,11 @@ namespace Mkey.Network
                         if (authResult.Success)
                             joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
                     }
+                    else if (joinResult.IsServerUnavailable)
+                    {
+                        await Task.Delay(750);
+                        joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                    }
                 }
 
                 if (!joinResult.Success || joinResult.Data == null)
@@ -115,9 +120,15 @@ namespace Mkey.Network
         private static async Task<ApiResult<bool>> EnsureAuthenticatedAsync()
         {
             if (NetworkManager.Instance.IsAuthenticated)
-                return ApiResult<bool>.Ok(true);
+            {
+                var session = await NetworkManager.Instance.GetAsync<UserProfileDto>("auth/me");
+                if (session.Success)
+                    return ApiResult<bool>.Ok(true);
 
-            var login = await AuthService.GuestLoginAsync();
+                AuthService.Logout();
+            }
+
+            var login = await GuestLoginWithRetryAsync();
             if (!login.Success)
                 return ApiResult<bool>.Fail(
                     login.ErrorMessage,
@@ -125,6 +136,16 @@ namespace Mkey.Network
                     login.IsServerUnavailable);
 
             return ApiResult<bool>.Ok(true);
+        }
+
+        private static async Task<ApiResult<TokenResponseDto>> GuestLoginWithRetryAsync()
+        {
+            var login = await AuthService.GuestLoginAsync();
+            if (login.Success || !login.IsServerUnavailable)
+                return login;
+
+            await Task.Delay(750);
+            return await AuthService.GuestLoginAsync();
         }
 
         private static void ConfirmJoinLocal(
@@ -206,10 +227,15 @@ namespace Mkey.Network
                 title = "Server Error";
                 message = "The game server had a problem.\nPlease try again in a moment.";
             }
-            else if (serverUnavailable || statusCode == 0)
+            else if (serverUnavailable)
             {
                 title = "Connection Problem";
                 message = "Could not reach the game server.\nPlease check internet and try again.";
+            }
+            else if (statusCode == 0)
+            {
+                title = "Could Not Join";
+                message = detail;
             }
             else if (statusCode == 401 || detail.IndexOf("authenticated", StringComparison.OrdinalIgnoreCase) >= 0)
             {
