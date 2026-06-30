@@ -323,6 +323,7 @@ namespace Mkey.Tournament
                 yield return null;
 
             catalogOk = catalogTask.Result;
+            SetOnlineStatus(catalogOk);
 
             yield return EnsureSessionRoutine();
 
@@ -340,7 +341,7 @@ namespace Mkey.Tournament
             yield return SyncWalletRoutine();
 
             if (!catalogOk)
-                ShowServerUnavailableRetry(() => StartCoroutine(RefreshOnlineDataRoutine()));
+                StartCoroutine(RefreshOnlineDataRoutine());
         }
 
         private IEnumerator EnsureSessionRoutine()
@@ -365,12 +366,13 @@ namespace Mkey.Tournament
             var catalogTask = FetchTournamentCatalogWithRetryAsync();
             while (!catalogTask.IsCompleted)
                 yield return null;
+            SetOnlineStatus(catalogTask.Result);
 
             yield return EnsureSessionRoutine();
             yield return SyncWalletRoutine();
 
             if (!catalogTask.Result)
-                ShowServerUnavailableRetry(() => StartCoroutine(RefreshOnlineDataRoutine()));
+                yield return new WaitForSecondsRealtime(2f);
         }
 
         private static async System.Threading.Tasks.Task<bool> FetchTournamentCatalogWithRetryAsync()
@@ -437,6 +439,23 @@ namespace Mkey.Tournament
                 true,
                 () => retry?.Invoke(),
                 null);
+        }
+
+        private void SetOnlineStatus(bool connected)
+        {
+            if (!onlineStatusText || ApiConfig.Current.UseLocalSimulation)
+                return;
+
+            if (connected)
+            {
+                onlineStatusText.text = "● Live Server";
+                onlineStatusText.color = new Color(0.45f, 1f, 0.62f);
+            }
+            else
+            {
+                onlineStatusText.text = "○ Reconnecting...";
+                onlineStatusText.color = new Color(1f, 0.72f, 0.42f);
+            }
         }
 
         private void OnBackClicked()
