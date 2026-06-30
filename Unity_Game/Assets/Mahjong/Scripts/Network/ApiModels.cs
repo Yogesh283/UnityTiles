@@ -92,6 +92,7 @@ namespace Mkey.Network
         [JsonProperty("match_start_at_ms")] public long matchStartAtMs;
         [JsonProperty("server_now_ms")] public long serverNowMs;
         [JsonProperty("search_status")] public string searchStatus;
+        [JsonProperty("wallet_balance")] public int? walletBalance;
         public bool queued;
         public List<RoomPlayerDto> players;
     }
@@ -101,9 +102,12 @@ namespace Mkey.Network
     {
         [JsonProperty("user_id")] public int userId;
         [JsonProperty("user_uuid")] public string userUuid;
+        public string username;
         [JsonProperty("display_name")] public string displayName;
         [JsonProperty("avatar_url")] public string avatarUrl;
         [JsonProperty("current_rank")] public int currentRank;
+        [JsonProperty("game_level")] public int gameLevel;
+        [JsonProperty("rank_tier")] public string rankTier;
         [JsonProperty("tournament_id")] public string tournamentId;
         public int score;
         public int moves;

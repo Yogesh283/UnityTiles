@@ -10,6 +10,26 @@ from tournament.catalog import get_tournament
 MATCH_START_COUNTDOWN_SECONDS = 3
 
 
+def game_level_from_leaderboard(leaderboard: LeaderboardEntry | None) -> int:
+    if not leaderboard:
+        return 1
+    return max(1, leaderboard.tournaments_played * 5 + leaderboard.total_wins + 1)
+
+
+def rank_tier_from_leaderboard(leaderboard: LeaderboardEntry | None) -> str:
+    if not leaderboard:
+        return "Bronze"
+    if leaderboard.best_rank == 1:
+        return "Diamond"
+    if leaderboard.best_rank <= 3:
+        return "Platinum"
+    if leaderboard.best_rank <= 10 or leaderboard.total_wins >= 5:
+        return "Gold"
+    if leaderboard.best_rank <= 50 or leaderboard.total_wins >= 1:
+        return "Silver"
+    return "Bronze"
+
+
 def waiting_seconds_remaining(room: TournamentRoom) -> int:
     tournament = get_tournament(room.tournament_id)
     wait_seconds = tournament.waiting_seconds if tournament else 30
@@ -39,9 +59,12 @@ def serialize_player(db: Session, player: RoomPlayer, tournament_id: str) -> dic
     return {
         "user_id": player.user_id,
         "user_uuid": user.user_uuid if user else None,
+        "username": (user.username or user.display_name) if user else f"Player {player.user_id}",
         "display_name": user.display_name if user else f"Player {player.user_id}",
         "avatar_url": user.avatar_url if user else None,
         "current_rank": leaderboard.best_rank if leaderboard else 9999,
+        "game_level": game_level_from_leaderboard(leaderboard),
+        "rank_tier": rank_tier_from_leaderboard(leaderboard),
         "tournament_id": tournament_id,
         "score": player.score,
         "moves": player.moves,

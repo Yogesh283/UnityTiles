@@ -78,9 +78,12 @@ class JoinTournamentRequest(BaseModel):
 class RoomPlayerResponse(BaseModel):
     user_id: int
     user_uuid: str | None = None
+    username: str | None = None
     display_name: str
     avatar_url: str | None = None
     current_rank: int | None = None
+    game_level: int | None = None
+    rank_tier: str | None = None
     tournament_id: str | None = None
     score: int = 0
     moves: int = 0
@@ -106,6 +109,7 @@ class RoomResponse(BaseModel):
     server_now_ms: int | None = None
     search_status: str | None = None
     queued: bool = False
+    wallet_balance: int | None = None
     players: list[RoomPlayerResponse] = []
 
 

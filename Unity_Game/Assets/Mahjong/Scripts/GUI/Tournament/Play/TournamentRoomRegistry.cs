@@ -85,11 +85,18 @@ namespace Mkey.Tournament
             return new TournamentRoomSnapshot
             {
                 hasRoom = true,
+                roomId = room.roomId,
                 currentPlayers = room.CurrentPlayerCount,
                 maxPlayers = room.maxPlayerCount,
                 countdownSeconds = Mathf.Max(0f, room.countdownRemaining),
                 statusMessage = room.GetStatusMessage(),
-                shouldLaunch = room.launchReady
+                shouldLaunch = room.launchReady,
+                searchStatus = room.CurrentPlayerCount >= room.maxPlayerCount
+                    ? "players_connected"
+                    : room.CurrentPlayerCount >= 2
+                        ? "player_joined"
+                        : "searching",
+                status = room.launchReady ? "starting" : "waiting"
             };
         }
 

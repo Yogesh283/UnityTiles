@@ -23,8 +23,11 @@ namespace Mkey.Tournament
         private Text walletText;
         private RectTransform pageRoot;
         private RectTransform scrollContent;
+        private RectTransform overlayRoot;
         private TournamentDialog dialog;
         private TournamentWaitingRoomPanel waitingRoom;
+        private TournamentWalletPulse walletPulse;
+        private Text onlineStatusText;
         private bool pageBuilt;
 
         private void Awake()
@@ -54,6 +57,8 @@ namespace Mkey.Tournament
                 CoinsHolder.Instance.ChangeEvent.AddListener(OnCoinsChanged);
                 CoinsHolder.Instance.LoadEvent.AddListener(OnCoinsChanged);
             }
+
+            TournamentPageLifecycle.OnPageShown(RefreshWallet);
 
             if (pageBuilt && !ApiConfig.Current.UseLocalSimulation)
                 StartCoroutine(SyncWalletRoutine());
@@ -164,6 +169,7 @@ namespace Mkey.Tournament
 
             RectTransform overlay = TournamentUIFactory.CreateRect(scrollContent, "Overlay");
             TournamentUIFactory.StretchRect(overlay);
+            overlayRoot = overlay;
 
             Image scrollCatcher = TournamentUIFactory.CreateImage(overlay, "ScrollCatcher", new Color(1f, 1f, 1f, 0.01f), TournamentSpriteFactory.SoftCircle, true);
             TournamentUIFactory.StretchRect(scrollCatcher.rectTransform);
@@ -188,7 +194,24 @@ namespace Mkey.Tournament
                 cardIndex++;
             }
 
+            int balance = CoinsHolder.Instance ? CoinsHolder.Count : 0;
+            TournamentCardOverlays.Build(overlay, balance);
+
             walletText = TournamentUIFactory.CreateWalletBalance(overlay);
+            walletPulse = walletText.gameObject.AddComponent<TournamentWalletPulse>();
+
+            onlineStatusText = TournamentUIFactory.CreateOverlayText(
+                overlay,
+                "OnlineStatus",
+                new Rect(24f, 118f, 320f, 28f),
+                ApiConfig.Current.UseLocalSimulation ? "● Offline Practice" : "● Live Server",
+                TournamentPngLayout.OverlayFont(14f),
+                FontStyle.Bold,
+                ApiConfig.Current.UseLocalSimulation
+                    ? TournamentPremiumTheme.TextMuted
+                    : new Color(0.45f, 1f, 0.62f),
+                TextAnchor.MiddleLeft);
+
             RefreshWallet();
 
             hitAreas.SetAsLastSibling();
@@ -198,6 +221,8 @@ namespace Mkey.Tournament
 
             dialog = TournamentDialog.Create(pageRoot);
             waitingRoom = TournamentWaitingRoomPanel.Create(pageRoot);
+
+            TournamentPageIntro.Play(pageRoot.gameObject);
 
             TournamentPageResponsive responsive = pageRoot.gameObject.AddComponent<TournamentPageResponsive>();
             responsive.Configure(scrollRoot, scrollContent);
@@ -224,6 +249,9 @@ namespace Mkey.Tournament
         {
             try
             {
+                if (!TournamentJoinFlowGuard.CanStartJoin)
+                    return;
+
                 TournamentJoinDebug.LogOnJoinTournamentEnter(tournament);
 
                 int balance = CoinsHolder.Instance ? CoinsHolder.Count : 0;
@@ -268,13 +296,17 @@ namespace Mkey.Tournament
         {
             try
             {
+                if (!TournamentJoinFlowGuard.TryBegin())
+                    return;
+
                 TournamentJoinDebug.LogConfirmJoinEnter(tournament);
                 TournamentJoinCoordinator.ConfirmJoin(
                     tournament,
                     dialog,
                     waitingRoom,
                     RefreshWallet,
-                    t => OnJoinTournament(t));
+                    t => OnJoinTournament(t),
+                    TournamentJoinFlowGuard.Reset);
             }
             catch (Exception ex)
             {
@@ -429,7 +461,10 @@ namespace Mkey.Tournament
                 return;
             }
 
-            walletText.text = CoinsHolder.Count.ToString("N0");
+            int balance = CoinsHolder.Count;
+            walletText.text = balance.ToString("N0");
+            walletPulse?.NotifyBalance(balance);
+            TournamentCardOverlays.RefreshAffordability(overlayRoot, balance);
         }
 
         private void OpenDepositPanel(Action onComplete)

@@ -354,6 +354,7 @@ class RoomManager:
 
         room.status = "locked"
         self.db.commit()
+        schedule_room_updated(room.id, serialize_room(self.db, room))
         return self.finalize_room(room.id)
 
     def try_auto_finalize(self, room_id: str) -> bool:
