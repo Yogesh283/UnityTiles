@@ -13,7 +13,7 @@ namespace Mkey.Network
             if (ApiConfig.Current.UseLocalSimulation)
                 return ApiResult<List<TournamentDefinition>>.Ok(TournamentCatalog.GetDefaultList());
 
-            var result = await NetworkManager.Instance.GetAsync<List<TournamentDto>>("tournaments");
+            var result = await NetworkManager.Instance.GetAsync<List<TournamentDto>>("tournaments", requireAuth: false);
             if (!result.Success || result.Data == null)
                 return ApiResult<List<TournamentDefinition>>.Fail(
                     result.ErrorMessage, result.StatusCode, result.IsServerUnavailable);

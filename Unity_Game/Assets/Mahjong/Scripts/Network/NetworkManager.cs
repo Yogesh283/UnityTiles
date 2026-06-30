@@ -106,7 +106,7 @@ namespace Mkey.Network
                 return ApiResult<TResponse>.Fail("Development mode enabled.");
 
             if (requireAuth && string.IsNullOrEmpty(AccessToken))
-                return ApiResult<TResponse>.Fail("Not authenticated.");
+                return ApiResult<TResponse>.Fail("Not authenticated.", 401);
 
             string url = BuildUrl(relativePath);
             float timeout = Mathf.Max(1f, ApiConfig.Current.requestTimeoutSeconds);

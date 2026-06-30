@@ -281,12 +281,29 @@ namespace Mkey.Tournament
 
             if (!NetworkManager.Instance.IsAuthenticated)
             {
-                var loginTask = AuthService.GuestLoginAsync();
+                var loginTask = GuestLoginWithRetryAsync();
                 while (!loginTask.IsCompleted)
                     yield return null;
 
                 if (!loginTask.Result.Success)
                     dataReady = false;
+            }
+            else
+            {
+                var sessionTask = NetworkManager.Instance.GetAsync<UserProfileDto>("auth/me");
+                while (!sessionTask.IsCompleted)
+                    yield return null;
+
+                if (!sessionTask.Result.Success)
+                {
+                    AuthService.Logout();
+                    var reloginTask = GuestLoginWithRetryAsync();
+                    while (!reloginTask.IsCompleted)
+                        yield return null;
+
+                    if (!reloginTask.Result.Success)
+                        dataReady = false;
+                }
             }
 
             var catalogTask = TournamentService.FetchTournamentListAsync();
@@ -332,6 +349,16 @@ namespace Mkey.Tournament
                 yield return null;
 
             RefreshWallet();
+        }
+
+        private static async System.Threading.Tasks.Task<ApiResult<TokenResponseDto>> GuestLoginWithRetryAsync()
+        {
+            var login = await AuthService.GuestLoginAsync();
+            if (login.Success || !login.IsServerUnavailable)
+                return login;
+
+            await System.Threading.Tasks.Task.Delay(750);
+            return await AuthService.GuestLoginAsync();
         }
 
         private void ShowServerUnavailableRetry(Action retry)
