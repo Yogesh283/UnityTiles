@@ -245,8 +245,10 @@ namespace Mkey.Network
             }
             else if (serverUnavailable)
             {
-                title = "Connection Problem";
-                message = "Could not reach the game server.\nPlease check internet and try again.";
+                // Keep join flow non-blocking on transient outages.
+                Debug.LogWarning("[TournamentJoin] Server temporarily unavailable; skipping blocking popup.");
+                onFailed?.Invoke();
+                return;
             }
             else if (statusCode == 0)
             {
