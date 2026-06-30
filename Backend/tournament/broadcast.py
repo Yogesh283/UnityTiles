@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from websocket.tournament_ws import manager as ws_manager
+from websocket.connection_manager import manager as ws_manager
 
 
 async def broadcast_room_event(room_id: str, payload: dict[str, Any]) -> None:
