@@ -81,6 +81,13 @@ namespace Mkey.Tournament
             if (TournamentMatchManager.IsMatchLocked)
             {
                 TournamentMatchManager.EnsureGameplayFrozen();
+                resultDialogWatchdog += Time.unscaledDeltaTime;
+                if (resultDialogWatchdog >= ResultDialogWatchdogSeconds)
+                {
+                    resultDialogWatchdog = 0f;
+                    TournamentMatchManager.TryApplyOnlineSnapshot();
+                    TournamentMatchManager.ShowPendingResultDialog();
+                }
                 return;
             }
 

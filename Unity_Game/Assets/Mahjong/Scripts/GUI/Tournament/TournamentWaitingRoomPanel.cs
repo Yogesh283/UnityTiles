@@ -1,20 +1,17 @@
 using System;
 using System.Collections;
-using System.Text;
-using Mkey;
 using Mkey.Network;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Mkey.Tournament
 {
     /// <summary>
-    /// Tournament matchmaking status via the standard app Message popup (same as map/game screens).
+    /// Premium tournament matchmaking — live player cards, VS intro, WebSocket updates.
     /// </summary>
     public class TournamentWaitingRoomPanel : MonoBehaviour
     {
-        private WarningMessController messagePrefab;
-        private WarningMessController activePopup;
+        private TournamentPremiumWaitingRoomView premiumView;
+        private TournamentVsIntroView vsIntro;
         private TournamentDefinition tournament;
         private int currentPlayers;
         private float timeLeft;
@@ -22,18 +19,20 @@ namespace Mkey.Tournament
         private bool launchStarted;
         private float searchPulse;
         private bool isVisible;
+        private bool vsIntroPlayed;
 
-        public bool IsShowing => isVisible && activePopup;
+        public bool IsShowing => isVisible && premiumView != null && premiumView.IsVisible;
 
         public void Show(TournamentDefinition data, Action completeCallback)
         {
             if (TournamentJoinDebug.IsFirstJoin(data))
-                TournamentJoinDebug.Log("WaitingRoom.Show — standard Message popup");
+                TournamentJoinDebug.Log("WaitingRoom.Show — premium multiplayer lobby");
 
             tournament = data;
             onComplete = completeCallback;
             launchStarted = false;
             searchPulse = 0f;
+            vsIntroPlayed = false;
 
             TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(data.id);
             currentPlayers = snap.hasRoom ? snap.currentPlayers : 1;
@@ -43,7 +42,9 @@ namespace Mkey.Tournament
             TournamentApiBridge.RoomUpdated -= OnRoomUpdated;
             TournamentApiBridge.RoomUpdated += OnRoomUpdated;
 
-            OpenStandardPopup();
+            EnsureViews();
+            premiumView.Show();
+            RefreshView();
             StartCoroutine(WaitingRoutine());
         }
 
@@ -51,7 +52,8 @@ namespace Mkey.Tournament
         {
             TournamentApiBridge.RoomUpdated -= OnRoomUpdated;
             StopAllCoroutines();
-            CloseStandardPopup();
+            vsIntro?.Hide();
+            premiumView?.Hide();
             isVisible = false;
         }
 
@@ -60,15 +62,16 @@ namespace Mkey.Tournament
             GameObject host = new GameObject("TournamentWaitingRoom");
             host.transform.SetParent(parent, false);
             TournamentWaitingRoomPanel view = host.AddComponent<TournamentWaitingRoomPanel>();
-            view.Initialize();
+            view.EnsureViews();
             return view;
         }
 
-        private void Initialize()
+        private void EnsureViews()
         {
-            messagePrefab = Resources.Load<WarningMessController>("PopUps/Message");
-            if (!messagePrefab)
-                Debug.LogError("[TournamentWaitingRoom] Missing Resources/PopUps/Message.prefab");
+            if (!premiumView)
+                premiumView = TournamentPremiumWaitingRoomView.Create(transform);
+            if (!vsIntro)
+                vsIntro = TournamentVsIntroView.Create(transform);
         }
 
         private void OnRoomUpdated()
@@ -80,53 +83,17 @@ namespace Mkey.Tournament
                 timeLeft = snap.countdownSeconds;
             }
 
-            RefreshPopupText();
+            RefreshView();
         }
 
-        private void OpenStandardPopup()
+        private void RefreshView()
         {
-            CloseStandardPopup();
-
-            GuiController gui = EnsureGuiController();
-            if (!gui || !messagePrefab)
+            if (!premiumView || tournament == null)
                 return;
 
             TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
-            BuildCaptionAndBody(snap, out string caption, out string body);
-
-            activePopup = gui.ShowMessageWithYesNoCloseButton(
-                messagePrefab,
-                caption,
-                body,
-                null,
-                null,
-                null);
-
-            if (activePopup)
-            {
-                activePopup.SetMessage(caption, body, false, false, false);
-                isVisible = true;
-            }
-        }
-
-        private void RefreshPopupText()
-        {
-            if (!activePopup || tournament == null)
-                return;
-
-            TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
-            BuildCaptionAndBody(snap, out string caption, out string body);
-            activePopup.Caption = caption;
-            activePopup.Message = body;
-        }
-
-        private void CloseStandardPopup()
-        {
-            if (!activePopup)
-                return;
-
-            activePopup.CloseWindow();
-            activePopup = null;
+            premiumView.Bind(tournament, snap, searchPulse);
+            isVisible = true;
         }
 
         private IEnumerator WaitingRoutine()
@@ -135,10 +102,13 @@ namespace Mkey.Tournament
 
             while (!launchStarted)
             {
+                searchPulse += Time.deltaTime;
+                RefreshView();
+
                 if (TournamentApiBridge.IsOnlineMode)
                 {
                     fallbackPoll += Time.deltaTime;
-                    if (fallbackPoll >= 2f)
+                    if (fallbackPoll >= 1.5f)
                     {
                         fallbackPoll = 0f;
                         yield return RefreshApiRoomCoroutine();
@@ -152,8 +122,6 @@ namespace Mkey.Tournament
                     timeLeft = snap.countdownSeconds;
                 }
 
-                RefreshPopupText();
-
                 if (snap.status == "starting" || snap.status == "active")
                 {
                     launchStarted = true;
@@ -166,7 +134,7 @@ namespace Mkey.Tournament
                 {
                     TournamentRoomRegistry.ForcePrepareForLaunch();
                     launchStarted = true;
-                    RefreshPopupText();
+                    RefreshView();
                     yield return new WaitForSeconds(0.8f);
                     onComplete?.Invoke();
                     Hide();
@@ -187,16 +155,49 @@ namespace Mkey.Tournament
             else if (TournamentApiBridge.CurrentRoom?.matchStartAtMs > 0)
                 TournamentServerClock.ScheduleServerStart(TournamentApiBridge.CurrentRoom.matchStartAtMs);
 
+            if (!vsIntroPlayed && tournament.maxPlayers <= 2)
+            {
+                vsIntroPlayed = true;
+                RoomPlayerDto local = FindLocalPlayer(snap);
+                RoomPlayerDto opponent = FindOpponentPlayer(snap);
+                yield return vsIntro.PlayRoutine(local, opponent, null);
+            }
+
             while (!TournamentServerClock.IsStartTimeReached())
             {
-                RefreshPopupText();
+                searchPulse += Time.unscaledDeltaTime;
+                RefreshView();
                 yield return null;
             }
 
-            RefreshPopupText();
-            yield return new WaitForSeconds(0.3f);
+            RefreshView();
+            yield return new WaitForSecondsRealtime(0.25f);
             onComplete?.Invoke();
             Hide();
+        }
+
+        private static RoomPlayerDto FindLocalPlayer(TournamentRoomSnapshot snap)
+        {
+            if (snap.players == null) return null;
+            int localUserId = NetworkManager.HasInstance ? NetworkManager.Instance.UserId : 0;
+            foreach (RoomPlayerDto player in snap.players)
+            {
+                if (player != null && player.userId == localUserId)
+                    return player;
+            }
+            return snap.players.Count > 0 ? snap.players[0] : null;
+        }
+
+        private static RoomPlayerDto FindOpponentPlayer(TournamentRoomSnapshot snap)
+        {
+            if (snap.players == null) return null;
+            int localUserId = NetworkManager.HasInstance ? NetworkManager.Instance.UserId : 0;
+            foreach (RoomPlayerDto player in snap.players)
+            {
+                if (player != null && player.userId != localUserId)
+                    return player;
+            }
+            return snap.players.Count > 1 ? snap.players[1] : null;
         }
 
         private IEnumerator RefreshApiRoomCoroutine()
@@ -204,91 +205,6 @@ namespace Mkey.Tournament
             var task = TournamentApiBridge.RefreshActiveRoomAsync();
             while (!task.IsCompleted)
                 yield return null;
-        }
-
-        private void BuildCaptionAndBody(TournamentRoomSnapshot snap, out string caption, out string body)
-        {
-            searchPulse += Time.deltaTime;
-            int dots = 1 + (Mathf.FloorToInt(searchPulse * 2f) % 3);
-
-            if (tournament == null)
-            {
-                caption = "Tournament";
-                body = string.Empty;
-                return;
-            }
-
-            currentPlayers = snap.hasRoom ? snap.currentPlayers : currentPlayers;
-            string phase = string.IsNullOrEmpty(snap.searchStatus) ? "searching" : snap.searchStatus;
-
-            if (snap.status == "starting" || phase == "match_found")
-                caption = "Match Found!";
-            else if (phase == "player_joined" || phase == "players_connected")
-                caption = "Player Found!";
-            else
-                caption = "Searching...";
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"{tournament.icon} {tournament.displayName}");
-            sb.AppendLine();
-
-            if (phase == "players_connected" || phase == "match_found" || phase == "starting")
-                sb.AppendLine(TournamentPlayerSearchPresenter.PlayersConnectedLine(currentPlayers, tournament.maxPlayers));
-            else
-                sb.AppendLine(TournamentPlayerSearchPresenter.PlayersFoundLine(currentPlayers, tournament.maxPlayers));
-
-            sb.AppendLine();
-
-            if (snap.status == "starting" || phase == "match_found")
-            {
-                int countdown = TournamentServerClock.DisplayCountdownSeconds();
-                sb.AppendLine(countdown > 0 ? countdown.ToString() : "GO!");
-                sb.AppendLine();
-                sb.AppendLine(countdown > 0 ? "Starting in..." : "Game Starting!");
-            }
-            else
-            {
-                float displayTime = snap.hasRoom ? snap.countdownSeconds : timeLeft;
-                int minutes = Mathf.FloorToInt(displayTime / 60f);
-                int seconds = Mathf.FloorToInt(displayTime % 60f);
-                sb.AppendLine($"{minutes:00}:{seconds:00}");
-                sb.AppendLine();
-                sb.AppendLine(TournamentPlayerSearchPresenter.StatusForPhase(
-                    currentPlayers <= 1 ? "searching" : phase,
-                    dots));
-            }
-
-            body = sb.ToString().TrimEnd();
-        }
-
-        private static GuiController EnsureGuiController()
-        {
-            if (GuiController.Instance)
-                return GuiController.Instance;
-
-            GuiController existing = FindFirstObjectByType<GuiController>();
-            if (existing)
-                return existing;
-
-            GameObject go = new GameObject(
-                "GuiController",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(GraphicRaycaster),
-                typeof(GuiController));
-
-            Canvas canvas = go.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 4500;
-
-            CanvasScaler scaler = go.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1080f, 1920f);
-            scaler.matchWidthOrHeight = 0.4f;
-
-            DontDestroyOnLoad(go);
-            return go.GetComponent<GuiController>();
         }
     }
 }

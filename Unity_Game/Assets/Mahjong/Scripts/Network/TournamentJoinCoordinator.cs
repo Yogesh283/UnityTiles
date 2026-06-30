@@ -20,7 +20,7 @@ namespace Mkey.Network
 
             if (ApiConfig.Current.UseLocalSimulation)
             {
-                ConfirmJoinLocal(tournament, dialog, waitingRoom, refreshWallet, retryJoin);
+                ConfirmJoinLocal(tournament, dialog, waitingRoom, refreshWallet, retryJoin, onJoinFailed);
                 return;
             }
 
@@ -50,6 +50,7 @@ namespace Mkey.Network
                     CoinsHolder.Instance &&
                     CoinsHolder.Count < tournament.entryFee)
                 {
+                    onJoinFailed?.Invoke();
                     dialog.ShowInsufficientCoins(
                         tournament.entryFee,
                         CoinsHolder.Count,
@@ -93,11 +94,13 @@ namespace Mkey.Network
 
                 refreshWallet?.Invoke();
 
-                if (!walletResult.Success)
-                    Debug.LogWarning("[TournamentJoin] Wallet sync failed after join: " + walletResult.ErrorMessage);
+                ApplyWalletFromJoinResponse(joinResult.Data);
+                await WalletService.SyncToCoinsHolderAsync();
+                refreshWallet?.Invoke();
 
                 TournamentApiBridge.ApplyJoinResponse(tournament, joinResult.Data);
                 TournamentSession.Begin(tournament);
+                TournamentJoinFlowGuard.Reset();
                 TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
             }
             catch (Exception ex)
@@ -163,11 +166,13 @@ namespace Mkey.Network
             TournamentDialog dialog,
             TournamentWaitingRoomPanel waitingRoom,
             Action refreshWallet,
-            Action<TournamentDefinition> retryJoin)
+            Action<TournamentDefinition> retryJoin,
+            Action onJoinFailed)
         {
             if (!CoinsHolder.Instance)
             {
                 dialog.Show("Error", "Coins system not ready. Please return to the map and try again.", false, null, null);
+                onJoinFailed?.Invoke();
                 return;
             }
 
@@ -178,7 +183,7 @@ namespace Mkey.Network
                     tournament.entryFee,
                     balance,
                     () => OpenDeposit(dialog, refreshWallet, () => retryJoin?.Invoke(tournament)),
-                    null);
+                    onJoinFailed);
                 return;
             }
 
@@ -186,6 +191,7 @@ namespace Mkey.Network
             refreshWallet?.Invoke();
             TournamentSession.Begin(tournament);
             TournamentRoomRegistry.JoinOrGetRoom(tournament);
+            TournamentJoinFlowGuard.Reset();
             TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
         }
 
@@ -273,5 +279,14 @@ namespace Mkey.Network
         private static bool IsInsufficientBalance(string message) =>
             !string.IsNullOrEmpty(message) &&
             message.IndexOf("insufficient", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        private static void ApplyWalletFromJoinResponse(RoomResponseDto room)
+        {
+            if (room == null || !room.walletBalance.HasValue || !CoinsHolder.Instance)
+                return;
+
+            CoinsHolder.Instance.SetCount(room.walletBalance.Value);
+            WalletService.CachedBalance = room.walletBalance.Value;
+        }
     }
 }

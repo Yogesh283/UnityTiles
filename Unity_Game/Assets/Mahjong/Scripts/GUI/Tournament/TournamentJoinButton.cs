@@ -1,4 +1,5 @@
 using System;
+using Mkey;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -34,11 +35,17 @@ namespace Mkey.Tournament
 
         private void OnButtonClicked()
         {
+            if (!TournamentJoinFlowGuard.CanStartJoin)
+                return;
+
             if (tournament == null)
             {
                 TournamentJoinDebug.LogError($"JOIN button '{name}' has no TournamentDefinition bound");
                 return;
             }
+
+            if (SoundMaster.Instance)
+                SoundMaster.Instance.SoundPlayClick(0.12f, null);
 
             TournamentJoinDebug.Log($"JOIN clicked: button={name}, id={tournament.id}, name={tournament.displayName}");
             onJoin?.Invoke(tournament);

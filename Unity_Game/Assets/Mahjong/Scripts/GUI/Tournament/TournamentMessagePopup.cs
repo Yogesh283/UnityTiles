@@ -14,7 +14,12 @@ namespace Mkey.Tournament
 
         public static bool IsVisible => visible;
 
-        public static void Show(string title, string message, Action onOk = null, string okLabel = "Ok")
+        public static void Show(
+            string title,
+            string message,
+            Action onOk = null,
+            string okLabel = "Ok",
+            float autoCloseSeconds = 0f)
         {
             WarningMessController prefab = Resources.Load<WarningMessController>("PopUps/Message");
             GuiController gui = EnsureGuiController();
@@ -26,15 +31,20 @@ namespace Mkey.Tournament
             }
 
             visible = true;
+            bool closed = false;
+            Action complete = () =>
+            {
+                if (closed) return;
+                closed = true;
+                visible = false;
+                onOk?.Invoke();
+            };
+
             WarningMessController popup = gui.ShowMessageWithYesNoCloseButton(
                 prefab,
                 title ?? string.Empty,
                 message ?? string.Empty,
-                () =>
-                {
-                    visible = false;
-                    onOk?.Invoke();
-                },
+                complete,
                 null,
                 null);
 
@@ -43,6 +53,9 @@ namespace Mkey.Tournament
                 popup.cancelButton.gameObject.SetActive(false);
             if (popup?.noButton)
                 popup.noButton.gameObject.SetActive(false);
+
+            if (autoCloseSeconds > 0f && popup)
+                popup.CloseWindow(autoCloseSeconds, complete);
         }
 
         private static void SetButtonLabel(Button button, string label)

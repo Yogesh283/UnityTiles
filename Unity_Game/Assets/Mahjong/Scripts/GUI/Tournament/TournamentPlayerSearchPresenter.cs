@@ -16,7 +16,7 @@ namespace Mkey.Tournament
             switch (searchPhase)
             {
                 case "searching":
-                    return "🔍 Searching for Players..." + new string('.', dots);
+                    return "🔍 Searching for Real Players..." + new string('.', dots);
                 case "player_joined":
                     return "Player Joined";
                 case "players_connected":
@@ -26,7 +26,7 @@ namespace Mkey.Tournament
                 case "starting":
                     return "Match Found!";
                 default:
-                    return "🔍 Searching for Players..." + new string('.', dots);
+                    return "🔍 Searching for Real Players..." + new string('.', dots);
             }
         }
 

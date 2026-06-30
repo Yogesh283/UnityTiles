@@ -165,9 +165,7 @@ namespace Mkey.Network
                 }
 
                 if (eventName == "player_joined" && payload["player"] != null)
-                {
                     Debug.Log("[TournamentApiBridge] Real player joined via WebSocket.");
-                }
 
                 RoomResponseDto room = roomToken.ToObject<RoomResponseDto>();
                 if (room == null || TournamentSession.Tournament == null) return;
@@ -254,9 +252,11 @@ namespace Mkey.Network
             {
                 if (player == null) continue;
 
-                string rankLine = player.currentRank > 0 && player.currentRank < 9999
-                    ? $"Rank #{player.currentRank}"
-                    : "Rank —";
+                string rankLine = !string.IsNullOrEmpty(player.rankTier)
+                    ? TournamentRankTier.FormatRankLine(player.currentRank, player.rankTier)
+                    : (player.currentRank > 0 && player.currentRank < 9999
+                        ? $"Rank #{player.currentRank}"
+                        : "Rank —");
 
                 if (player.userId == localUserId)
                 {

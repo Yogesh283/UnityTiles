@@ -27,7 +27,12 @@ from wallet.service import WalletService
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
 
-def _build_room_response(db: Session, room: TournamentRoom) -> RoomResponse:
+def _build_room_response(
+    db: Session,
+    room: TournamentRoom,
+    *,
+    wallet_balance: int | None = None,
+) -> RoomResponse:
     payload = serialize_room(db, room)
     return RoomResponse(
         room_id=payload["room_id"],
@@ -45,6 +50,7 @@ def _build_room_response(db: Session, room: TournamentRoom) -> RoomResponse:
         server_now_ms=payload.get("server_now_ms"),
         search_status=payload.get("search_status"),
         queued=False,
+        wallet_balance=wallet_balance,
         players=[RoomPlayerResponse(**player) for player in payload["players"]],
     )
 
@@ -79,6 +85,21 @@ def join_tournament(
         raise HTTPException(status_code=404, detail="Tournament not found")
 
     manager = RoomManager(db)
+    wallet = WalletService(db)
+
+    already_in_room = (
+        db.query(RoomPlayer)
+        .join(TournamentRoom, TournamentRoom.id == RoomPlayer.room_id)
+        .filter(
+            RoomPlayer.user_id == user.id,
+            TournamentRoom.tournament_id == payload.tournament_id,
+            TournamentRoom.status.notin_(("finished",)),
+        )
+        .first()
+    )
+    if not already_in_room and wallet.get_balance(user.id) < tournament.entry_fee:
+        raise HTTPException(status_code=400, detail="Insufficient balance")
+
     try:
         result = manager.matchmake(payload.tournament_id, user.id)
     except ValueError as exc:
@@ -98,7 +119,8 @@ def join_tournament(
     db.commit()
 
     room = db.query(TournamentRoom).filter(TournamentRoom.id == room.id).first()
-    return _build_room_response(db, room)
+    wallet_balance = WalletService(db).get_balance(user.id)
+    return _build_room_response(db, room, wallet_balance=wallet_balance)
 
 
 @router.get("/rooms/{room_id}", response_model=RoomResponse)

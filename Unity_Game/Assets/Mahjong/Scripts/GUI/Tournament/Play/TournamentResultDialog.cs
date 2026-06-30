@@ -6,6 +6,8 @@ namespace Mkey.Tournament
 {
     public static class TournamentResultDialog
     {
+        private const float AutoReturnSeconds = 3f;
+
         public static bool IsVisible => TournamentMessagePopup.IsVisible;
 
         private static string TournamentSubtitle()
@@ -23,7 +25,8 @@ namespace Mkey.Tournament
                 "YOU WIN!",
                 header +
                 $"Congratulations!\n\n+{prizeCoins:N0} Coins\nRank: #1",
-                onClosed);
+                onClosed,
+                autoCloseSeconds: AutoReturnSeconds);
         }
 
         public static void ShowDuelLoss(Action onClosed)
@@ -34,7 +37,8 @@ namespace Mkey.Tournament
                 "YOU LOSE",
                 header +
                 "Your opponent completed the level first.\n\nBetter luck next time.\n\nReward: 0 Coins",
-                onClosed);
+                onClosed,
+                autoCloseSeconds: AutoReturnSeconds);
         }
 
         public static void ShowRankWin(int rank, int prizeCoins, Action onClosed)
@@ -45,7 +49,8 @@ namespace Mkey.Tournament
                 "YOU WIN!",
                 header +
                 $"Congratulations!\n\n+{prizeCoins:N0} Coins\nRank: #{rank:N0}",
-                onClosed);
+                onClosed,
+                autoCloseSeconds: AutoReturnSeconds);
         }
 
         public static void ShowRankLoss(string tournamentId, int rank, Action onClosed)
@@ -56,13 +61,15 @@ namespace Mkey.Tournament
                 "YOU LOSE",
                 header +
                 $"Better luck next time.\n\nRank: #{rank:N0}\n\nReward: 0 Coins",
-                onClosed);
+                onClosed,
+                autoCloseSeconds: AutoReturnSeconds);
         }
 
         public static void ReturnToTournamentPage()
         {
             TournamentMatchManager.DestroyRoom();
             TournamentSession.Clear();
+            TournamentPageLifecycle.OnReturningFromMatch(null);
 
             if (SceneLoader.Instance)
                 SceneLoader.Instance.LoadScene(TournamentSession.TournamentSceneIndex);
