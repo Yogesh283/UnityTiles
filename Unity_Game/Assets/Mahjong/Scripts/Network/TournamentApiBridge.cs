@@ -77,7 +77,7 @@ namespace Mkey.Network
                 wsHooked = false;
             }
 
-            TournamentRoomWebSocket.Disconnect();
+            TournamentRoomWebSocket.StopMaintainingConnection();
             CurrentRoom = null;
             TournamentServerClock.Reset();
         }
@@ -155,17 +155,33 @@ namespace Mkey.Network
                 string eventName = payload.Value<string>("event");
                 if (string.IsNullOrEmpty(eventName)) return;
 
+                TournamentFlowLog.Event(eventName, json.Length > 120 ? json.Substring(0, 120) + "..." : json);
+
                 JToken roomToken = payload["room"];
                 if (roomToken == null && eventName != "match_finished") return;
 
                 if (eventName == "match_finished")
                 {
+                    TournamentFlowLog.MatchFinished("received");
                     TournamentMatchManager.HandleServerMatchFinished(payload["results"]);
                     return;
                 }
 
-                if (eventName == "player_joined" && payload["player"] != null)
-                    Debug.Log("[TournamentApiBridge] Real player joined via WebSocket.");
+                if (eventName == "player_joined")
+                {
+                    TournamentFlowLog.PlayerJoined("opponent connected via WebSocket");
+                }
+                else if (eventName == "countdown")
+                {
+                    RoomResponseDto countdownRoom = roomToken?.ToObject<RoomResponseDto>();
+                    if (countdownRoom != null)
+                        TournamentFlowLog.Countdown(
+                            $"status={countdownRoom.status} players={countdownRoom.playerCount} remaining={countdownRoom.startCountdownSeconds}");
+                }
+                else if (eventName == "match_start")
+                {
+                    TournamentFlowLog.MatchStart("WebSocket match_start");
+                }
 
                 RoomResponseDto room = roomToken.ToObject<RoomResponseDto>();
                 if (room == null || TournamentSession.Tournament == null) return;

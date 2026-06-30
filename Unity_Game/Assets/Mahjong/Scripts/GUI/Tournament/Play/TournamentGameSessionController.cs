@@ -130,6 +130,7 @@ namespace Mkey.Tournament
                 TournamentRoomRegistry.ForcePrepareForLaunch();
 
             TournamentMatchManager.EnsureGameplayFrozen();
+            TournamentFlowLog.BoardFrozen("begin round");
 
             if (TournamentApiBridge.IsOnlineMode && TournamentSession.Tournament != null &&
                 TournamentSession.Tournament.maxPlayers <= 2)
@@ -138,16 +139,27 @@ namespace Mkey.Tournament
             }
             else if (TournamentApiBridge.IsOnlineMode)
             {
-                float waitTimeout = 12f;
-                while (!TournamentServerClock.IsStartTimeReached() && waitTimeout > 0f)
+                while (TournamentSession.IsActive && !TournamentServerClock.IsStartTimeReached())
                 {
                     TournamentMatchManager.EnsureGameplayFrozen();
-                    waitTimeout -= Time.unscaledDeltaTime;
                     yield return null;
                 }
             }
 
+            RoomResponseDto readyRoom = TournamentApiBridge.CurrentRoom;
+            if (!TournamentSession.IsActive ||
+                (TournamentApiBridge.IsOnlineMode &&
+                 TournamentSession.Tournament != null &&
+                 TournamentSession.Tournament.maxPlayers <= 2 &&
+                 (readyRoom == null || readyRoom.status != "active" ||
+                  !TournamentServerClock.IsServerStartTimeReached())))
+            {
+                TournamentFlowLog.BoardFrozen("abort — server never confirmed active start");
+                yield break;
+            }
+
             TournamentMatchManager.BeginSynchronizedMatch();
+            TournamentFlowLog.BoardUnfrozen("server active + match_start_at_ms reached");
 
             if (GameBoard.Instance)
                 GameBoard.Instance.SetControlActivity(true, true);
@@ -158,42 +170,40 @@ namespace Mkey.Tournament
 
         private static IEnumerator WaitForInstantDuelSyncStart()
         {
-            float opponentWait = 120f;
             float pollTimer = 0f;
+            TournamentFlowLog.BoardFrozen("waiting for opponent + server active sync");
 
-            while (opponentWait > 0f)
+            while (TournamentSession.IsActive)
             {
                 RoomResponseDto apiRoom = TournamentApiBridge.CurrentRoom;
-                if (apiRoom != null && apiRoom.playerCount >= 2 &&
-                    (apiRoom.status == "starting" || apiRoom.status == "active"))
+
+                if (apiRoom != null &&
+                    apiRoom.playerCount >= 2 &&
+                    apiRoom.status == "active" &&
+                    TournamentServerClock.HasScheduledStart &&
+                    TournamentServerClock.IsServerStartTimeReached())
                     break;
 
                 pollTimer += Time.unscaledDeltaTime;
-                if (pollTimer >= 1.5f)
+                if (pollTimer >= 1.0f)
                 {
                     pollTimer = 0f;
                     Task<bool> refresh = TournamentApiBridge.RefreshActiveRoomAsync();
                     while (!refresh.IsCompleted)
                         yield return null;
+
+                    apiRoom = TournamentApiBridge.CurrentRoom;
+                    if (apiRoom != null)
+                    {
+                        if (apiRoom.status == "starting")
+                            TournamentFlowLog.Countdown(
+                                $"remaining={apiRoom.startCountdownSeconds}s players={apiRoom.playerCount}");
+                        else if (apiRoom.playerCount >= 2 && apiRoom.status == "active")
+                            TournamentFlowLog.MatchStart($"players={apiRoom.playerCount}");
+                    }
                 }
 
                 TournamentMatchManager.EnsureGameplayFrozen();
-                opponentWait -= Time.unscaledDeltaTime;
-                yield return null;
-            }
-
-            float syncWait = 20f;
-            while (!TournamentServerClock.HasScheduledStart && syncWait > 0f)
-            {
-                TournamentMatchManager.EnsureGameplayFrozen();
-                syncWait -= Time.unscaledDeltaTime;
-                yield return null;
-            }
-
-            while (!TournamentServerClock.IsServerStartTimeReached() && syncWait > 0f)
-            {
-                TournamentMatchManager.EnsureGameplayFrozen();
-                syncWait -= Time.unscaledDeltaTime;
                 yield return null;
             }
         }

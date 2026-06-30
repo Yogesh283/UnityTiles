@@ -587,44 +587,49 @@ namespace Mkey.Tournament
             while (!submitTask.IsCompleted)
                 yield return null;
 
-            if (submitTask.Result.Success && submitTask.Result.Data != null)
+            if (!submitTask.Result.Success || submitTask.Result.Data == null)
             {
-                duelServerScoreSubmitted = true;
-
-                if (submitTask.Result.Data.finalized)
-                {
-                    ApplyServerFinish(
-                        submitTask.Result.Data.rank,
-                        submitTask.Result.Data.prize,
-                        duelMode && submitTask.Result.Data.rank == 1);
-                }
-                else if (!duelMode)
-                {
-                    room.localPlayer.hasCompleted = true;
-                    room.localPlayer.score = score;
-                    room.localPlayer.moves = moves;
-                    room.localPlayer.timeSeconds = elapsedSeconds;
-                    room.localPlayer.completionServerMs = TournamentServerClock.NowMs;
-                }
-                else
-                {
-                    room.localPlayer.hasCompleted = true;
-                    room.localPlayer.score = score;
-                    room.localPlayer.moves = moves;
-                    room.localPlayer.timeSeconds = elapsedSeconds;
-                    room.localPlayer.completionServerMs = TournamentServerClock.NowMs;
-                }
-
+                string err = submitTask.Result?.ErrorMessage ?? "Unknown submit error";
+                TournamentFlowLog.SubmitScoreError(
+                    $"room={room.roomId} status={submitTask.Result?.StatusCode} detail={err}");
+                TournamentMessagePopup.Show(
+                    "Score Submit Failed",
+                    err + "\n\nYour result could not be saved. Please try again.",
+                    null,
+                    autoCloseSeconds: 5f);
                 yield break;
             }
 
-            if (duelMode && UseOnlineDuelAuthority)
-                yield break;
+            TournamentFlowLog.SubmitScore(
+                $"ok finalized={submitTask.Result.Data.finalized} rank={submitTask.Result.Data.rank}");
 
-            if (duelMode)
-                TryResolveDuelInstant();
+            duelServerScoreSubmitted = true;
+
+            if (submitTask.Result.Data.finalized)
+            {
+                ApplyServerFinish(
+                    submitTask.Result.Data.rank,
+                    submitTask.Result.Data.prize,
+                    duelMode && submitTask.Result.Data.rank == 1);
+            }
+            else if (!duelMode)
+            {
+                room.localPlayer.hasCompleted = true;
+                room.localPlayer.score = score;
+                room.localPlayer.moves = moves;
+                room.localPlayer.timeSeconds = elapsedSeconds;
+                room.localPlayer.completionServerMs = TournamentServerClock.NowMs;
+            }
             else
-                FinalizeSimulatedMultiResult(score, moves, elapsedSeconds);
+            {
+                room.localPlayer.hasCompleted = true;
+                room.localPlayer.score = score;
+                room.localPlayer.moves = moves;
+                room.localPlayer.timeSeconds = elapsedSeconds;
+                room.localPlayer.completionServerMs = TournamentServerClock.NowMs;
+            }
+
+            yield break;
         }
 
         private static void ApplyServerFinish(int rank, int prize, bool duelWin)
@@ -633,6 +638,11 @@ namespace Mkey.Tournament
 
             rank = Mathf.Max(1, rank);
             prize = Mathf.Max(0, prize);
+            if (duelWin)
+                TournamentFlowLog.Winner($"rank={rank} prize={prize}");
+            else if (room.IsDuel)
+                TournamentFlowLog.Loser($"rank={rank}");
+
             room.isLocked = true;
             room.state = TournamentRoomState.Locked;
             TournamentSession.StopGameplay();
@@ -1021,13 +1031,17 @@ namespace Mkey.Tournament
         public static void DestroyRoom()
         {
             if (room != null)
+            {
+                TournamentFlowLog.RoomDestroyed(room.roomId);
                 room.Cleanup();
+            }
 
             room = null;
             ClearPendingResult();
             duelServerScoreSubmitted = false;
             TournamentServerClock.Reset();
             TournamentRoomRegistry.ReleaseLocalRoom();
+            TournamentJoinFlowGuard.Reset();
         }
 
         private static void SyncMatchToServer(TournamentMatchResult matchResult)

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from sqlalchemy.orm import Session
@@ -11,6 +12,7 @@ from tournament.room_state import serialize_room
 from websocket.connection_manager import manager
 
 router = APIRouter()
+logger = logging.getLogger("matchiq.tournament.ws")
 
 
 def _resolve_user_id(token: str | None) -> int | None:
@@ -33,6 +35,7 @@ def _resolve_user_id(token: str | None) -> int | None:
 async def tournament_room_ws(websocket: WebSocket, room_id: str, token: str | None = None) -> None:
     user_id = _resolve_user_id(token)
     if not user_id:
+        logger.warning("WebSocket /ws/tournament/%s rejected invalid token", room_id)
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
@@ -49,6 +52,7 @@ async def tournament_room_ws(websocket: WebSocket, room_id: str, token: str | No
             return
 
         await manager.connect(room_id, websocket, user_id)
+        logger.info("WebSocket /ws/tournament/%s [accepted] user_id=%s", room_id, user_id)
         RoomManager(db).set_player_connected(room_id, user_id, True)
         await websocket.send_text(json.dumps({"event": "room_updated", "room": serialize_room(db, room)}))
 
@@ -68,6 +72,7 @@ async def tournament_room_ws(websocket: WebSocket, room_id: str, token: str | No
                         json.dumps({"event": "room_updated", "room": serialize_room(db, room)})
                     )
     except WebSocketDisconnect:
+        logger.info("WebSocket /ws/tournament/%s [disconnected] user_id=%s", room_id, user_id)
         manager.disconnect(room_id, websocket)
         RoomManager(db).set_player_connected(room_id, user_id, False)
     finally:

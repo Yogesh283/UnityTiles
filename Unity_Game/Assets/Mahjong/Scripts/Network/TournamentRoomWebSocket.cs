@@ -4,6 +4,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Mkey.Tournament;
 using UnityEngine;
 
 namespace Mkey.Network
@@ -19,9 +20,13 @@ namespace Mkey.Network
         private CancellationTokenSource cancelSource;
         private readonly ConcurrentQueue<string> incoming = new ConcurrentQueue<string>();
         private string activeRoomId;
+        private bool maintainConnection;
+        private int reconnectAttempts;
 
         public static bool IsConnected =>
             instance != null && instance.socket != null && instance.socket.State == WebSocketState.Open;
+
+        public static string ActiveRoomId => instance != null ? instance.activeRoomId : null;
 
         public static event Action<string> MessageReceived;
 
@@ -42,60 +47,108 @@ namespace Mkey.Network
 
         private void OnDestroy()
         {
-            Disconnect();
+            StopMaintainingConnection();
         }
 
         public static void Connect(string roomId)
         {
             Bootstrap();
-            instance.ConnectInternal(roomId);
+            _ = instance.ConnectAndWaitInternalAsync(roomId, 15000);
         }
 
-        public static void Disconnect()
+        public static Task<bool> ConnectAndWaitAsync(string roomId, int timeoutMs = 15000)
+        {
+            Bootstrap();
+            return instance.ConnectAndWaitInternalAsync(roomId, timeoutMs);
+        }
+
+        public static void Disconnect() => StopMaintainingConnection();
+
+        public static void StopMaintainingConnection()
         {
             if (!instance) return;
-            instance.DisconnectInternal();
+            instance.maintainConnection = false;
+            string roomId = instance.activeRoomId;
+            instance.DisconnectSocket("client_disconnect");
+            instance.activeRoomId = null;
+            if (!string.IsNullOrEmpty(roomId))
+                TournamentFlowLog.RoomDestroyed(roomId);
         }
 
-        private async void ConnectInternal(string roomId)
+        private async Task<bool> ConnectAndWaitInternalAsync(string roomId, int timeoutMs)
         {
             if (string.IsNullOrEmpty(roomId) || !NetworkManager.HasInstance || !NetworkManager.Instance.IsAuthenticated)
             {
                 Debug.LogWarning("[TournamentWS] connect skipped — missing room id or auth.");
-                return;
+                return false;
             }
 
-            if (activeRoomId == roomId && IsConnected)
-                return;
-
-            DisconnectInternal();
+            maintainConnection = true;
             activeRoomId = roomId;
+            reconnectAttempts = 0;
+
+            using var timeoutCts = new CancellationTokenSource(timeoutMs);
+            try
+            {
+                return await ConnectWithRetriesAsync(roomId, timeoutCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.LogWarning($"[TournamentWS] connect timed out room={roomId}");
+                return IsConnected;
+            }
+        }
+
+        private async Task<bool> ConnectWithRetriesAsync(string roomId, CancellationToken outerToken)
+        {
+            const int maxAttempts = 5;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                outerToken.ThrowIfCancellationRequested();
+
+                if (await TryConnectOnceAsync(roomId, attempt))
+                    return true;
+
+                if (attempt < maxAttempts)
+                    await Task.Delay(attempt * 400, outerToken);
+            }
+
+            return false;
+        }
+
+        private async Task<bool> TryConnectOnceAsync(string roomId, int attempt)
+        {
+            DisconnectSocket("reconnect");
+
+            if (!NetworkManager.HasInstance || !NetworkManager.Instance.IsAuthenticated)
+                return false;
+
+            socket = new ClientWebSocket();
+            cancelSource = new CancellationTokenSource();
 
             string token = Uri.EscapeDataString(NetworkManager.Instance.AccessToken);
             string url = ApiConfig.Current.WebSocketRoot + "/" + roomId + "?token=" + token;
 
-            const int maxAttempts = 3;
-            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            try
             {
-                socket = new ClientWebSocket();
-                cancelSource = new CancellationTokenSource();
+                Debug.Log($"[TournamentWS] connecting ({attempt}) room={roomId} url={ApiConfig.Current.WebSocketRoot}");
+                await socket.ConnectAsync(new Uri(url), cancelSource.Token);
 
-                try
-                {
-                    Debug.Log($"[TournamentWS] connecting ({attempt}/{maxAttempts}) room={roomId}");
-                    await socket.ConnectAsync(new Uri(url), cancelSource.Token);
-                    Debug.Log("[TournamentWS] connected room=" + roomId);
-                    _ = ReceiveLoop();
-                    _ = PingLoop();
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"[TournamentWS] connect failed ({attempt}/{maxAttempts}): " + ex.Message);
-                    DisconnectInternal();
-                    if (attempt < maxAttempts)
-                        await Task.Delay(attempt * 500);
-                }
+                if (socket.State != WebSocketState.Open)
+                    return false;
+
+                reconnectAttempts = 0;
+                TournamentFlowLog.WebSocketConnected(roomId);
+                _ = ReceiveLoop();
+                _ = PingLoop();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[TournamentWS] connect failed ({attempt}): {ex.Message}");
+                DisconnectSocket("connect_failed");
+                return false;
             }
         }
 
@@ -103,6 +156,7 @@ namespace Mkey.Network
         {
             byte[] buffer = new byte[8192];
             StringBuilder builder = new StringBuilder();
+            string roomId = activeRoomId;
 
             while (socket != null && socket.State == WebSocketState.Open && cancelSource != null)
             {
@@ -115,7 +169,7 @@ namespace Mkey.Network
                         result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), cancelSource.Token);
                         if (result.MessageType == WebSocketMessageType.Close)
                         {
-                            DisconnectInternal();
+                            HandleDisconnect(roomId, "server_close");
                             return;
                         }
 
@@ -133,10 +187,42 @@ namespace Mkey.Network
                 catch (Exception ex)
                 {
                     Debug.LogWarning("[TournamentWS] receive error: " + ex.Message);
-                    DisconnectInternal();
+                    HandleDisconnect(roomId, ex.Message);
                     return;
                 }
             }
+        }
+
+        private void HandleDisconnect(string roomId, string reason)
+        {
+            TournamentFlowLog.WebSocketDisconnected(roomId ?? activeRoomId, reason);
+            DisconnectSocket(reason);
+
+            if (!maintainConnection || string.IsNullOrEmpty(activeRoomId) || !TournamentSession.IsActive)
+                return;
+
+            _ = ReconnectAfterDelayAsync(activeRoomId);
+        }
+
+        private async Task ReconnectAfterDelayAsync(string roomId)
+        {
+            if (!maintainConnection || !TournamentSession.IsActive)
+                return;
+
+            reconnectAttempts++;
+            if (reconnectAttempts > 8)
+            {
+                Debug.LogWarning("[TournamentWS] max reconnect attempts reached");
+                return;
+            }
+
+            TournamentFlowLog.WebSocketReconnecting(roomId, reconnectAttempts);
+            await Task.Delay(Mathf.Min(5000, reconnectAttempts * 500));
+
+            if (!maintainConnection || !TournamentSession.IsActive || IsConnected)
+                return;
+
+            await TryConnectOnceAsync(roomId, reconnectAttempts);
         }
 
         private async Task PingLoop()
@@ -168,7 +254,7 @@ namespace Mkey.Network
             await socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, cancelSource.Token);
         }
 
-        private void DisconnectInternal()
+        private void DisconnectSocket(string reason)
         {
             cancelSource?.Cancel();
             cancelSource?.Dispose();
@@ -179,7 +265,7 @@ namespace Mkey.Network
                 try
                 {
                     if (socket.State == WebSocketState.Open)
-                        socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "bye", CancellationToken.None);
+                        socket.CloseAsync(WebSocketCloseStatus.NormalClosure, reason, CancellationToken.None);
                 }
                 catch
                 {
@@ -189,8 +275,6 @@ namespace Mkey.Network
                 socket.Dispose();
                 socket = null;
             }
-
-            activeRoomId = null;
         }
     }
 }
