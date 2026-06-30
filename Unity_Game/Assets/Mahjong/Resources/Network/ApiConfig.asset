@@ -16,4 +16,4 @@ MonoBehaviour:
   productionUrl: https://api.matchiq.fun
   useProductionUrl: 1
   developmentMode: 0
-  requestTimeoutSeconds: 15
+  requestTimeoutSeconds: 25
