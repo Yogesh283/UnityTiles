@@ -37,6 +37,7 @@ class RoomManager:
             raise ValueError("Tournament not found")
 
         self._cleanup_stale_single_player_rooms(tournament_id, tournament)
+        self._release_user_from_ended_rooms(user_id, tournament_id)
 
         existing_room = self._find_user_room(user_id, tournament_id)
         if existing_room:
@@ -215,7 +216,7 @@ class RoomManager:
             .filter(
                 RoomPlayer.user_id == user_id,
                 TournamentRoom.tournament_id == tournament_id,
-                TournamentRoom.status.in_(("waiting", "starting", "active", "locked")),
+                TournamentRoom.status.in_(("waiting", "starting", "active")),
             )
             .order_by(TournamentRoom.created_at.desc())
             .first()
@@ -223,6 +224,26 @@ class RoomManager:
         if not player:
             return None
         return self.db.query(TournamentRoom).filter(TournamentRoom.id == player.room_id).first()
+
+    def _release_user_from_ended_rooms(self, user_id: int, tournament_id: str) -> None:
+        """Detach user from locked/finished rooms so new joins can matchmake fresh."""
+        stale_players = (
+            self.db.query(RoomPlayer)
+            .join(TournamentRoom, TournamentRoom.id == RoomPlayer.room_id)
+            .filter(
+                RoomPlayer.user_id == user_id,
+                TournamentRoom.tournament_id == tournament_id,
+                TournamentRoom.status.in_(("locked", "finished")),
+            )
+            .all()
+        )
+        if not stale_players:
+            return
+
+        for player in stale_players:
+            self.db.delete(player)
+
+        self.db.commit()
 
     def _find_open_room(self, tournament_id: str) -> TournamentRoom | None:
         rooms = (
