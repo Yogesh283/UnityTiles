@@ -148,6 +148,9 @@ namespace Mkey.Network
                 if (request.result == UnityWebRequest.Result.ConnectionError ||
                     request.result == UnityWebRequest.Result.DataProcessingError)
                 {
+                    Debug.LogWarning(
+                        "[NetworkManager] Connection failed: " + request.error +
+                        " url=" + url + " code=" + request.responseCode);
                     SetServerAvailable(false);
                     return ApiResult<TResponse>.Fail(ServerUnavailableMessage, 0, true);
                 }

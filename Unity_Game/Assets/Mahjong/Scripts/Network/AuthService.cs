@@ -57,7 +57,25 @@ namespace Mkey.Network
             return true;
         }
 
+        private static Task<ApiResult<TokenResponseDto>> _guestLoginInFlight;
+
         public static async Task<ApiResult<TokenResponseDto>> GuestLoginAsync(string displayName = null)
+        {
+            if (_guestLoginInFlight != null)
+                return await _guestLoginInFlight;
+
+            _guestLoginInFlight = GuestLoginInternalAsync(displayName);
+            try
+            {
+                return await _guestLoginInFlight;
+            }
+            finally
+            {
+                _guestLoginInFlight = null;
+            }
+        }
+
+        private static async Task<ApiResult<TokenResponseDto>> GuestLoginInternalAsync(string displayName)
         {
             string guestId = GetOrCreateGuestId();
             if (string.IsNullOrEmpty(displayName))
@@ -86,7 +104,7 @@ namespace Mkey.Network
             if (PlayerDataHolder.Instance && !string.IsNullOrEmpty(result.Data.displayName))
                 PlayerDataHolder.Instance.SetFullName(result.Data.displayName);
 
-            await ProfileService.RefreshProfileAsync();
+            _ = ProfileService.RefreshProfileAsync();
             return result;
         }
 

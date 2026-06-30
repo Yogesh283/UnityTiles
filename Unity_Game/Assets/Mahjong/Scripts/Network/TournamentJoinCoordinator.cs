@@ -140,11 +140,21 @@ namespace Mkey.Network
 
         private static async Task<ApiResult<TokenResponseDto>> GuestLoginWithRetryAsync()
         {
-            var login = await AuthService.GuestLoginAsync();
-            if (login.Success || !login.IsServerUnavailable)
-                return login;
+            const int maxAttempts = 3;
 
-            await Task.Delay(750);
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                var login = await AuthService.GuestLoginAsync();
+                if (login.Success)
+                    return login;
+
+                if (!login.IsServerUnavailable && login.StatusCode != 0)
+                    return login;
+
+                if (attempt < maxAttempts)
+                    await Task.Delay(attempt * 1000);
+            }
+
             return await AuthService.GuestLoginAsync();
         }
 

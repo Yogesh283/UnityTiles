@@ -277,41 +277,14 @@ namespace Mkey.Tournament
 
         private IEnumerator SyncOnlineDataRoutine()
         {
-            bool dataReady = true;
-
-            if (!NetworkManager.Instance.IsAuthenticated)
-            {
-                var loginTask = GuestLoginWithRetryAsync();
-                while (!loginTask.IsCompleted)
-                    yield return null;
-
-                if (!loginTask.Result.Success)
-                    dataReady = false;
-            }
-            else
-            {
-                var sessionTask = NetworkManager.Instance.GetAsync<UserProfileDto>("auth/me");
-                while (!sessionTask.IsCompleted)
-                    yield return null;
-
-                if (!sessionTask.Result.Success)
-                {
-                    AuthService.Logout();
-                    var reloginTask = GuestLoginWithRetryAsync();
-                    while (!reloginTask.IsCompleted)
-                        yield return null;
-
-                    if (!reloginTask.Result.Success)
-                        dataReady = false;
-                }
-            }
-
-            var catalogTask = TournamentService.FetchTournamentListAsync();
+            bool catalogOk = false;
+            var catalogTask = FetchTournamentCatalogWithRetryAsync();
             while (!catalogTask.IsCompleted)
                 yield return null;
 
-            if (!catalogTask.Result.Success)
-                dataReady = false;
+            catalogOk = catalogTask.Result;
+
+            yield return EnsureSessionRoutine();
 
             var leaderboardTask = LeaderboardService.FetchLeaderboardAsync();
             while (!leaderboardTask.IsCompleted)
@@ -326,20 +299,62 @@ namespace Mkey.Tournament
 
             yield return SyncWalletRoutine();
 
-            if (!dataReady)
+            if (!catalogOk)
                 ShowServerUnavailableRetry(() => StartCoroutine(RefreshOnlineDataRoutine()));
+        }
+
+        private IEnumerator EnsureSessionRoutine()
+        {
+            if (NetworkManager.Instance.IsAuthenticated)
+                yield break;
+
+            var loginTask = GuestLoginWithRetryAsync();
+            while (!loginTask.IsCompleted)
+                yield return null;
+
+            if (!loginTask.Result.Success)
+            {
+                Debug.LogWarning(
+                    "[TournamentPage] Guest login failed: " + loginTask.Result.ErrorMessage +
+                    " (status " + loginTask.Result.StatusCode + "). Join may retry login.");
+            }
         }
 
         private IEnumerator RefreshOnlineDataRoutine()
         {
-            var catalogTask = TournamentService.FetchTournamentListAsync();
+            var catalogTask = FetchTournamentCatalogWithRetryAsync();
             while (!catalogTask.IsCompleted)
                 yield return null;
 
+            yield return EnsureSessionRoutine();
             yield return SyncWalletRoutine();
 
-            if (!catalogTask.Result.Success)
+            if (!catalogTask.Result)
                 ShowServerUnavailableRetry(() => StartCoroutine(RefreshOnlineDataRoutine()));
+        }
+
+        private static async System.Threading.Tasks.Task<bool> FetchTournamentCatalogWithRetryAsync()
+        {
+            const int maxAttempts = 3;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                var result = await TournamentService.FetchTournamentListAsync();
+                if (result.Success)
+                    return true;
+
+                Debug.LogWarning(
+                    "[TournamentPage] Tournament catalog fetch failed (" + attempt + "/" + maxAttempts + "): " +
+                    result.ErrorMessage + " status=" + result.StatusCode);
+
+                if (!result.IsServerUnavailable && result.StatusCode != 0)
+                    return false;
+
+                if (attempt < maxAttempts)
+                    await System.Threading.Tasks.Task.Delay(attempt * 1000);
+            }
+
+            return false;
         }
 
         private IEnumerator SyncWalletRoutine()
@@ -353,11 +368,21 @@ namespace Mkey.Tournament
 
         private static async System.Threading.Tasks.Task<ApiResult<TokenResponseDto>> GuestLoginWithRetryAsync()
         {
-            var login = await AuthService.GuestLoginAsync();
-            if (login.Success || !login.IsServerUnavailable)
-                return login;
+            const int maxAttempts = 3;
 
-            await System.Threading.Tasks.Task.Delay(750);
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                var login = await AuthService.GuestLoginAsync();
+                if (login.Success)
+                    return login;
+
+                if (!login.IsServerUnavailable && login.StatusCode != 0)
+                    return login;
+
+                if (attempt < maxAttempts)
+                    await System.Threading.Tasks.Task.Delay(attempt * 1000);
+            }
+
             return await AuthService.GuestLoginAsync();
         }
 
