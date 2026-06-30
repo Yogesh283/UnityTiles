@@ -13,7 +13,7 @@ from tournament.broadcast import (
     schedule_player_left,
     schedule_room_updated,
 )
-from tournament.catalog import TournamentDefinition, get_tournament
+from tournament.catalog import TournamentDefinition, get_tournament, is_instant_duel
 from tournament.level_selector import generate_room_seed, pick_level_index
 from tournament.prize_table import get_paid_rank_count, get_prize
 from tournament.ranking import RankedPlayer, rank_players
@@ -40,7 +40,8 @@ class RoomManager:
         if existing_room:
             return MatchmakeResult(room=existing_room)
 
-        self._cleanup_stale_single_player_rooms(tournament_id, tournament)
+        if not is_instant_duel(tournament_id):
+            self._cleanup_stale_single_player_rooms(tournament_id, tournament)
         self._cleanup_empty_waiting_rooms(tournament_id)
         self._release_user_from_ended_rooms(user_id, tournament_id)
 
@@ -134,7 +135,8 @@ class RoomManager:
                 continue
 
             if room.status == "waiting":
-                self._cleanup_stale_single_player_rooms(room.tournament_id, tournament)
+                if not is_instant_duel(room.tournament_id):
+                    self._cleanup_stale_single_player_rooms(room.tournament_id, tournament)
                 self._maybe_begin_start_countdown(room, tournament)
                 schedule_countdown(room.id, serialize_room(self.db, room))
             elif room.status == "starting":
@@ -334,6 +336,8 @@ class RoomManager:
         for room in rooms:
             players = self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).all()
             if len(players) != 1 or room.created_at > cutoff:
+                continue
+            if is_instant_duel(room.tournament_id):
                 continue
 
             player = players[0]

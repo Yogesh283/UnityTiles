@@ -95,7 +95,7 @@ namespace Mkey.Network
                 TournamentApiBridge.ApplyJoinResponse(tournament, joinResult.Data);
                 TournamentSession.Begin(tournament);
                 TournamentJoinFlowGuard.Reset();
-                TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
+                EnterMatchAfterJoin(tournament);
 
                 ApplyWalletFromJoinResponse(joinResult.Data);
                 refreshWallet?.Invoke();
@@ -218,6 +218,22 @@ namespace Mkey.Network
             TournamentSession.Begin(tournament);
             TournamentRoomRegistry.JoinOrGetRoom(tournament);
             TournamentJoinFlowGuard.Reset();
+            EnterMatchAfterJoin(tournament);
+        }
+
+        private static bool IsInstantDuel(TournamentDefinition tournament) =>
+            tournament != null && tournament.maxPlayers <= 2;
+
+        private static void EnterMatchAfterJoin(TournamentDefinition tournament)
+        {
+            if (IsInstantDuel(tournament))
+            {
+                if (ApiConfig.Current.UseLocalSimulation)
+                    TournamentRoomRegistry.ForcePrepareForLaunch();
+                TournamentGameBridge.LaunchGameFromWaitingRoom();
+                return;
+            }
+
             TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
         }
 

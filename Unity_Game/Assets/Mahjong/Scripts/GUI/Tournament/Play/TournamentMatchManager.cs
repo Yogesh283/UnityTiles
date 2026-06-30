@@ -39,6 +39,14 @@ namespace Mkey.Tournament
         public static bool IsDuelMode => HasActiveRoom && room.IsDuel;
         public static bool IsMatchResolved => HasActiveRoom && room.isResolved;
         public static bool IsMatchLocked => HasActiveRoom && room.isLocked;
+
+        public static bool IsWaitingForOpponentSync =>
+            HasActiveRoom &&
+            room.IsDuel &&
+            TournamentApiBridge.IsOnlineMode &&
+            room.state != TournamentRoomState.Playing &&
+            !room.isResolved &&
+            !room.isLocked;
         public static string ActiveRoomId => HasActiveRoom ? room.roomId : null;
         public static int MatchLevelIndex => HasActiveRoom ? room.selectedLevelIndex : -1;
         public static int ActiveRoomSeed => HasActiveRoom ? room.roomSeed : 0;
@@ -191,6 +199,13 @@ namespace Mkey.Tournament
         private void Update()
         {
             if (!HasActiveRoom || room.isResolved) return;
+
+            if (IsWaitingForOpponentSync)
+            {
+                EnsureGameplayFrozen();
+                return;
+            }
+
             if (room.state != TournamentRoomState.Playing) return;
 
             if (UseSimulatedDuelOpponent)
