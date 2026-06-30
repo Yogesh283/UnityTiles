@@ -79,6 +79,9 @@ class RoomPlayerResponse(BaseModel):
     user_id: int
     user_uuid: str | None = None
     display_name: str
+    avatar_url: str | None = None
+    current_rank: int | None = None
+    tournament_id: str | None = None
     score: int = 0
     moves: int = 0
     elapsed_seconds: int = 0
@@ -88,14 +91,21 @@ class RoomPlayerResponse(BaseModel):
 
 
 class RoomResponse(BaseModel):
-    room_id: str
+    room_id: str | None = None
     tournament_id: str
-    level_index: int
-    level_seed: int
+    tournament_name: str | None = None
+    level_index: int = 0
+    level_seed: int = 0
     status: str
     player_count: int
     max_players: int
     waiting_seconds: int
+    waiting_seconds_remaining: int | None = None
+    start_countdown_seconds: int | None = None
+    match_start_at_ms: int | None = None
+    server_now_ms: int | None = None
+    search_status: str | None = None
+    queued: bool = False
     players: list[RoomPlayerResponse] = []
 
 

@@ -96,7 +96,7 @@ namespace Mkey.Tournament
             Action onClosed,
             float autoReturnSeconds)
         {
-            EnsureEventSystem();
+            UiEventSystemGuard.EnforceSingle();
             pendingCloseAction = onClosed;
             baseFooter = footer ?? string.Empty;
 
@@ -227,16 +227,6 @@ namespace Mkey.Tournament
             footerText.rectTransform.offsetMin = footerText.rectTransform.offsetMax = Vector2.zero;
 
             overlayRoot.gameObject.SetActive(false);
-        }
-
-        private static void EnsureEventSystem()
-        {
-            if (EventSystem.current) return;
-
-            GameObject eventSystem = new GameObject("EventSystem");
-            eventSystem.AddComponent<EventSystem>();
-            eventSystem.AddComponent<StandaloneInputModule>();
-            DontDestroyOnLoad(eventSystem);
         }
     }
 }

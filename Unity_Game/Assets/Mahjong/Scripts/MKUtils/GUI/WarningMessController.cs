@@ -44,20 +44,35 @@ namespace Mkey
         public string Caption
         {
             get { if (caption) return caption.text; else return string.Empty; }
-            set { if (caption) caption.text = value; }
+            set
+            {
+                if (caption)
+                    caption.text = value;
+                ConfigureMessageTextLayout();
+            }
         }
 
         public string Message
         {
             get { if (message) return message.text; else return string.Empty; }
-            set { if (message) message.text = value; }
+            set
+            {
+                if (message)
+                    message.text = value;
+                ConfigureMessageTextLayout();
+            }
         }
 
         internal void SetMessage(string caption, string message, bool yesButtonActive, bool cancelButtonActive, bool noButtonActive)
         {
-            Caption = caption;
-            Message = message;
+            if (this.caption)
+                this.caption.text = caption;
+            if (this.message)
+                this.message.text = message;
+
             ConfigureMessageTextLayout();
+            ConfigureButtonsInsidePanel(yesButtonActive || cancelButtonActive || noButtonActive);
+
             if (yesButton) yesButton.gameObject.SetActive(yesButtonActive);
             if (cancelButton) cancelButton.gameObject.SetActive(cancelButtonActive);
             if (noButton) noButton.gameObject.SetActive(noButtonActive);
@@ -65,19 +80,110 @@ namespace Mkey
 
         private void ConfigureMessageTextLayout()
         {
-            if (!message) return;
+            bool hasCaption = caption && !string.IsNullOrWhiteSpace(caption.text);
+            bool hasMessage = message && !string.IsNullOrWhiteSpace(message.text);
 
-            message.horizontalOverflow = HorizontalWrapMode.Wrap;
-            message.verticalOverflow = VerticalWrapMode.Overflow;
-            message.resizeTextForBestFit = true;
-            message.resizeTextMinSize = 18;
-            message.resizeTextMaxSize = 28;
+            if (hasCaption && hasMessage)
+            {
+                ApplyTextInsidePanel(caption, 0.68f, 0.90f, 20, 28, TextAnchor.UpperCenter);
+                ApplyTextInsidePanel(message, 0.30f, 0.66f, 16, 24, TextAnchor.UpperCenter);
+                caption.gameObject.SetActive(true);
+                message.gameObject.SetActive(true);
+                return;
+            }
 
-            RectTransform rt = message.rectTransform;
-            rt.anchorMin = new Vector2(0.06f, 0.22f);
-            rt.anchorMax = new Vector2(0.94f, 0.62f);
+            if (hasCaption)
+            {
+                ApplyTextInsidePanel(caption, 0.30f, 0.86f, 18, 28, TextAnchor.MiddleCenter);
+                if (message) message.gameObject.SetActive(false);
+                caption.gameObject.SetActive(true);
+                return;
+            }
+
+            if (hasMessage)
+            {
+                ApplyTextInsidePanel(message, 0.30f, 0.86f, 16, 26, TextAnchor.MiddleCenter);
+                if (caption) caption.gameObject.SetActive(false);
+                message.gameObject.SetActive(true);
+                return;
+            }
+
+            if (caption) caption.gameObject.SetActive(false);
+            if (message) message.gameObject.SetActive(false);
+        }
+
+        private void ConfigureButtonsInsidePanel(bool visible)
+        {
+            RectTransform buttonsRoot = FindButtonsRoot();
+            if (!buttonsRoot)
+                return;
+
+            buttonsRoot.gameObject.SetActive(visible);
+            if (!visible)
+                return;
+
+            buttonsRoot.anchorMin = new Vector2(0.14f, 0.08f);
+            buttonsRoot.anchorMax = new Vector2(0.86f, 0.24f);
+            buttonsRoot.offsetMin = Vector2.zero;
+            buttonsRoot.offsetMax = Vector2.zero;
+            buttonsRoot.pivot = new Vector2(0.5f, 0.5f);
+            buttonsRoot.anchoredPosition = Vector2.zero;
+
+            if (yesButton)
+                FitButtonInsideRow(yesButton.GetComponent<RectTransform>());
+            if (noButton)
+                FitButtonInsideRow(noButton.GetComponent<RectTransform>());
+            if (cancelButton)
+                FitButtonInsideRow(cancelButton.GetComponent<RectTransform>());
+        }
+
+        private RectTransform FindButtonsRoot()
+        {
+            if (yesButton)
+                return yesButton.transform.parent as RectTransform;
+            if (noButton)
+                return noButton.transform.parent as RectTransform;
+            if (cancelButton)
+                return cancelButton.transform.parent as RectTransform;
+            return null;
+        }
+
+        private static void FitButtonInsideRow(RectTransform button)
+        {
+            if (!button)
+                return;
+
+            button.anchorMin = new Vector2(0.5f, 0.5f);
+            button.anchorMax = new Vector2(0.5f, 0.5f);
+            button.pivot = new Vector2(0.5f, 0.5f);
+            button.anchoredPosition = Vector2.zero;
+            button.sizeDelta = new Vector2(170f, 72f);
+        }
+
+        private static void ApplyTextInsidePanel(
+            Text text,
+            float minY,
+            float maxY,
+            int minSize,
+            int maxSize,
+            TextAnchor alignment)
+        {
+            if (!text)
+                return;
+
+            text.alignment = alignment;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = minSize;
+            text.resizeTextMaxSize = maxSize;
+
+            RectTransform rt = text.rectTransform;
+            rt.anchorMin = new Vector2(0.12f, minY);
+            rt.anchorMax = new Vector2(0.88f, maxY);
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
+            rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = Vector2.zero;
             rt.sizeDelta = Vector2.zero;
         }

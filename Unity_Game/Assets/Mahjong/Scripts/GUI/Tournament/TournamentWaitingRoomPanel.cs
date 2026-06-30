@@ -1,159 +1,172 @@
 using System;
 using System.Collections;
-using Mkey.Network;
+using System.Text;
 using Mkey;
+using Mkey.Network;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Mkey.Tournament
 {
+    /// <summary>
+    /// Tournament matchmaking status via the standard app Message popup (same as map/game screens).
+    /// </summary>
     public class TournamentWaitingRoomPanel : MonoBehaviour
     {
-        private Text titleText;
-        private Text playersText;
-        private Text localIdText;
-        private Text opponentIdText;
-        private Text countdownText;
-        private Text statusText;
+        private WarningMessController messagePrefab;
+        private WarningMessController activePopup;
         private TournamentDefinition tournament;
         private int currentPlayers;
         private float timeLeft;
         private Action onComplete;
+        private bool launchStarted;
+        private float searchPulse;
+        private bool isVisible;
+
+        public bool IsShowing => isVisible && activePopup;
 
         public void Show(TournamentDefinition data, Action completeCallback)
         {
             if (TournamentJoinDebug.IsFirstJoin(data))
-                TournamentJoinDebug.Log("WaitingRoom.Show executing — setting panel active");
+                TournamentJoinDebug.Log("WaitingRoom.Show — standard Message popup");
 
             tournament = data;
             onComplete = completeCallback;
+            launchStarted = false;
+            searchPulse = 0f;
+
             TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(data.id);
             currentPlayers = snap.hasRoom ? snap.currentPlayers : 1;
             timeLeft = snap.hasRoom ? snap.countdownSeconds : data.waitingSeconds;
-            transform.SetAsLastSibling();
-            gameObject.SetActive(true);
-            UpdateLabels();
+
             StopAllCoroutines();
+            TournamentApiBridge.RoomUpdated -= OnRoomUpdated;
+            TournamentApiBridge.RoomUpdated += OnRoomUpdated;
+
+            OpenStandardPopup();
             StartCoroutine(WaitingRoutine());
-            PlayIntro();
         }
 
         public void Hide()
         {
-            SimpleTween.ForceCancel(gameObject);
-            gameObject.SetActive(false);
+            TournamentApiBridge.RoomUpdated -= OnRoomUpdated;
             StopAllCoroutines();
+            CloseStandardPopup();
+            isVisible = false;
         }
 
         public static TournamentWaitingRoomPanel Create(Transform parent)
         {
-            RectTransform overlay = TournamentUIFactory.CreateRect(parent, "WaitingRoom");
-            TournamentUIFactory.StretchRect(overlay);
-            Image dim = TournamentUIFactory.CreateImage(overlay, "Dim", new Color(0f, 0f, 0f, 0.72f));
-            TournamentUIFactory.StretchRect(dim.rectTransform);
-            dim.raycastTarget = true;
-
-            RectTransform panel = TournamentUIFactory.CreateRect(overlay, "Panel");
-            panel.anchorMin = new Vector2(0.5f, 0.5f);
-            panel.anchorMax = new Vector2(0.5f, 0.5f);
-            panel.sizeDelta = new Vector2(TournamentLayoutMetrics.S(820f), TournamentLayoutMetrics.S(640f));
-
-            TournamentPremiumUI.CreateDialogPanel(panel);
-
-            Text header = TournamentUIFactory.CreateText(panel, "Header", "WAITING ROOM", TournamentLayoutMetrics.Font(38f), FontStyle.Bold, TournamentPremiumTheme.GoldBright, TextAnchor.UpperCenter);
-            header.rectTransform.anchorMin = new Vector2(0f, 0.78f);
-            header.rectTransform.anchorMax = new Vector2(1f, 0.95f);
-            TournamentUIFactory.AddGoldOutline(header);
-
-            Text tournamentName = TournamentUIFactory.CreateText(panel, "TournamentName", "", TournamentLayoutMetrics.Font(28f), FontStyle.Bold, TournamentPremiumTheme.TextSoft, TextAnchor.UpperCenter);
-            tournamentName.rectTransform.anchorMin = new Vector2(0f, 0.66f);
-            tournamentName.rectTransform.anchorMax = new Vector2(1f, 0.78f);
-
-            Text players = TournamentUIFactory.CreateText(panel, "Players", "", TournamentLayoutMetrics.Font(30f), FontStyle.Bold, TournamentPremiumTheme.TextWhite, TextAnchor.MiddleCenter);
-            players.rectTransform.anchorMin = new Vector2(0.1f, 0.48f);
-            players.rectTransform.anchorMax = new Vector2(0.9f, 0.62f);
-
-            Text localId = TournamentUIFactory.CreateText(panel, "LocalId", "", TournamentLayoutMetrics.Font(24f), FontStyle.Normal, TournamentPremiumTheme.TextSoft, TextAnchor.MiddleCenter);
-            localId.rectTransform.anchorMin = new Vector2(0.08f, 0.38f);
-            localId.rectTransform.anchorMax = new Vector2(0.92f, 0.47f);
-
-            Text opponentId = TournamentUIFactory.CreateText(panel, "OpponentId", "", TournamentLayoutMetrics.Font(24f), FontStyle.Normal, TournamentPremiumTheme.TextSoft, TextAnchor.MiddleCenter);
-            opponentId.rectTransform.anchorMin = new Vector2(0.08f, 0.29f);
-            opponentId.rectTransform.anchorMax = new Vector2(0.92f, 0.38f);
-
-            Text countdown = TournamentUIFactory.CreateText(panel, "Countdown", "", TournamentLayoutMetrics.Font(50f), FontStyle.Bold, TournamentPremiumTheme.GoldBright, TextAnchor.MiddleCenter);
-            countdown.rectTransform.anchorMin = new Vector2(0.1f, 0.14f);
-            countdown.rectTransform.anchorMax = new Vector2(0.9f, 0.28f);
-
-            Text status = TournamentUIFactory.CreateText(panel, "Status", "Finding players...", 26, FontStyle.Italic, TournamentPremiumTheme.TextMuted, TextAnchor.LowerCenter);
-            status.rectTransform.anchorMin = new Vector2(0.1f, 0.04f);
-            status.rectTransform.anchorMax = new Vector2(0.9f, 0.12f);
-
-            TournamentWaitingRoomPanel view = overlay.gameObject.AddComponent<TournamentWaitingRoomPanel>();
-            view.titleText = tournamentName;
-            view.playersText = players;
-            view.localIdText = localId;
-            view.opponentIdText = opponentId;
-            view.countdownText = countdown;
-            view.statusText = status;
-            overlay.gameObject.SetActive(false);
+            GameObject host = new GameObject("TournamentWaitingRoom");
+            host.transform.SetParent(parent, false);
+            TournamentWaitingRoomPanel view = host.AddComponent<TournamentWaitingRoomPanel>();
+            view.Initialize();
             return view;
         }
 
-        private void PlayIntro()
+        private void Initialize()
         {
-            RectTransform panel = transform.Find("Panel") as RectTransform;
-            if (!panel) return;
-            panel.localScale = Vector3.one * 0.9f;
-            SimpleTween.Value(gameObject, 0f, 1f, 0.22f)
-                .SetEase(EaseAnim.EaseOutBack)
-                .SetOnUpdate(t => panel.localScale = Vector3.LerpUnclamped(Vector3.one * 0.9f, Vector3.one, t));
+            messagePrefab = Resources.Load<WarningMessController>("PopUps/Message");
+            if (!messagePrefab)
+                Debug.LogError("[TournamentWaitingRoom] Missing Resources/PopUps/Message.prefab");
+        }
+
+        private void OnRoomUpdated()
+        {
+            TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
+            if (snap.hasRoom)
+            {
+                currentPlayers = snap.currentPlayers;
+                timeLeft = snap.countdownSeconds;
+            }
+
+            RefreshPopupText();
+        }
+
+        private void OpenStandardPopup()
+        {
+            CloseStandardPopup();
+
+            GuiController gui = EnsureGuiController();
+            if (!gui || !messagePrefab)
+                return;
+
+            TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
+            BuildCaptionAndBody(snap, out string caption, out string body);
+
+            activePopup = gui.ShowMessageWithYesNoCloseButton(
+                messagePrefab,
+                caption,
+                body,
+                null,
+                null,
+                null);
+
+            if (activePopup)
+            {
+                activePopup.SetMessage(caption, body, false, false, false);
+                isVisible = true;
+            }
+        }
+
+        private void RefreshPopupText()
+        {
+            if (!activePopup || tournament == null)
+                return;
+
+            TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
+            BuildCaptionAndBody(snap, out string caption, out string body);
+            activePopup.Caption = caption;
+            activePopup.Message = body;
+        }
+
+        private void CloseStandardPopup()
+        {
+            if (!activePopup)
+                return;
+
+            activePopup.CloseWindow();
+            activePopup = null;
         }
 
         private IEnumerator WaitingRoutine()
         {
-            float maxWait = tournament.waitingSeconds + 10f;
-            float startedAt = Time.realtimeSinceStartup;
-            float apiPollTimer = 0f;
+            float fallbackPoll = 0f;
 
-            while (true)
+            while (!launchStarted)
             {
                 if (TournamentApiBridge.IsOnlineMode)
                 {
-                    apiPollTimer += Time.deltaTime;
-                    if (apiPollTimer >= 1f)
+                    fallbackPoll += Time.deltaTime;
+                    if (fallbackPoll >= 2f)
                     {
-                        apiPollTimer = 0f;
+                        fallbackPoll = 0f;
                         yield return RefreshApiRoomCoroutine();
                     }
                 }
 
                 TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
-
                 if (snap.hasRoom)
                 {
                     currentPlayers = snap.currentPlayers;
                     timeLeft = snap.countdownSeconds;
                 }
 
-                UpdateLabels();
+                RefreshPopupText();
 
-                if (snap.shouldLaunch)
+                if (snap.status == "starting" || snap.status == "active")
                 {
-                    statusText.text = "Game Starting!";
-                    countdownText.text = "GO!";
-                    yield return new WaitForSeconds(1.2f);
-                    onComplete?.Invoke();
-                    Hide();
+                    launchStarted = true;
+                    yield return RunMatchStartSequence(snap);
                     yield break;
                 }
 
-                // Anti-freeze: never stay in waiting room forever
-                if (Time.realtimeSinceStartup - startedAt >= maxWait)
+                if (!TournamentApiBridge.IsOnlineMode &&
+                    Time.realtimeSinceStartup >= tournament.waitingSeconds + 5f)
                 {
                     TournamentRoomRegistry.ForcePrepareForLaunch();
-                    statusText.text = "Game Starting!";
-                    countdownText.text = "GO!";
+                    launchStarted = true;
+                    RefreshPopupText();
                     yield return new WaitForSeconds(0.8f);
                     onComplete?.Invoke();
                     Hide();
@@ -164,49 +177,26 @@ namespace Mkey.Tournament
             }
         }
 
-        private void UpdateLabels()
+        private IEnumerator RunMatchStartSequence(TournamentRoomSnapshot snap)
         {
-            if (tournament == null) return;
-            titleText.text = $"{tournament.icon} {tournament.displayName}";
-            playersText.text = $"Waiting Players: {currentPlayers} / {tournament.maxPlayers}";
+            if (TournamentApiBridge.CurrentRoom?.serverNowMs > 0)
+                TournamentServerClock.SyncServerTime(TournamentApiBridge.CurrentRoom.serverNowMs);
 
-            TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
-            float displayTime = snap.hasRoom ? snap.countdownSeconds : timeLeft;
-            int minutes = Mathf.FloorToInt(displayTime / 60f);
-            int seconds = Mathf.FloorToInt(displayTime % 60f);
-            countdownText.text = $"{minutes:00}:{seconds:00}";
-            statusText.text = snap.hasRoom ? snap.statusMessage :
-                (currentPlayers >= tournament.maxPlayers ? "Lobby full — starting soon" : "Finding players...");
+            if (snap.matchStartAtMs > 0)
+                TournamentServerClock.ScheduleServerStart(snap.matchStartAtMs);
+            else if (TournamentApiBridge.CurrentRoom?.matchStartAtMs > 0)
+                TournamentServerClock.ScheduleServerStart(TournamentApiBridge.CurrentRoom.matchStartAtMs);
 
-            string localUuid = snap.localPlayerUuid;
-            if (string.IsNullOrEmpty(localUuid) && NetworkManager.HasInstance)
-                localUuid = NetworkManager.Instance.UserUuid;
-
-            if (localIdText)
+            while (!TournamentServerClock.IsStartTimeReached())
             {
-                localIdText.text = string.IsNullOrEmpty(localUuid)
-                    ? "Your ID: —"
-                    : "Your ID: " + TournamentRoom.FormatShortId(localUuid);
+                RefreshPopupText();
+                yield return null;
             }
 
-            if (opponentIdText)
-            {
-                if (!string.IsNullOrEmpty(snap.opponentUuid))
-                {
-                    string label = string.IsNullOrEmpty(snap.opponentName)
-                        ? TournamentRoom.FormatShortId(snap.opponentUuid)
-                        : snap.opponentName;
-                    opponentIdText.text = "Opponent: " + label + " (" + TournamentRoom.FormatShortId(snap.opponentUuid) + ")";
-                }
-                else if (tournament.maxPlayers <= 2)
-                {
-                    opponentIdText.text = "Opponent: searching...";
-                }
-                else
-                {
-                    opponentIdText.text = string.Empty;
-                }
-            }
+            RefreshPopupText();
+            yield return new WaitForSeconds(0.3f);
+            onComplete?.Invoke();
+            Hide();
         }
 
         private IEnumerator RefreshApiRoomCoroutine()
@@ -214,6 +204,91 @@ namespace Mkey.Tournament
             var task = TournamentApiBridge.RefreshActiveRoomAsync();
             while (!task.IsCompleted)
                 yield return null;
+        }
+
+        private void BuildCaptionAndBody(TournamentRoomSnapshot snap, out string caption, out string body)
+        {
+            searchPulse += Time.deltaTime;
+            int dots = 1 + (Mathf.FloorToInt(searchPulse * 2f) % 3);
+
+            if (tournament == null)
+            {
+                caption = "Tournament";
+                body = string.Empty;
+                return;
+            }
+
+            currentPlayers = snap.hasRoom ? snap.currentPlayers : currentPlayers;
+            string phase = string.IsNullOrEmpty(snap.searchStatus) ? "searching" : snap.searchStatus;
+
+            if (snap.status == "starting" || phase == "match_found")
+                caption = "Match Found!";
+            else if (phase == "player_joined" || phase == "players_connected")
+                caption = "Player Found!";
+            else
+                caption = "Searching...";
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"{tournament.icon} {tournament.displayName}");
+            sb.AppendLine();
+
+            if (phase == "players_connected" || phase == "match_found" || phase == "starting")
+                sb.AppendLine(TournamentPlayerSearchPresenter.PlayersConnectedLine(currentPlayers, tournament.maxPlayers));
+            else
+                sb.AppendLine(TournamentPlayerSearchPresenter.PlayersFoundLine(currentPlayers, tournament.maxPlayers));
+
+            sb.AppendLine();
+
+            if (snap.status == "starting" || phase == "match_found")
+            {
+                int countdown = TournamentServerClock.DisplayCountdownSeconds();
+                sb.AppendLine(countdown > 0 ? countdown.ToString() : "GO!");
+                sb.AppendLine();
+                sb.AppendLine(countdown > 0 ? "Starting in..." : "Game Starting!");
+            }
+            else
+            {
+                float displayTime = snap.hasRoom ? snap.countdownSeconds : timeLeft;
+                int minutes = Mathf.FloorToInt(displayTime / 60f);
+                int seconds = Mathf.FloorToInt(displayTime % 60f);
+                sb.AppendLine($"{minutes:00}:{seconds:00}");
+                sb.AppendLine();
+                sb.AppendLine(TournamentPlayerSearchPresenter.StatusForPhase(
+                    currentPlayers <= 1 ? "searching" : phase,
+                    dots));
+            }
+
+            body = sb.ToString().TrimEnd();
+        }
+
+        private static GuiController EnsureGuiController()
+        {
+            if (GuiController.Instance)
+                return GuiController.Instance;
+
+            GuiController existing = FindFirstObjectByType<GuiController>();
+            if (existing)
+                return existing;
+
+            GameObject go = new GameObject(
+                "GuiController",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster),
+                typeof(GuiController));
+
+            Canvas canvas = go.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 4500;
+
+            CanvasScaler scaler = go.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080f, 1920f);
+            scaler.matchWidthOrHeight = 0.4f;
+
+            DontDestroyOnLoad(go);
+            return go.GetComponent<GuiController>();
         }
     }
 }

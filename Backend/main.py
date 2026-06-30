@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -14,10 +16,21 @@ from websocket.tournament_ws import router as ws_router
 settings = get_settings()
 legal_dir = Path(__file__).resolve().parent / "static" / "legal"
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from tournament.room_scheduler import room_scheduler_loop
+
+    task = asyncio.create_task(room_scheduler_loop())
+    yield
+    task.cancel()
+
+
 app = FastAPI(
     title="Match IQ API",
     description="Production backend for Match IQ tile matching tournaments",
     version="2.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(RateLimitMiddleware)

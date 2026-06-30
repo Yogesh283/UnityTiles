@@ -98,6 +98,16 @@ class WalletService:
             idempotency_key=f"entry:{room_id}:{user_id}",
         )
 
+    def refund_entry_fee(self, user_id: int, amount: int, reference_id: str) -> Wallet:
+        return self._apply(
+            user_id,
+            amount,
+            "tournament_entry_refund",
+            reference_id,
+            f"Refund tournament entry ({reference_id})",
+            idempotency_key=f"refund:{reference_id}",
+        )
+
     def credit_prize(self, user_id: int, amount: int, room_id: str, rank: int) -> Wallet:
         return self._apply(
             user_id,

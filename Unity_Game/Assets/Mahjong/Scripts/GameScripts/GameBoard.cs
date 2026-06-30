@@ -199,6 +199,10 @@ namespace Mkey
                 {
                     if (Tournament.TournamentSession.IsActive)
                     {
+                        if (Tournament.TournamentMatchManager.IsMatchResolved ||
+                            Tournament.TournamentMatchManager.IsMatchLocked)
+                            return;
+
                         Tournament.TournamentGameBridge.HandleLevelComplete();
                         return;
                     }

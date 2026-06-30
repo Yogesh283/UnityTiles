@@ -29,7 +29,7 @@ namespace Mkey.Tournament
         private void Awake()
         {
             TournamentLayoutMetrics.Refresh();
-            EnsureEventSystem();
+            UiEventSystemGuard.EnforceSingle();
             EnsureCamera();
             EnsureHolders();
             NetworkManager.EnsureExists();
@@ -72,13 +72,6 @@ namespace Mkey.Tournament
         {
             if (pageRoot)
                 SimpleTween.ForceCancel(pageRoot.gameObject);
-        }
-
-        private void EnsureEventSystem()
-        {
-            if (FindFirstObjectByType<EventSystem>()) return;
-            GameObject es = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
-            DontDestroyOnLoad(es);
         }
 
         private void EnsureCamera()
@@ -244,9 +237,12 @@ namespace Mkey.Tournament
 
                 TournamentDefinition currentTournament = tournament;
                 dialog.Show(
-                    "Join Tournament?",
-                    $"Join {currentTournament.displayName}?\n\nEntry Fee: {currentTournament.entryFee:N0} Coins\nPrize Pool: {currentTournament.prizePool:N0} Coins",
-                    true,
+                    string.Empty,
+                    "Join Tournament?\n\n" +
+                    $"Join {currentTournament.displayName}?\n\n" +
+                    $"Entry Fee: {currentTournament.entryFee:N0} Coins\n" +
+                    $"Prize Pool: {currentTournament.prizePool:N0} Coins",
+                    false,
                     () => ConfirmJoin(currentTournament),
                     null);
 

@@ -9,6 +9,7 @@ from database.connection import get_db
 from database.models import RoomPlayer, TournamentResult, TournamentRoom, User
 from models.schemas import (
     JoinTournamentRequest,
+    RoomPlayerResponse,
     RoomResponse,
     SubmitScoreRequest,
     SubmitScoreResponse,
@@ -17,56 +18,34 @@ from models.schemas import (
     WalletResponse,
 )
 from tournament.anti_cheat import AntiCheatError, ScoreSubmission, validate_score_submission
-from tournament.broadcast import schedule_match_finished_broadcast
 from tournament.catalog import TOURNAMENT_CATALOG, get_tournament
 from tournament.prize_table import get_paid_rank_count
 from tournament.room_manager import RoomManager
+from tournament.room_state import serialize_player, serialize_room
 from wallet.service import WalletService
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
 
-def _serialize_room_players(db: Session, players: list[RoomPlayer]) -> list[dict]:
-    if not players:
-        return []
-
-    user_ids = [p.user_id for p in players]
-    users = {
-        u.id: u
-        for u in db.query(User).filter(User.id.in_(user_ids)).all()
-    }
-
-    payload = []
-    for player in players:
-        user = users.get(player.user_id)
-        payload.append(
-            {
-                "user_id": player.user_id,
-                "user_uuid": user.user_uuid if user else None,
-                "display_name": user.display_name if user else f"Player {player.user_id}",
-                "score": player.score,
-                "moves": player.moves,
-                "elapsed_seconds": player.elapsed_seconds,
-                "rank": player.rank,
-                "is_connected": player.is_connected,
-                "has_submitted": player.submitted_at is not None,
-            }
-        )
-    return payload
-
-
-def _build_room_response(db: Session, room: TournamentRoom, waiting_seconds: int) -> RoomResponse:
-    players = db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).all()
+def _build_room_response(db: Session, room: TournamentRoom) -> RoomResponse:
+    payload = serialize_room(db, room)
     return RoomResponse(
-        room_id=room.id,
-        tournament_id=room.tournament_id,
-        level_index=room.level_index,
-        level_seed=room.level_seed,
-        status=room.status,
-        player_count=len(players),
-        max_players=room.max_players,
-        waiting_seconds=waiting_seconds,
-        players=_serialize_room_players(db, players),
+        room_id=payload["room_id"],
+        tournament_id=payload["tournament_id"],
+        tournament_name=payload["tournament_name"],
+        level_index=payload["level_index"],
+        level_seed=payload["level_seed"],
+        status=payload["status"],
+        player_count=payload["player_count"],
+        max_players=payload["max_players"],
+        waiting_seconds=payload["waiting_seconds"],
+        waiting_seconds_remaining=payload["waiting_seconds_remaining"],
+        start_countdown_seconds=payload["start_countdown_seconds"],
+        match_start_at_ms=payload["match_start_at_ms"],
+        server_now_ms=payload.get("server_now_ms"),
+        search_status=payload.get("search_status"),
+        queued=False,
+        players=[RoomPlayerResponse(**player) for player in payload["players"]],
     )
 
 
@@ -101,11 +80,11 @@ def join_tournament(
 
     manager = RoomManager(db)
     try:
-        room = manager.find_or_create_room(payload.tournament_id, user.id)
-        manager.join_room(room, user.id, tournament)
+        result = manager.matchmake(payload.tournament_id, user.id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    room = result.room
     write_audit_log(
         db,
         action="tournament_join",
@@ -119,29 +98,15 @@ def join_tournament(
     db.commit()
 
     room = db.query(TournamentRoom).filter(TournamentRoom.id == room.id).first()
-    return _build_room_response(db, room, tournament.waiting_seconds)
+    return _build_room_response(db, room)
 
 
-@router.get("/rooms/{room_id}")
+@router.get("/rooms/{room_id}", response_model=RoomResponse)
 def room_snapshot(room_id: str, db: Session = Depends(get_db)):
     room = db.query(TournamentRoom).filter(TournamentRoom.id == room_id).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
-
-    players = db.query(RoomPlayer).filter(RoomPlayer.room_id == room_id).all()
-    tournament = get_tournament(room.tournament_id)
-    paid_slots = get_paid_rank_count(room.tournament_id) if tournament else 0
-    submitted_count = sum(1 for p in players if p.submitted_at is not None)
-    return {
-        "room_id": room.id,
-        "tournament_id": room.tournament_id,
-        "level_index": room.level_index,
-        "level_seed": room.level_seed,
-        "status": room.status,
-        "paid_winner_slots": paid_slots,
-        "submitted_count": submitted_count,
-        "players": _serialize_room_players(db, players),
-    }
+    return _build_room_response(db, room)
 
 
 @router.post("/submit-score", response_model=SubmitScoreResponse)
@@ -153,6 +118,12 @@ def submit_score(
     room = db.query(TournamentRoom).filter(TournamentRoom.id == payload.room_id).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
+
+    if room.status in {"locked", "finished"}:
+        raise HTTPException(status_code=409, detail="Match already ended")
+
+    if room.status != "active":
+        raise HTTPException(status_code=400, detail="Room is not active")
 
     player = (
         db.query(RoomPlayer)
@@ -201,9 +172,6 @@ def submit_score(
 
     db.refresh(room)
     db.refresh(player)
-
-    if results:
-        schedule_match_finished_broadcast(payload.room_id, results)
 
     return SubmitScoreResponse(
         ok=True,
