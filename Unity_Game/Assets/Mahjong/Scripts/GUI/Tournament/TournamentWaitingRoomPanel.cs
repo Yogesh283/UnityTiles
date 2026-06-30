@@ -147,13 +147,13 @@ namespace Mkey.Tournament
 
         private IEnumerator RunMatchStartSequence(TournamentRoomSnapshot snap)
         {
-            if (TournamentApiBridge.CurrentRoom?.serverNowMs > 0)
-                TournamentServerClock.SyncServerTime(TournamentApiBridge.CurrentRoom.serverNowMs);
+            if ((TournamentApiBridge.CurrentRoom?.serverNowMs ?? 0) > 0)
+                TournamentServerClock.SyncServerTime(TournamentApiBridge.CurrentRoom.serverNowMs.Value);
 
             if (snap.matchStartAtMs > 0)
                 TournamentServerClock.ScheduleServerStart(snap.matchStartAtMs);
-            else if (TournamentApiBridge.CurrentRoom?.matchStartAtMs > 0)
-                TournamentServerClock.ScheduleServerStart(TournamentApiBridge.CurrentRoom.matchStartAtMs);
+            else if ((TournamentApiBridge.CurrentRoom?.matchStartAtMs ?? 0) > 0)
+                TournamentServerClock.ScheduleServerStart(TournamentApiBridge.CurrentRoom.matchStartAtMs.Value);
 
             if (!vsIntroPlayed && tournament.maxPlayers <= 2)
             {

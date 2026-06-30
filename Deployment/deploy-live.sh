@@ -9,9 +9,12 @@ DB_USER="Game"
 DB_PASS="Game@123"
 DB_NAME="Game"
 
-echo "==> Pull latest code"
+echo "==> Pull tournament feature branch (NOT main)"
 cd "$APP_ROOT"
-git pull origin main
+git fetch origin feat/realtime-tournament-and-ui-fixes
+git checkout feat/realtime-tournament-and-ui-fixes
+git reset --hard origin/feat/realtime-tournament-and-ui-fixes
+git log -1 --oneline
 
 echo "==> Backend dependencies"
 cd "$APP_ROOT/Backend"
@@ -26,6 +29,10 @@ php artisan route:cache
 php artisan view:cache
 
 echo "==> Restart API"
+if [[ -f "$APP_ROOT/Deployment/nginx/api.matchiq.fun.conf" ]]; then
+  cp "$APP_ROOT/Deployment/nginx/api.matchiq.fun.conf" /etc/nginx/sites-enabled/api.matchiq.fun.conf
+  nginx -t && systemctl reload nginx
+fi
 systemctl restart matchiq-api
 sleep 2
 

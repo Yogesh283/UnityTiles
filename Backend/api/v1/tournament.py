@@ -104,12 +104,24 @@ def join_tournament(
         raise HTTPException(status_code=400, detail="Insufficient balance")
 
     try:
-        result = manager.matchmake(payload.tournament_id, user.id)
+        result = manager.matchmake(payload.tournament_id, user.id, user_uuid=user.user_uuid)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     room = result.room
-    logger.info("join user_id=%s tournament=%s room_id=%s status=%s", user.id, payload.tournament_id, room.id, room.status)
+    room = db.query(TournamentRoom).filter(TournamentRoom.id == room.id).first()
+    payload_snapshot = serialize_room(db, room)
+    logger.info(
+        "JOIN user_uuid=%s tournament_id=%s room_id=%s player_count=%s room_status=%s "
+        "start_countdown_seconds=%s match_start_at_ms=%s",
+        user.user_uuid,
+        payload.tournament_id,
+        room.id,
+        payload_snapshot.get("player_count"),
+        room.status,
+        payload_snapshot.get("start_countdown_seconds"),
+        payload_snapshot.get("match_start_at_ms"),
+    )
     write_audit_log(
         db,
         action="tournament_join",

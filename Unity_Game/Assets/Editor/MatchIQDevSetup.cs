@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -9,6 +10,7 @@ using UnityEngine;
 public static class MatchIQDevSetup
 {
     private const string ApiConfigPath = "Assets/Mahjong/Resources/Network/ApiConfig.asset";
+    private const string BuildInfoPath = "Assets/Mahjong/Resources/MatchIQBuildInfo.txt";
     private const string TournamentScenePath = "Assets/Mahjong/Scenes/3_Tournaments.unity";
     private const string SplashLogoPath = "Assets/Mahjong/Resources/Landing/AppLogo.png";
 
@@ -78,11 +80,62 @@ public static class MatchIQDevSetup
         ApplyApiConfig(localSimulation: false, useProductionUrl: true);
         FixAndroidSplashTexture();
         MatchIQAppIconSetup.ApplyFromMenu();
+        string commit = WriteBuildInfoFile();
         Debug.Log(
             "[Match IQ] Ready for Release APK build.\n" +
             "• Development Mode OFF\n" +
             "• Production URL ON\n" +
-            "• Icons applied — now File → Build Settings → Build");
+            "• Icons applied\n" +
+            "• Build commit embedded: " + commit + "\n" +
+            "• Now File → Build Settings → Build\n" +
+            "• Verify on phone: adb logcat | findstr \"Match IQ Build\"");
+    }
+
+    /// <summary>Embeds git short hash into Resources for runtime logcat verification.</summary>
+    public static string WriteBuildInfoFile()
+    {
+        string repoRoot = Directory.GetParent(Application.dataPath)?.Parent?.FullName;
+        string commit = "unknown";
+        string subject = "";
+
+        if (!string.IsNullOrEmpty(repoRoot))
+        {
+            commit = RunGit(repoRoot, "rev-parse --short HEAD") ?? commit;
+            subject = RunGit(repoRoot, "log -1 --pretty=%s") ?? "";
+        }
+
+        string body = string.IsNullOrEmpty(subject) ? commit : commit + "\n" + subject;
+        string fullPath = Path.Combine(Application.dataPath, "Mahjong/Resources/MatchIQBuildInfo.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? Application.dataPath);
+        File.WriteAllText(fullPath, body);
+        AssetDatabase.ImportAsset(BuildInfoPath);
+        AssetDatabase.SaveAssets();
+        return commit;
+    }
+
+    private static string RunGit(string workingDirectory, string arguments)
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo("git", arguments)
+            {
+                WorkingDirectory = workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            using System.Diagnostics.Process process = System.Diagnostics.Process.Start(psi);
+            if (process == null)
+                return null;
+            string output = process.StandardOutput.ReadToEnd().Trim();
+            process.WaitForExit(5000);
+            return process.ExitCode == 0 && !string.IsNullOrEmpty(output) ? output : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static void ApplyApiConfig(bool localSimulation, bool useProductionUrl)
