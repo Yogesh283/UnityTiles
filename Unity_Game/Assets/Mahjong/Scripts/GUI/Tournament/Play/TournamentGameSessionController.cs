@@ -1,4 +1,5 @@
 using System.Collections;
+using Mkey.Network;
 using Mkey;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -74,6 +75,12 @@ namespace Mkey.Tournament
                 return;
             }
 
+            if (TournamentMatchManager.IsMatchLocked)
+            {
+                TournamentMatchManager.EnsureGameplayFrozen();
+                return;
+            }
+
             resultDialogWatchdog = 0f;
 
             if (Input.GetKeyDown(KeyCode.Escape))
@@ -104,6 +111,16 @@ namespace Mkey.Tournament
 
             if (!TournamentMatchManager.PrepareMatchFromRoom())
                 TournamentRoomRegistry.ForcePrepareForLaunch();
+
+            if (TournamentApiBridge.IsOnlineMode)
+            {
+                float waitTimeout = 12f;
+                while (!TournamentServerClock.IsStartTimeReached() && waitTimeout > 0f)
+                {
+                    waitTimeout -= Time.unscaledDeltaTime;
+                    yield return null;
+                }
+            }
 
             TournamentMatchManager.BeginSynchronizedMatch();
 

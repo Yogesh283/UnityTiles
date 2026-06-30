@@ -114,6 +114,15 @@ class TournamentRoom(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class MatchmakingEntry(Base):
+    __tablename__ = "matchmaking_queue"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
+    tournament_id: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class RoomPlayer(Base):
     __tablename__ = "room_players"
 

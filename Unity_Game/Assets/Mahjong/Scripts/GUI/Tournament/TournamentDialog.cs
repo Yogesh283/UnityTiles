@@ -203,7 +203,8 @@ namespace Mkey.Tournament
 
             if (confirm != null)
             {
-                gui.ShowMessageWithYesNoCloseButton(messagePrefab, title, message, confirm, null, null);
+                WarningMessController popup = gui.ShowMessageWithYesNoCloseButton(messagePrefab, title, message, confirm, null, null);
+                SetButtonLabel(popup?.yesButton, "Ok");
                 TournamentJoinDebug.Log("TournamentDialog opened via GuiController (Yes only)");
             }
             else

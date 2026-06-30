@@ -30,7 +30,7 @@ def validate_score_submission(
     player: RoomPlayer,
     submission: ScoreSubmission,
 ) -> None:
-    if room.status not in {"starting", "active"}:
+    if room.status != "active":
         raise AntiCheatError("Room is not accepting scores")
 
     if player.finished_at is not None:

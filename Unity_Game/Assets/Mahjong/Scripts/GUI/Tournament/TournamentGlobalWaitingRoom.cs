@@ -16,7 +16,7 @@ namespace Mkey.Tournament
         private TournamentWaitingRoomPanel panel;
 
         public static bool IsVisible =>
-            instance != null && instance.panel != null && instance.panel.gameObject.activeInHierarchy;
+            instance != null && instance.panel != null && instance.panel.IsShowing;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()

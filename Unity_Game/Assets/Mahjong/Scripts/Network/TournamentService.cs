@@ -41,12 +41,12 @@ namespace Mkey.Network
             return result;
         }
 
-        public static async Task<ApiResult<RoomSnapshotDto>> FetchRoomSnapshotAsync(string roomId)
+        public static async Task<ApiResult<RoomResponseDto>> FetchRoomSnapshotAsync(string roomId)
         {
             if (ApiConfig.Current.UseLocalSimulation || string.IsNullOrEmpty(roomId))
-                return ApiResult<RoomSnapshotDto>.Fail("No API room.");
+                return ApiResult<RoomResponseDto>.Fail("No API room.");
 
-            return await NetworkManager.Instance.GetAsync<RoomSnapshotDto>(
+            return await NetworkManager.Instance.GetAsync<RoomResponseDto>(
                 "tournaments/rooms/" + roomId, requireAuth: false);
         }
 

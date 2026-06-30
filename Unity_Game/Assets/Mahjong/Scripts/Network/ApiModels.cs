@@ -80,12 +80,19 @@ namespace Mkey.Network
     {
         [JsonProperty("room_id")] public string roomId;
         [JsonProperty("tournament_id")] public string tournamentId;
+        [JsonProperty("tournament_name")] public string tournamentName;
         [JsonProperty("level_index")] public int levelIndex;
         [JsonProperty("level_seed")] public int levelSeed;
         public string status;
         [JsonProperty("player_count")] public int playerCount;
         [JsonProperty("max_players")] public int maxPlayers;
         [JsonProperty("waiting_seconds")] public int waitingSeconds;
+        [JsonProperty("waiting_seconds_remaining")] public int waitingSecondsRemaining;
+        [JsonProperty("start_countdown_seconds")] public int startCountdownSeconds;
+        [JsonProperty("match_start_at_ms")] public long matchStartAtMs;
+        [JsonProperty("server_now_ms")] public long serverNowMs;
+        [JsonProperty("search_status")] public string searchStatus;
+        public bool queued;
         public List<RoomPlayerDto> players;
     }
 
@@ -95,6 +102,9 @@ namespace Mkey.Network
         [JsonProperty("user_id")] public int userId;
         [JsonProperty("user_uuid")] public string userUuid;
         [JsonProperty("display_name")] public string displayName;
+        [JsonProperty("avatar_url")] public string avatarUrl;
+        [JsonProperty("current_rank")] public int currentRank;
+        [JsonProperty("tournament_id")] public string tournamentId;
         public int score;
         public int moves;
         [JsonProperty("elapsed_seconds")] public int elapsedSeconds;

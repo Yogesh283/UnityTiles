@@ -61,7 +61,7 @@ namespace Mkey.Tournament
 
         public static TournamentRoomSnapshot GetSnapshot(string tournamentId)
         {
-            if (TournamentApiBridge.HasActiveApiRoom &&
+            if (TournamentApiBridge.HasActiveApiSession &&
                 TournamentSession.Tournament != null &&
                 TournamentSession.Tournament.id == tournamentId)
             {
