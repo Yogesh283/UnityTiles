@@ -4,8 +4,10 @@ namespace Mkey.Tournament
     {
         public static bool IsJoining { get; private set; }
 
+        public static bool IsRoomEstablished { get; private set; }
+
         public static bool CanStartJoin =>
-            !IsJoining && !TournamentGlobalWaitingRoom.IsVisible;
+            !IsJoining && !IsRoomEstablished && !TournamentGlobalWaitingRoom.IsVisible;
 
         public static bool TryBegin()
         {
@@ -15,6 +17,16 @@ namespace Mkey.Tournament
             return true;
         }
 
-        public static void Reset() => IsJoining = false;
+        public static void MarkRoomEstablished()
+        {
+            IsRoomEstablished = true;
+            IsJoining = false;
+        }
+
+        public static void Reset()
+        {
+            IsJoining = false;
+            IsRoomEstablished = false;
+        }
     }
 }

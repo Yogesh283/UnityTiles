@@ -1,11 +1,11 @@
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from database.models import LeaderboardEntry, RoomPlayer, TournamentResult, TournamentRoom, User
+from database.models import LeaderboardEntry, RoomPlayer, Tournament, TournamentResult, TournamentRoom, User
 from tournament.broadcast import (
     schedule_countdown,
     schedule_match_finished_broadcast,
@@ -14,12 +14,14 @@ from tournament.broadcast import (
     schedule_player_left,
     schedule_room_updated,
 )
-from tournament.catalog import TournamentDefinition, get_tournament
+from tournament.catalog import TournamentDefinition, get_tournament, is_instant_duel
 from tournament.level_selector import generate_room_seed, pick_level_index
 from tournament.prize_table import get_paid_rank_count, get_prize
 from tournament.ranking import RankedPlayer, rank_players
 from tournament.room_state import MATCH_START_COUNTDOWN_SECONDS, serialize_room
 from wallet.service import WalletService
+
+logger = logging.getLogger("matchiq.tournament")
 
 
 @dataclass
@@ -37,44 +39,78 @@ class RoomManager:
         if not tournament:
             raise ValueError("Tournament not found")
 
-        if not self._acquire_matchmake_lock(tournament_id):
-            raise ValueError("Matchmaking busy, try again")
+        existing_room = self._find_user_room(user_id, tournament_id)
+        if existing_room:
+            logger.info("matchmake rejoin user_id=%s room_id=%s", user_id, existing_room.id)
+            return MatchmakeResult(room=existing_room)
 
-        try:
+        self._lock_tournament_for_matchmake(tournament_id)
+
+        existing_room = self._find_user_room(user_id, tournament_id)
+        if existing_room:
+            logger.info("matchmake rejoin after lock user_id=%s room_id=%s", user_id, existing_room.id)
+            return MatchmakeResult(room=existing_room)
+
+        if not is_instant_duel(tournament_id):
             self._cleanup_stale_single_player_rooms(tournament_id, tournament)
-            self._cleanup_empty_waiting_rooms(tournament_id)
-            self._release_user_from_ended_rooms(user_id, tournament_id)
+        self._cleanup_empty_waiting_rooms(tournament_id)
+        self._release_user_from_ended_rooms(user_id, tournament_id)
 
-            existing_room = self._find_user_room(user_id, tournament_id)
-            if existing_room:
-                return MatchmakeResult(room=existing_room)
+        existing_room = self._find_user_room(user_id, tournament_id)
+        if existing_room:
+            return MatchmakeResult(room=existing_room)
 
-            open_room = self._find_open_room(tournament_id)
-            if open_room:
-                player = self.join_room(open_room, user_id, tournament)
-                self._after_player_joined(open_room, player.user_id)
-                return MatchmakeResult(room=open_room)
+        open_room = self._find_open_room(tournament_id, for_update=True)
+        if open_room:
+            player = self.join_room(open_room, user_id, tournament)
+            logger.info(
+                "matchmake joined open room user_id=%s room_id=%s players=%s",
+                user_id,
+                open_room.id,
+                self.db.query(RoomPlayer).filter(RoomPlayer.room_id == open_room.id).count(),
+            )
+            self._after_player_joined(open_room, player.user_id)
+            return MatchmakeResult(room=open_room)
 
-            room = self._create_room(tournament_id, tournament)
-            self.join_room(room, user_id, tournament)
-            payload = serialize_room(self.db, room)
-            schedule_room_updated(room.id, payload)
-            return MatchmakeResult(room=room)
-        finally:
-            self._release_matchmake_lock(tournament_id)
+        room = self._create_room(tournament_id, tournament)
+        self.join_room(room, user_id, tournament)
+        logger.info("matchmake created room user_id=%s room_id=%s seed=%s", user_id, room.id, room.level_seed)
+        payload = serialize_room(self.db, room)
+        schedule_room_updated(room.id, payload)
+        return MatchmakeResult(room=room)
 
-    def _acquire_matchmake_lock(self, tournament_id: str, timeout: int = 5) -> bool:
-        acquired = self.db.execute(
-            text("SELECT GET_LOCK(:name, :timeout)"),
-            {"name": f"tournament_mm_{tournament_id}", "timeout": timeout},
-        ).scalar()
-        return acquired == 1
-
-    def _release_matchmake_lock(self, tournament_id: str) -> None:
-        self.db.execute(
-            text("SELECT RELEASE_LOCK(:name)"),
-            {"name": f"tournament_mm_{tournament_id}"},
+    def _lock_tournament_for_matchmake(self, tournament_id: str) -> None:
+        """Serialize matchmaking per tournament — prevents duplicate 1-player duel rooms."""
+        row = (
+            self.db.query(Tournament)
+            .filter(Tournament.id == tournament_id)
+            .with_for_update()
+            .first()
         )
+        if row:
+            return
+
+        tournament = get_tournament(tournament_id)
+        if not tournament:
+            raise ValueError("Tournament not found")
+
+        self.db.add(
+            Tournament(
+                id=tournament.id,
+                display_name=tournament.display_name,
+                icon=tournament.icon,
+                max_players=tournament.max_players,
+                entry_fee=tournament.entry_fee,
+                prize_pool=tournament.prize_pool,
+                platform_fee=tournament.platform_fee,
+                reward_info=tournament.reward_info,
+                waiting_seconds=tournament.waiting_seconds,
+                status_label=tournament.status_label,
+                is_active=True,
+            )
+        )
+        self.db.flush()
+        self.db.query(Tournament).filter(Tournament.id == tournament_id).with_for_update().first()
 
     def join_room(
         self,
@@ -150,7 +186,8 @@ class RoomManager:
                 continue
 
             if room.status == "waiting":
-                self._cleanup_stale_single_player_rooms(room.tournament_id, tournament)
+                if not is_instant_duel(room.tournament_id):
+                    self._cleanup_stale_single_player_rooms(room.tournament_id, tournament)
                 self._maybe_begin_start_countdown(room, tournament)
                 schedule_countdown(room.id, serialize_room(self.db, room))
             elif room.status == "starting":
@@ -210,6 +247,7 @@ class RoomManager:
             room.started_at = datetime.utcnow()
         self.db.commit()
         payload = serialize_room(self.db, room)
+        logger.info("room activated room_id=%s players=%s", room.id, payload.get("player_count"))
         schedule_match_start(room.id, payload)
 
     def _remove_player_from_waiting_room(self, room: TournamentRoom, player: RoomPlayer) -> None:
@@ -294,16 +332,19 @@ class RoomManager:
                 self.db.delete(room)
         self.db.commit()
 
-    def _find_open_room(self, tournament_id: str) -> TournamentRoom | None:
-        rooms = (
+    def _find_open_room(self, tournament_id: str, *, for_update: bool = False) -> TournamentRoom | None:
+        query = (
             self.db.query(TournamentRoom)
             .filter(
                 TournamentRoom.tournament_id == tournament_id,
                 TournamentRoom.status == "waiting",
             )
             .order_by(TournamentRoom.created_at.asc())
-            .all()
         )
+        if for_update:
+            query = query.with_for_update()
+
+        rooms = query.all()
 
         for room in rooms:
             count = self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).count()
@@ -347,6 +388,8 @@ class RoomManager:
         for room in rooms:
             players = self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).all()
             if len(players) != 1 or room.created_at > cutoff:
+                continue
+            if is_instant_duel(room.tournament_id):
                 continue
 
             player = players[0]
@@ -504,5 +547,6 @@ class RoomManager:
         room.status = "finished"
         room.ended_at = datetime.utcnow()
         self.db.commit()
+        logger.info("match finished room_id=%s winner_user_id=%s", room_id, results[0]["user_id"] if results else None)
         schedule_match_finished_broadcast(room_id, results)
         return results

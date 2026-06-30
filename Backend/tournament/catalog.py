@@ -25,7 +25,7 @@ TOURNAMENT_CATALOG: list[TournamentDefinition] = [
         prize_pool=160,
         platform_fee=40,
         reward_info="",
-        waiting_seconds=12,
+        waiting_seconds=300,
         status_label="OPEN",
     ),
     TournamentDefinition(
@@ -93,3 +93,8 @@ TOURNAMENT_CATALOG: list[TournamentDefinition] = [
 
 def get_tournament(tournament_id: str) -> TournamentDefinition | None:
     return next((t for t in TOURNAMENT_CATALOG if t.id == tournament_id), None)
+
+
+def is_instant_duel(tournament_id: str) -> bool:
+    """1v1 duel: player enters game immediately; match syncs when opponent joins."""
+    return tournament_id == "duel_1v1"

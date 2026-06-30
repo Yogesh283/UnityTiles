@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Threading.Tasks;
 using Mkey.Network;
 using Mkey;
 using UnityEngine;
@@ -91,6 +92,12 @@ namespace Mkey.Tournament
                 return;
             }
 
+            if (TournamentMatchManager.IsWaitingForOpponentSync)
+            {
+                TournamentMatchManager.EnsureGameplayFrozen();
+                return;
+            }
+
             resultDialogWatchdog = 0f;
 
             if (Input.GetKeyDown(KeyCode.Escape))
@@ -122,20 +129,83 @@ namespace Mkey.Tournament
             if (!TournamentMatchManager.PrepareMatchFromRoom())
                 TournamentRoomRegistry.ForcePrepareForLaunch();
 
-            if (TournamentApiBridge.IsOnlineMode)
+            TournamentMatchManager.EnsureGameplayFrozen();
+            TournamentFlowLog.BoardFrozen("begin round");
+
+            if (TournamentApiBridge.IsOnlineMode && TournamentSession.Tournament != null &&
+                TournamentSession.Tournament.maxPlayers <= 2)
             {
-                float waitTimeout = 12f;
-                while (!TournamentServerClock.IsStartTimeReached() && waitTimeout > 0f)
+                yield return WaitForInstantDuelSyncStart();
+            }
+            else if (TournamentApiBridge.IsOnlineMode)
+            {
+                while (TournamentSession.IsActive && !TournamentServerClock.IsStartTimeReached())
                 {
-                    waitTimeout -= Time.unscaledDeltaTime;
+                    TournamentMatchManager.EnsureGameplayFrozen();
                     yield return null;
                 }
             }
 
+            RoomResponseDto readyRoom = TournamentApiBridge.CurrentRoom;
+            if (!TournamentSession.IsActive ||
+                (TournamentApiBridge.IsOnlineMode &&
+                 TournamentSession.Tournament != null &&
+                 TournamentSession.Tournament.maxPlayers <= 2 &&
+                 (readyRoom == null || readyRoom.status != "active" ||
+                  !TournamentServerClock.IsServerStartTimeReached())))
+            {
+                TournamentFlowLog.BoardFrozen("abort — server never confirmed active start");
+                yield break;
+            }
+
             TournamentMatchManager.BeginSynchronizedMatch();
+            TournamentFlowLog.BoardUnfrozen("server active + match_start_at_ms reached");
+
+            if (GameBoard.Instance)
+                GameBoard.Instance.SetControlActivity(true, true);
 
             GameEvents.MatchSpritesEvent += OnMatchMade;
             timerHud = TournamentTimerHud.Create();
+        }
+
+        private static IEnumerator WaitForInstantDuelSyncStart()
+        {
+            float pollTimer = 0f;
+            TournamentFlowLog.BoardFrozen("waiting for opponent + server active sync");
+
+            while (TournamentSession.IsActive)
+            {
+                RoomResponseDto apiRoom = TournamentApiBridge.CurrentRoom;
+
+                if (apiRoom != null &&
+                    apiRoom.playerCount >= 2 &&
+                    apiRoom.status == "active" &&
+                    TournamentServerClock.HasScheduledStart &&
+                    TournamentServerClock.IsServerStartTimeReached())
+                    break;
+
+                pollTimer += Time.unscaledDeltaTime;
+                if (pollTimer >= 1.0f)
+                {
+                    pollTimer = 0f;
+                    Task<bool> refresh = TournamentApiBridge.RefreshActiveRoomAsync();
+                    while (!refresh.IsCompleted)
+                        yield return null;
+
+                    apiRoom = TournamentApiBridge.CurrentRoom;
+                    if (apiRoom != null)
+                    {
+                        if (apiRoom.status == "starting")
+                            TournamentFlowLog.Countdown(
+                                $"remaining={apiRoom.startCountdownSeconds}s players={apiRoom.playerCount}");
+                        else if (apiRoom.playerCount >= 2 && apiRoom.status == "active")
+                            TournamentFlowLog.MatchStart($"players={apiRoom.playerCount}");
+                    }
+                }
+
+                TournamentMatchManager.EnsureGameplayFrozen();
+                yield return null;
+            }
         }
 
         private static void OnMatchMade(Sprite _, Sprite __)

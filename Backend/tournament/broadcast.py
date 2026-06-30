@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 
 from websocket.connection_manager import manager as ws_manager
+
+logger = logging.getLogger("matchiq.tournament.broadcast")
 
 
 async def broadcast_room_event(room_id: str, payload: dict[str, Any]) -> None:
@@ -14,6 +17,8 @@ def schedule_room_broadcast(room_id: str, event: str, data: dict[str, Any] | Non
     message: dict[str, Any] = {"event": event, "room_id": room_id}
     if data:
         message.update(data)
+
+    logger.info("broadcast room_id=%s event=%s", room_id, event)
 
     try:
         loop = asyncio.get_running_loop()

@@ -30,10 +30,20 @@ namespace Mkey.Tournament
             scheduledStartMs = matchStartAtMs;
         }
 
+        public static bool HasScheduledStart => scheduledStartMs > 0;
+
         public static bool IsStartTimeReached()
         {
             if (scheduledStartMs <= 0)
                 return true;
+            return ServerNowMs >= scheduledStartMs;
+        }
+
+        /// <summary>Online instant duel: false until server sets match_start_at_ms.</summary>
+        public static bool IsServerStartTimeReached()
+        {
+            if (scheduledStartMs <= 0)
+                return false;
             return ServerNowMs >= scheduledStartMs;
         }
 

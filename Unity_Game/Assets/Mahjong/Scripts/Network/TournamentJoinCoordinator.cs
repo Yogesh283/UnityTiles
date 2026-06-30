@@ -8,6 +8,8 @@ namespace Mkey.Network
 {
     public static class TournamentJoinCoordinator
     {
+        private static bool joinRequestInFlight;
+
         public static async void ConfirmJoin(
             TournamentDefinition tournament,
             TournamentDialog dialog,
@@ -24,8 +26,36 @@ namespace Mkey.Network
                 return;
             }
 
+            if (joinRequestInFlight || TournamentJoinFlowGuard.IsRoomEstablished)
+            {
+                TournamentFlowLog.Join("ignored duplicate ConfirmJoin");
+                return;
+            }
+
+            joinRequestInFlight = true;
+
             try
             {
+                await ConfirmJoinOnlineAsync(
+                    tournament, dialog, waitingRoom, refreshWallet, retryJoin, onJoinFailed);
+            }
+            finally
+            {
+                joinRequestInFlight = false;
+            }
+        }
+
+        private static async Task ConfirmJoinOnlineAsync(
+            TournamentDefinition tournament,
+            TournamentDialog dialog,
+            TournamentWaitingRoomPanel waitingRoom,
+            Action refreshWallet,
+            Action<TournamentDefinition> retryJoin,
+            Action onJoinFailed)
+        {
+            try
+            {
+                TournamentFlowLog.Join($"start tournament={tournament.id}");
                 ApiResult<bool> authResult = await EnsureAuthenticatedAsync();
                 if (!authResult.Success)
                 {
@@ -59,7 +89,7 @@ namespace Mkey.Network
                     return;
                 }
 
-                var joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                var joinResult = await JoinTournamentOnceAsync(tournament.id);
                 if (!joinResult.Success || joinResult.Data == null)
                 {
                     if (joinResult.StatusCode == 401)
@@ -67,12 +97,12 @@ namespace Mkey.Network
                         AuthService.Logout();
                         authResult = await EnsureAuthenticatedAsync();
                         if (authResult.Success)
-                            joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                            joinResult = await JoinTournamentOnceAsync(tournament.id);
                     }
                     else if (joinResult.IsServerUnavailable)
                     {
                         await Task.Delay(750);
-                        joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                        joinResult = await JoinTournamentOnceAsync(tournament.id);
                     }
                 }
 
@@ -89,18 +119,45 @@ namespace Mkey.Network
                         refreshWallet,
                         retryJoin,
                         onJoinFailed);
+                    TournamentJoinFlowGuard.Reset();
                     return;
                 }
 
+                TournamentFlowLog.RoomCreated(joinResult.Data.roomId);
+                TournamentFlowLog.RoomId(joinResult.Data.roomId);
+
                 TournamentApiBridge.ApplyJoinResponse(tournament, joinResult.Data);
                 TournamentSession.Begin(tournament);
-                TournamentJoinFlowGuard.Reset();
-                TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
+
+                bool wsConnected = await TournamentRoomWebSocket.ConnectAndWaitAsync(
+                    joinResult.Data.roomId, timeoutMs: 15000);
+                if (!wsConnected)
+                {
+                    TournamentFlowLog.WebSocketDisconnected(joinResult.Data.roomId, "initial_connect_failed");
+                    ShowJoinError(
+                        dialog,
+                        tournament,
+                        "Could not connect to the match server. Check your connection and try again.",
+                        0,
+                        false,
+                        dialogRef => ConfirmJoin(
+                            tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed),
+                        refreshWallet,
+                        retryJoin,
+                        onJoinFailed);
+                    TournamentApiBridge.Clear();
+                    TournamentJoinFlowGuard.Reset();
+                    return;
+                }
+
+                TournamentJoinFlowGuard.MarkRoomEstablished();
 
                 ApplyWalletFromJoinResponse(joinResult.Data);
                 refreshWallet?.Invoke();
                 await WalletService.SyncToCoinsHolderAsync();
                 refreshWallet?.Invoke();
+
+                EnterMatchAfterJoin(tournament);
             }
             catch (Exception ex)
             {
@@ -116,7 +173,14 @@ namespace Mkey.Network
                     refreshWallet,
                     retryJoin,
                     onJoinFailed);
+                TournamentJoinFlowGuard.Reset();
             }
+        }
+
+        private static async Task<ApiResult<RoomResponseDto>> JoinTournamentOnceAsync(string tournamentId)
+        {
+            TournamentFlowLog.Join($"API POST tournaments/join tournament_id={tournamentId}");
+            return await TournamentService.JoinTournamentAsync(tournamentId);
         }
 
         private static async Task<ApiResult<bool>> EnsureAuthenticatedAsync()
@@ -190,7 +254,23 @@ namespace Mkey.Network
             refreshWallet?.Invoke();
             TournamentSession.Begin(tournament);
             TournamentRoomRegistry.JoinOrGetRoom(tournament);
-            TournamentJoinFlowGuard.Reset();
+            TournamentJoinFlowGuard.MarkRoomEstablished();
+            EnterMatchAfterJoin(tournament);
+        }
+
+        private static bool IsInstantDuel(TournamentDefinition tournament) =>
+            tournament != null && tournament.maxPlayers <= 2;
+
+        private static void EnterMatchAfterJoin(TournamentDefinition tournament)
+        {
+            if (IsInstantDuel(tournament))
+            {
+                if (ApiConfig.Current.UseLocalSimulation)
+                    TournamentRoomRegistry.ForcePrepareForLaunch();
+                TournamentGameBridge.LaunchGameFromWaitingRoom();
+                return;
+            }
+
             TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
         }
 
@@ -246,6 +326,12 @@ namespace Mkey.Network
             {
                 // Keep join flow non-blocking on transient outages.
                 Debug.LogWarning("[TournamentJoin] Server temporarily unavailable; skipping blocking popup.");
+                onFailed?.Invoke();
+                return;
+            }
+            else if (detail.IndexOf("matchmaking busy", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                Debug.LogWarning("[TournamentJoin] Matchmaking busy — not retrying automatically.");
                 onFailed?.Invoke();
                 return;
             }

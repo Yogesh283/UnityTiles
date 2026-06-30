@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -25,6 +27,7 @@ from tournament.room_state import serialize_player, serialize_room
 from wallet.service import WalletService
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
+logger = logging.getLogger("matchiq.tournament.api")
 
 
 def _build_room_response(
@@ -106,6 +109,7 @@ def join_tournament(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     room = result.room
+    logger.info("join user_id=%s tournament=%s room_id=%s status=%s", user.id, payload.tournament_id, room.id, room.status)
     write_audit_log(
         db,
         action="tournament_join",
@@ -194,6 +198,11 @@ def submit_score(
 
     db.refresh(room)
     db.refresh(player)
+
+    if results is not None:
+        logger.info("submit-score finalized room_id=%s user_id=%s rank=%s", payload.room_id, user.id, player.rank)
+    else:
+        logger.info("submit-score stored room_id=%s user_id=%s waiting_finalize", payload.room_id, user.id)
 
     return SubmitScoreResponse(
         ok=True,
