@@ -4,6 +4,42 @@
 
 ---
 
+## 0. Local tournament testing (PC, no APK)
+
+Unity menu:
+
+| Menu | Use |
+|------|-----|
+| **Match IQ → Local Tournament Testing** | Offline — no server, simulated 1v1 bot |
+| **Match IQ → Open Tournament Test Scene** | Opens `3_Tournaments` scene |
+| **Match IQ → Play Tournament Scene Now** | Scene + Play in one click |
+| **Match IQ → Production Server Testing** | Real API before APK |
+| **Match IQ → Prepare APK Build** | Production URL + app icons |
+
+**Local test steps:**
+1. `Match IQ → Local Tournament Testing`
+2. `Match IQ → Play Tournament Scene Now`
+3. **1 vs 1 Duel** → **JOIN** (5000 test coins auto-set)
+
+**Final APK:** `Match IQ → Prepare APK Build` → Build APK → uninstall old app → install.
+
+### 2 real players (1v1 duel) — NOT offline local mode
+
+**Local Tournament Testing = 1 human + bot only.** For 2 real players use server:
+
+`Match IQ → 2 Player Duel Test (2 PCs / ParrelSync)`
+
+**ParrelSync (best on PC):**
+1. Package Manager → Add from git URL: `https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync`
+2. **ParrelSync → Clones Manager → Create clone**
+3. **Original** Unity → Play → Tournaments → Join **1 vs 1 Duel**
+4. **Clone** Unity → Play → Tournaments → Join **1 vs 1 Duel**
+5. Dono same room mein match honge (`api.matchiq.fun`)
+
+**PC + Phone:** Editor (Production Server) + phone APK — dono Join 1v1.
+
+---
+
 ## 1. Local — Git PR (Windows)
 
 ```powershell

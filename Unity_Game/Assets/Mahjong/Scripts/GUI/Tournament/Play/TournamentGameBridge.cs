@@ -31,6 +31,8 @@ namespace Mkey.Tournament
                 if (!TournamentMatchManager.PrepareMatchFromRoom())
                     TournamentRoomRegistry.ForcePrepareForLaunch();
 
+                TournamentMatchManager.SyncLevelFromServerAuthority();
+
                 if (!TournamentMatchManager.HasActiveRoom ||
                     TournamentMatchManager.MatchLevelIndex < 0)
                 {
@@ -41,9 +43,13 @@ namespace Mkey.Tournament
 
                 TournamentSession.BindRoom(
                     TournamentMatchManager.ActiveRoomId,
-                    TournamentMatchManager.MatchLevelIndex);
-
+                    TournamentMatchManager.MatchLevelIndex,
+                    TournamentMatchManager.ActiveRoomSeed);
                 TournamentSession.PrepareGameLevel();
+
+                Debug.Log(
+                    $"[Tournament] Launch level {TournamentSession.MatchLevelIndex + 1} " +
+                    $"seed {TournamentSession.RoomSeed} room {TournamentSession.ActiveRoomId}");
 
                 TournamentGlobalWaitingRoom.Hide();
 

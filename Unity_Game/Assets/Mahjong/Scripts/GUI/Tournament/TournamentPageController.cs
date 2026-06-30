@@ -15,8 +15,9 @@ namespace Mkey.Tournament
     public class TournamentPageController : MonoBehaviour
     {
         private const int MapSceneIndex = 1;
+        private const int LocalTestWalletCoins = 5000;
+        private const string ScriptableHolderResource = "Tournament/ScriptableHolder";
 
-        [SerializeField] private GameObject scriptableHolderPrefab;
         [SerializeField] private int backSceneIndex = MapSceneIndex;
 
         private Text walletText;
@@ -37,6 +38,7 @@ namespace Mkey.Tournament
 
         private void Start()
         {
+            ApplyLocalTestWallet();
             BuildPage();
             pageBuilt = true;
             RefreshWallet();
@@ -95,17 +97,23 @@ namespace Mkey.Tournament
         {
             if (!CoinsHolder.Instance)
             {
-                if (scriptableHolderPrefab)
-                    Instantiate(scriptableHolderPrefab);
+                GameObject prefab = Resources.Load<GameObject>(ScriptableHolderResource);
+                if (prefab)
+                    Instantiate(prefab);
                 else
-                {
-                    GameObject prefab = Resources.Load<GameObject>("Tournament/ScriptableHolder");
-                    if (prefab) Instantiate(prefab);
-                }
+                    Debug.LogError("[Tournament] Missing Resources/" + ScriptableHolderResource);
             }
 
-            if (CoinsHolder.Instance)
-                _ = CoinsHolder.Count;
+            ApplyLocalTestWallet();
+        }
+
+        private static void ApplyLocalTestWallet()
+        {
+            if (!ApiConfig.Current.UseLocalSimulation || !CoinsHolder.Instance)
+                return;
+
+            if (CoinsHolder.Count < LocalTestWalletCoins)
+                CoinsHolder.Instance.SetCount(LocalTestWalletCoins);
         }
 
         private void BuildPage()

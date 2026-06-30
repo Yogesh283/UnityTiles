@@ -201,9 +201,32 @@ namespace Mkey.Tournament
 
         public void GenerateSharedLevel()
         {
-            if (levelGenerated || tournament == null) return;
+            if (tournament == null)
+                return;
+
+            if (TryApplyServerLevel())
+                return;
+
+            if (levelGenerated)
+                return;
+
             selectedLevelIndex = TournamentLevelSelector.PickLevelIndex(roomSeed, tournament);
             levelGenerated = true;
+        }
+
+        private bool TryApplyServerLevel()
+        {
+            if (!Mkey.Network.TournamentApiBridge.HasActiveApiSession)
+                return false;
+
+            Mkey.Network.RoomResponseDto apiRoom = Mkey.Network.TournamentApiBridge.CurrentRoom;
+            if (apiRoom == null || apiRoom.levelIndex < 0)
+                return false;
+
+            roomSeed = apiRoom.levelSeed;
+            selectedLevelIndex = apiRoom.levelIndex;
+            levelGenerated = true;
+            return true;
         }
 
         /// <summary>

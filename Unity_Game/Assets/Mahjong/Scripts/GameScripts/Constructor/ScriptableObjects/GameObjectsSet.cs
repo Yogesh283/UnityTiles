@@ -21,7 +21,7 @@ namespace Mkey
         /// </summary>
         /// <param name="count"></param>
         /// <returns></returns>
-        private List<SpritesPair> GetRandomPairs_SAG(int count)  
+        private List<SpritesPair> GetRandomPairs_SAG(int count, System.Random rng)
         {
             List<SpritesPair> source = new List<SpritesPair>();
             List<SpritesPair> simple = new List<SpritesPair>();
@@ -56,32 +56,27 @@ namespace Mkey
                 if (indexSimple >= simple.Count) indexSimple = 0;
             }
 
-            source.Shuffle();
+            ShuffleList(source, rng);
             return source;
         }
 
         /// <summary>
         /// first add groups after that try adding simple sprites- FillType.GroupsAndSimple
         /// </summary>
-        /// <param name="count"></param>
-        /// <returns></returns>
-        private List<SpritesPair> GetRandomPairs_GAS(int count)
+        private List<SpritesPair> GetRandomPairs_GAS(int count, System.Random rng)
         {
             List<SpritesPair> source = new List<SpritesPair>();
             ThemeSpritesHolder themeSpritesHolder = GameThemesHolder.Instance.GetTheme();
 
-            // first add complete groups
             foreach (var group_i in themeSpritesHolder.groups)
             {
                 List<SpritesPair> groupSprites = group_i.GetSequencedSpritesPairs();
                 if (source.Count + groupSprites.Count <= count)
-                {
                     source.AddRange(groupSprites);
-                }
-                else break;
+                else
+                    break;
             }
 
-            // try to add simple sprites
             while (source.Count < count)
             {
                 foreach (var item in themeSpritesHolder.simpleSprites)
@@ -91,31 +86,25 @@ namespace Mkey
                 }
             }
 
-            source.Shuffle();
+            ShuffleList(source, rng);
             return source;
         }
 
         /// <summary>
         /// first add 1 random group after that try adding simple sprites- FillType.RandomGroupAndSimple
         /// </summary>
-        /// <param name="count"></param>
-        /// <returns></returns>
-        private List<SpritesPair> GetRandomPairs_RGS(int count)
+        private List<SpritesPair> GetRandomPairs_RGS(int count, System.Random rng)
         {
             List<SpritesPair> source = new List<SpritesPair>();
             ThemeSpritesHolder themeSpritesHolder = GameThemesHolder.Instance.GetTheme();
 
-            // first add complete groups
             if (themeSpritesHolder.groups.Count > 0)
             {
-                List<SpritesPair> groupSprites = themeSpritesHolder.groups.GetRandomPos().GetSequencedSpritesPairs();
+                List<SpritesPair> groupSprites = themeSpritesHolder.groups.GetRandomPos(rng).GetSequencedSpritesPairs();
                 if (source.Count + groupSprites.Count <= count)
-                {
                     source.AddRange(groupSprites);
-                }
             }
 
-            // try to add simple sprites
             while (source.Count < count)
             {
                 foreach (var item in themeSpritesHolder.simpleSprites)
@@ -125,22 +114,18 @@ namespace Mkey
                 }
             }
 
-            source.Shuffle();
+            ShuffleList(source, rng);
             return source;
         }
-
 
         /// <summary>
         /// first add simple sprites after that try adding groups - FillType.Simple
         /// </summary>
-        /// <param name="count"></param>
-        /// <returns></returns>
-        private List<SpritesPair> GetRandomPairs_S(int count)
+        private List<SpritesPair> GetRandomPairs_S(int count, System.Random rng)
         {
             List<SpritesPair> source = new List<SpritesPair>();
             ThemeSpritesHolder themeSpritesHolder = GameThemesHolder.Instance.GetTheme();
 
-            // try to add simple sprites
             while (source.Count < count)
             {
                 foreach (var item in themeSpritesHolder.simpleSprites)
@@ -150,25 +135,38 @@ namespace Mkey
                 }
             }
 
-            source.Shuffle();
+            ShuffleList(source, rng);
             return source;
         }
 
         public List<SpritesPair> GetRandomPairs(int count, FillType fillType)
         {
+            return GetRandomPairs(count, fillType, null);
+        }
+
+        public List<SpritesPair> GetRandomPairs(int count, FillType fillType, System.Random rng)
+        {
             switch (fillType)
             {
                 case FillType.OnlySimple:
-                    return GetRandomPairs_S(count);
+                    return GetRandomPairs_S(count, rng);
                 case FillType.GroupsAndSimple:
-                    return GetRandomPairs_GAS(count);
+                    return GetRandomPairs_GAS(count, rng);
                 case FillType.SimpleAndGroups:
-                    return GetRandomPairs_SAG(count);
+                    return GetRandomPairs_SAG(count, rng);
                 case FillType.RandomGroupAndSimple:
-                    return GetRandomPairs_RGS(count);
+                    return GetRandomPairs_RGS(count, rng);
                 default:
-                    return GetRandomPairs_S(count);
+                    return GetRandomPairs_S(count, rng);
             }
+        }
+
+        private static void ShuffleList<T>(IList<T> list, System.Random rng)
+        {
+            if (rng == null)
+                list.Shuffle();
+            else
+                list.Shuffle(rng);
         }
 
         public bool IsOneGroup(Sprite sprite_1, Sprite sprite_2)

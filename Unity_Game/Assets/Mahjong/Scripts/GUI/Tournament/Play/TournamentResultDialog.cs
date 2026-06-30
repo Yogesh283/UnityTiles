@@ -6,9 +6,7 @@ namespace Mkey.Tournament
 {
     public static class TournamentResultDialog
     {
-        private const float AutoReturnSeconds = 3f;
-
-        public static bool IsVisible => TournamentPremiumOverlay.IsVisible;
+        public static bool IsVisible => TournamentMessagePopup.IsVisible;
 
         private static string TournamentSubtitle()
         {
@@ -19,50 +17,46 @@ namespace Mkey.Tournament
 
         public static void ShowDuelWin(int prizeCoins, Action onClosed)
         {
-            TournamentPremiumOverlay.Show(
+            string subtitle = TournamentSubtitle();
+            string header = string.IsNullOrEmpty(subtitle) ? string.Empty : subtitle + "\n\n";
+            TournamentMessagePopup.Show(
                 "YOU WIN!",
-                TournamentSubtitle(),
-                $"+{prizeCoins:N0} COINS",
-                "Congratulations!\n\nRank: #1",
-                footer: string.Empty,
-                onClosed: onClosed,
-                autoReturnSeconds: AutoReturnSeconds);
+                header +
+                $"Congratulations!\n\n+{prizeCoins:N0} Coins\nRank: #1",
+                onClosed);
         }
 
         public static void ShowDuelLoss(Action onClosed)
         {
-            TournamentPremiumOverlay.Show(
+            string subtitle = TournamentSubtitle();
+            string header = string.IsNullOrEmpty(subtitle) ? string.Empty : subtitle + "\n\n";
+            TournamentMessagePopup.Show(
                 "YOU LOSE",
-                TournamentSubtitle(),
-                "GAME OVER",
-                "Your opponent completed the level first.\n\nBetter luck next time.",
-                footer: "Reward: 0 Coins",
-                onClosed: onClosed,
-                autoReturnSeconds: AutoReturnSeconds);
+                header +
+                "Your opponent completed the level first.\n\nBetter luck next time.\n\nReward: 0 Coins",
+                onClosed);
         }
 
         public static void ShowRankWin(int rank, int prizeCoins, Action onClosed)
         {
-            TournamentPremiumOverlay.Show(
+            string subtitle = TournamentSubtitle();
+            string header = string.IsNullOrEmpty(subtitle) ? string.Empty : subtitle + "\n\n";
+            TournamentMessagePopup.Show(
                 "YOU WIN!",
-                TournamentSubtitle(),
-                $"+{prizeCoins:N0} COINS",
-                $"Congratulations!\n\nRank: #{rank:N0}",
-                footer: string.Empty,
-                onClosed: onClosed,
-                autoReturnSeconds: AutoReturnSeconds);
+                header +
+                $"Congratulations!\n\n+{prizeCoins:N0} Coins\nRank: #{rank:N0}",
+                onClosed);
         }
 
         public static void ShowRankLoss(string tournamentId, int rank, Action onClosed)
         {
-            TournamentPremiumOverlay.Show(
+            string subtitle = TournamentSubtitle();
+            string header = string.IsNullOrEmpty(subtitle) ? string.Empty : subtitle + "\n\n";
+            TournamentMessagePopup.Show(
                 "YOU LOSE",
-                TournamentSubtitle(),
-                "GAME OVER",
-                $"Better Luck Next Time\n\nRank: #{rank:N0}",
-                footer: "Reward: 0 Coins",
-                onClosed: onClosed,
-                autoReturnSeconds: AutoReturnSeconds);
+                header +
+                $"Better luck next time.\n\nRank: #{rank:N0}\n\nReward: 0 Coins",
+                onClosed);
         }
 
         public static void ReturnToTournamentPage()

@@ -53,6 +53,9 @@ namespace Mkey.Tournament
                 return;
             }
 
+            // GameLevelHolder.Awake resets CurrentLevel to 0 — re-apply before GameBoard.Start.
+            TournamentSession.PrepareGameLevel();
+            UiEventSystemGuard.EnforceSingle();
             StartCoroutine(BeginRound());
         }
 

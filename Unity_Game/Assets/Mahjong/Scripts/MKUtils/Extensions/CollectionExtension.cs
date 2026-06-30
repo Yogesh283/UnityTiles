@@ -105,6 +105,25 @@ namespace Mkey {
             }
         }
 
+        public static void Shuffle<T>(this IList<T> list, System.Random rng)
+        {
+            if (rng == null)
+            {
+                list.Shuffle();
+                return;
+            }
+
+            int n = list.Count;
+            while (n > 1)
+            {
+                int k = rng.Next(n);
+                n--;
+                T val = list[k];
+                list[k] = list[n];
+                list[n] = val;
+            }
+        }
+
         /// <summary>
         /// Array to enumerable
         /// </summary>
@@ -121,6 +140,13 @@ namespace Mkey {
 	    public static T GetRandomPos<T>(this IList<T> list)
         {
             return list[UnityEngine.Random.Range(0, list.Count)];
+        }
+
+        public static T GetRandomPos<T>(this IList<T> list, System.Random rng)
+        {
+            if (rng == null)
+                return list.GetRandomPos();
+            return list[rng.Next(list.Count)];
         }
 		
 		/// <summary>
