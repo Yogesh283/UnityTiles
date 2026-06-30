@@ -53,7 +53,7 @@ namespace Mkey.Network
                 room.status,
                 room.waitingSeconds);
             registryRoom?.ApplyOnlinePlayers(room.players);
-            TournamentSession.BindRoom(room.roomId, room.levelIndex);
+            TournamentSession.BindRoom(room.roomId, room.levelIndex, room.levelSeed);
             RoomUpdated?.Invoke();
         }
 

@@ -26,8 +26,11 @@ namespace Mkey
 
         public void ClickSound()
         {
+            if (!SoundMaster.Instance)
+                return;
+
             if (!clickSound) SoundMaster.Instance.SoundPlayClick(0, null);
-            else {SoundMaster.Instance.PlayClip(0, clickSound); }
+            else SoundMaster.Instance.PlayClip(0, clickSound);
         }
     }
 }

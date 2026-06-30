@@ -170,7 +170,9 @@ namespace Mkey
             }
         #endregion build consumables
 
+#pragma warning disable CS0618
             UnityPurchasing.Initialize(this, builder);
+#pragma warning restore CS0618
         }
 
         private bool IsInitialized()
@@ -348,6 +350,7 @@ namespace Mkey
                 product.definition.storeSpecificId,
                 failureReason));
         }
+
         #endregion IStoreListener
 
         ShopThingData GetProductById(string id)

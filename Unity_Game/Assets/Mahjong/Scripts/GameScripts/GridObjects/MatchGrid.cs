@@ -356,17 +356,20 @@ namespace Mkey
         #region fill sprites
         public void SetMahjongSprites()
         {
-            // set majong sprites
-            List<SpritesPair> sprites = goSet.GetRandomPairs(tiles.Count / 2, LcSet.fillType);
+            System.Random tournamentRng = ResolveTournamentRandom();
+            List<SpritesPair> sprites = tournamentRng != null
+                ? goSet.GetRandomPairs(tiles.Count / 2, LcSet.fillType, tournamentRng)
+                : goSet.GetRandomPairs(tiles.Count / 2, LcSet.fillType);
             List<MahjongTile> tT = new List<MahjongTile>(tiles);
-            Debug.Log("set sprites, tiles count: " + tiles.Count + "; sprites pairs count: " + sprites.Count + "; " + LcSet.fillType);
+            Debug.Log("set sprites, tiles count: " + tiles.Count + "; sprites pairs count: " + sprites.Count + "; " + LcSet.fillType +
+                      (tournamentRng != null ? " ; tournament seed " + Tournament.TournamentSession.RoomSeed : string.Empty));
 
             // 1 type - get random from free to fill tiles
             bool failed = false;
             for (int i = 0; i < tT.Count; i += 2)
             {
-                List<MahjongTile> freeTiles = GetFreeToFillTiles(tiles, true, false);      // not sorted by layer
-                if(freeTiles.Count < 5) freeTiles = GetFreeToFillTiles(tiles, true, true); // avoid last error (tile 0 over tile)
+                List<MahjongTile> freeTiles = GetFreeToFillTiles(tiles, true, false, tournamentRng);
+                if(freeTiles.Count < 5) freeTiles = GetFreeToFillTiles(tiles, true, true, tournamentRng);
                 if(freeTiles.Count == 1)
                 {
                     failed = true;
@@ -388,7 +391,7 @@ namespace Mkey
                 tiles.ForEach((t) => { t.SetExcluded(false); });
                 for (int i = 0; i < tT.Count; i += 2)
                 {
-                    List<MahjongTile>  freeTiles = GetFreeToFillTiles(tiles, true, true); // reverse sorted
+                    List<MahjongTile>  freeTiles = GetFreeToFillTiles(tiles, true, true, tournamentRng);
                     if (freeTiles.Count == 1)
                     {
                         failed = true;
@@ -412,7 +415,7 @@ namespace Mkey
                 failed = false;
                 for (int i = 0; i < tT.Count; i += 2)
                 {
-                    List<MahjongTile> freeTiles = GetFreeToFillTiles(tiles, true, true); // reverse sorted
+                    List<MahjongTile> freeTiles = GetFreeToFillTiles(tiles, true, true, tournamentRng);
                     if (freeTiles.Count == 1)
                     {
                         failed = true;
@@ -431,13 +434,36 @@ namespace Mkey
             else Debug.LogError("Fill failed, make changes in game board.");
         }
 
+        private static System.Random ResolveTournamentRandom()
+        {
+            if (!Tournament.TournamentSession.IsActive)
+                return null;
+
+            return Tournament.TournamentSession.CreateTileRandom();
+        }
+
         private List<MahjongTile> GetFreeToFillTiles(List<MahjongTile>fromTiles, bool shuffle, bool sortByLayerReverse)
+        {
+            return GetFreeToFillTiles(fromTiles, shuffle, sortByLayerReverse, null);
+        }
+
+        private List<MahjongTile> GetFreeToFillTiles(
+            List<MahjongTile> fromTiles,
+            bool shuffle,
+            bool sortByLayerReverse,
+            System.Random rng)
         {
             List<MahjongTile> result = new List<MahjongTile>(fromTiles);
             result.RemoveAll((t) => { return t == null; });
             result.RemoveAll((t) => { return t.Excluded; });
             result.RemoveAll((t) => { return !t.IsFreeToFill(); });
-            if (shuffle) result.Shuffle();
+            if (shuffle)
+            {
+                if (rng != null)
+                    result.Shuffle(rng);
+                else
+                    result.Shuffle();
+            }
             if (sortByLayerReverse) result.Sort((a,b) =>{return b.Layer.CompareTo(a.Layer);});
             return result;
         }

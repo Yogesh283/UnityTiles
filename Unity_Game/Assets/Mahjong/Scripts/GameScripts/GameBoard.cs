@@ -97,6 +97,8 @@ namespace Mkey
 #if UNITY_EDITOR
             if (GCSet && GCSet.testMode) GameLevelHolder.CurrentLevel = Mathf.Abs(GCSet.testLevel);
 #endif
+            if (Tournament.TournamentSession.IsActive && Tournament.TournamentSession.MatchLevelIndex >= 0)
+                GameLevelHolder.CurrentLevel = Tournament.TournamentSession.MatchLevelIndex;
             ScoreHolder.Instance.SetCount(0);
         }
 

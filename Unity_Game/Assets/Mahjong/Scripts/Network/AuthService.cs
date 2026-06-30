@@ -91,10 +91,10 @@ namespace Mkey.Network
                 await NetworkManager.Instance.PostAsync<GuestLoginRequestDto, TokenResponseDto>("auth/guest", body, false));
         }
 
-        private static async Task<ApiResult<TokenResponseDto>> CompleteLoginAsync(ApiResult<TokenResponseDto> result)
+        private static Task<ApiResult<TokenResponseDto>> CompleteLoginAsync(ApiResult<TokenResponseDto> result)
         {
             if (!result.Success || result.Data == null)
-                return result;
+                return Task.FromResult(result);
 
             NetworkManager.Instance.SaveSession(
                 result.Data.accessToken,
@@ -105,7 +105,7 @@ namespace Mkey.Network
                 PlayerDataHolder.Instance.SetFullName(result.Data.displayName);
 
             _ = ProfileService.RefreshProfileAsync();
-            return result;
+            return Task.FromResult(result);
         }
 
         public static void Logout()

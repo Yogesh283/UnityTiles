@@ -42,6 +42,7 @@ namespace Mkey
                 if (systems[i] == keep)
                     continue;
 
+                systems[i].enabled = false;
                 Object.Destroy(systems[i].gameObject);
             }
         }
@@ -63,6 +64,7 @@ namespace Mkey
         private static void CreatePersistentEventSystem()
         {
             GameObject go = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            go.AddComponent<UiEventSystemSelfGuard>();
             Object.DontDestroyOnLoad(go);
         }
     }

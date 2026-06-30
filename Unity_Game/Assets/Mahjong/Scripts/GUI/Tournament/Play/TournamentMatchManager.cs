@@ -41,6 +41,7 @@ namespace Mkey.Tournament
         public static bool IsMatchLocked => HasActiveRoom && room.isLocked;
         public static string ActiveRoomId => HasActiveRoom ? room.roomId : null;
         public static int MatchLevelIndex => HasActiveRoom ? room.selectedLevelIndex : -1;
+        public static int ActiveRoomSeed => HasActiveRoom ? room.roomSeed : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -96,6 +97,8 @@ namespace Mkey.Tournament
             if (!HasActiveRoom) return false;
             if (room.matchPrepared) return room.levelGenerated;
 
+            SyncLevelFromServerAuthority();
+
             if (!room.joinLocked)
                 room.LockForMatch();
 
@@ -115,6 +118,25 @@ namespace Mkey.Tournament
                 $"players {room.maxPlayerCount} | level {room.selectedLevelIndex + 1}");
 
             return room.levelGenerated && room.selectedLevelIndex >= 0;
+        }
+
+        public static void SyncLevelFromServerAuthority()
+        {
+            if (!HasActiveRoom || !TournamentApiBridge.HasActiveApiSession)
+                return;
+
+            RoomResponseDto apiRoom = TournamentApiBridge.CurrentRoom;
+            if (apiRoom == null || apiRoom.levelIndex < 0)
+                return;
+
+            room.ApplyApiRoomData(
+                apiRoom.roomId,
+                apiRoom.levelIndex,
+                apiRoom.levelSeed,
+                apiRoom.playerCount,
+                apiRoom.status,
+                apiRoom.waitingSeconds);
+            TournamentSession.BindRoom(apiRoom.roomId, apiRoom.levelIndex, apiRoom.levelSeed);
         }
 
         [Obsolete("Use AttachRoom + PrepareMatchFromRoom via TournamentRoomRegistry.")]

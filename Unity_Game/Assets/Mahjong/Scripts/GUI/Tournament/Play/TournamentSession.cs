@@ -17,6 +17,7 @@ namespace Mkey.Tournament
         public static TournamentDefinition Tournament { get; private set; }
         public static string ActiveRoomId { get; private set; }
         public static int MatchLevelIndex { get; private set; } = -1;
+        public static int RoomSeed { get; private set; }
 
         public static float ElapsedSeconds { get; private set; }
         public static int MoveCount { get; private set; }
@@ -34,22 +35,55 @@ namespace Mkey.Tournament
             IsActive = tournament != null;
             ActiveRoomId = null;
             MatchLevelIndex = -1;
+            RoomSeed = 0;
             ElapsedSeconds = 0f;
             MoveCount = 0;
             FinalScore = 0;
             GameplayRunning = false;
         }
 
-        public static void BindRoom(string roomId, int levelIndex)
+        public static void BindRoom(string roomId, int levelIndex, int roomSeed = 0)
         {
             ActiveRoomId = roomId;
             MatchLevelIndex = levelIndex;
+            RoomSeed = roomSeed;
+        }
+
+        /// <summary>
+        /// Shared RNG for tile faces + placement — both duel clients must use the same room seed.
+        /// </summary>
+        public static System.Random CreateTileRandom()
+        {
+            int seed = RoomSeed;
+            if (seed == 0 && !string.IsNullOrEmpty(ActiveRoomId))
+                seed = TournamentStringHash.Compute(ActiveRoomId);
+            if (seed == 0 && MatchLevelIndex >= 0)
+                seed = MatchLevelIndex + 1;
+
+            return new System.Random(seed);
         }
 
         public static void PrepareGameLevel()
         {
             int level = MatchLevelIndex >= 0 ? MatchLevelIndex : SharedGameLevelIndex;
             GameLevelHolder.CurrentLevel = level;
+            SyncSharedTheme();
+        }
+
+        private static void SyncSharedTheme()
+        {
+            if (!IsActive || !GameThemesHolder.Instance || GameThemesHolder.Instance.themes == null)
+                return;
+
+            int count = GameThemesHolder.Instance.themes.Length;
+            if (count <= 0)
+                return;
+
+            int themeIndex = RoomSeed != 0
+                ? Mathf.Abs(RoomSeed) % count
+                : (MatchLevelIndex >= 0 ? MatchLevelIndex % count : 0);
+
+            GameThemesHolder.Instance.SetIndex(themeIndex);
         }
 
         public static void StartGameplayTracking()
@@ -91,6 +125,7 @@ namespace Mkey.Tournament
             Tournament = null;
             ActiveRoomId = null;
             MatchLevelIndex = -1;
+            RoomSeed = 0;
             ElapsedSeconds = 0f;
             MoveCount = 0;
             FinalScore = 0;
