@@ -92,6 +92,12 @@ namespace Mkey.Network
                 var joinResult = await JoinTournamentOnceAsync(tournament.id);
                 if (!joinResult.Success || joinResult.Data == null)
                 {
+                    if (!string.IsNullOrEmpty(joinResult.ErrorMessage) &&
+                        joinResult.ErrorMessage.StartsWith("Response parse error", StringComparison.Ordinal))
+                    {
+                        TournamentFlowLog.Join("RESPONSE PARSE FAILED " + joinResult.ErrorMessage);
+                    }
+
                     if (joinResult.StatusCode == 401)
                     {
                         AuthService.Logout();
@@ -123,12 +129,18 @@ namespace Mkey.Network
                     return;
                 }
 
+                TournamentFlowLog.JoinResponseParsed(
+                    joinResult.Data.roomId,
+                    joinResult.Data.status,
+                    joinResult.Data.playerCount,
+                    joinResult.Data.matchStartAtMs);
                 TournamentFlowLog.RoomCreated(joinResult.Data.roomId);
                 TournamentFlowLog.RoomId(joinResult.Data.roomId);
 
                 TournamentApiBridge.ApplyJoinResponse(tournament, joinResult.Data);
                 TournamentSession.Begin(tournament);
 
+                TournamentFlowLog.ConnectingWebSocket(joinResult.Data.roomId);
                 bool wsConnected = await TournamentRoomWebSocket.ConnectAndWaitAsync(
                     joinResult.Data.roomId, timeoutMs: 15000);
                 if (!wsConnected)

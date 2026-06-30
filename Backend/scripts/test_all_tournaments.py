@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -50,11 +51,58 @@ def get_json(path: str, api_base: str = API_BASE) -> tuple[int, dict | str]:
             return exc.code, raw
 
 
-def guest_login(guest_id: str, api_base: str) -> str:
+def guest_login(guest_id: str, api_base: str) -> tuple[str, str]:
     status, payload = post_json("auth/guest", {"guest_id": guest_id, "display_name": "FreezeTest"}, api_base=api_base)
     if status != 200:
         raise RuntimeError(f"guest login failed ({status}): {payload}")
-    return payload["access_token"]
+    return payload["access_token"], payload["user_uuid"]
+
+
+TOURNAMENT_ENTRY_FEES = {
+    "duel_1v1": 100,
+    "quick_cup": 100,
+    "mega_clash": 200,
+    "grand_clash": 500,
+    "championship": 1000,
+    "world_cup": 2000,
+}
+
+
+def fund_wallet(token: str, user_uuid: str, api_base: str, min_balance: int = 500) -> None:
+    level = 1
+    balance = 0
+    while balance < min_balance and level <= 40:
+        status, resp = post_json(
+            "levels/complete",
+            {"user_uuid": user_uuid, "level_number": level},
+            token,
+            api_base=api_base,
+        )
+        if status != 200:
+            raise RuntimeError(f"level complete failed ({status}): {resp}")
+        balance = resp.get("current_wallet_balance", balance)
+        level += 1
+    if balance < min_balance:
+        raise RuntimeError(f"could not fund wallet to {min_balance}, got {balance}")
+
+
+def join_tournament(token: str, tournament_id: str, api_base: str) -> tuple[int, dict | str]:
+    for attempt in range(1, 9):
+        status, body = post_json(
+            "tournaments/join", {"tournament_id": tournament_id}, token, api_base=api_base
+        )
+        if status == 200:
+            return status, body
+        if (
+            status == 400
+            and isinstance(body, dict)
+            and "matchmaking busy" in str(body.get("detail", "")).lower()
+            and attempt < 8
+        ):
+            time.sleep(min(2.0 * attempt, 8.0))
+            continue
+        return status, body
+    return status, body
 
 
 def main() -> int:
@@ -64,8 +112,10 @@ def main() -> int:
     failures = 0
 
     for index, tournament_id in enumerate(TOURNAMENT_IDS):
-        token = guest_login(f"freeze_test_{tournament_id}_{index}", api_base)
-        status, join = post_json("tournaments/join", {"tournament_id": tournament_id}, token, api_base=api_base)
+        token, user_uuid = guest_login(f"freeze_test_{tournament_id}_{index}", api_base)
+        entry_fee = TOURNAMENT_ENTRY_FEES.get(tournament_id, 500)
+        fund_wallet(token, user_uuid, api_base, min_balance=entry_fee + 200)
+        status, join = join_tournament(token, tournament_id, api_base)
         ok = status == 200 and isinstance(join, dict)
         room_id = join.get("room_id") if ok else None
         level_seed = join.get("level_seed") if ok else None

@@ -435,11 +435,12 @@ namespace Mkey.Tournament
                 }
             }
 
-            if (localDto != null && localDto.rank > 0)
+            if (localDto != null && (localDto.rank ?? 0) > 0)
             {
-                int prize = TournamentPrizeTable.GetPrize(room.tournament.id, localDto.rank);
-                bool duelWin = room.IsDuel && localDto.rank == 1;
-                ApplyServerFinish(localDto.rank, prize, duelWin);
+                int rank = localDto.rank.Value;
+                int prize = TournamentPrizeTable.GetPrize(room.tournament.id, rank);
+                bool duelWin = room.IsDuel && rank == 1;
+                ApplyServerFinish(rank, prize, duelWin);
                 return;
             }
 

@@ -4,7 +4,7 @@ set -euo pipefail
 
 APP_ROOT="${APP_ROOT:-/var/www/UnityTiles}"
 API="${API:-https://api.matchiq.fun}"
-REQUIRED_COMMIT="1bc9567"
+REQUIRED_COMMIT="767f74f"
 pass() { echo "PASS: $*"; }
 fail() { echo "FAIL: $*"; exit 1; }
 

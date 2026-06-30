@@ -1,3 +1,5 @@
+import hashlib
+
 from sqlalchemy.orm import Session
 
 from core.audit import write_audit_log
@@ -109,13 +111,14 @@ class WalletService:
         )
 
     def credit_prize(self, user_id: int, amount: int, room_id: str, rank: int) -> Wallet:
+        idempotency_key = hashlib.sha256(f"prize:{room_id}:{user_id}".encode()).hexdigest()[:36]
         return self._apply(
             user_id,
             amount,
             "tournament_prize",
             room_id,
             f"Tournament prize rank {rank} in room {room_id}",
-            idempotency_key=f"prize:{room_id}:{user_id}",
+            idempotency_key=idempotency_key,
         )
 
     def admin_adjust(self, user_id: int, amount: int, reason: str) -> Wallet:

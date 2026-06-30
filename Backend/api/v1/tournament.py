@@ -206,7 +206,22 @@ def submit_score(
     db.commit()
 
     manager = RoomManager(db)
-    results = manager.try_instant_finalize(payload.room_id)
+    try:
+        results = manager.try_instant_finalize(payload.room_id)
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception(
+            "submit-score finalize failed room_id=%s user_id=%s",
+            payload.room_id,
+            user.id,
+        )
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Could not finalize match. Please try again.",
+        ) from exc
 
     db.refresh(room)
     db.refresh(player)

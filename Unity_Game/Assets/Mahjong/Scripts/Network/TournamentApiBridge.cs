@@ -268,10 +268,11 @@ namespace Mkey.Network
             {
                 if (player == null) continue;
 
+                int currentRank = player.currentRank ?? 0;
                 string rankLine = !string.IsNullOrEmpty(player.rankTier)
-                    ? TournamentRankTier.FormatRankLine(player.currentRank, player.rankTier)
-                    : (player.currentRank > 0 && player.currentRank < 9999
-                        ? $"Rank #{player.currentRank}"
+                    ? TournamentRankTier.FormatRankLine(currentRank, player.rankTier)
+                    : (currentRank > 0 && currentRank < 9999
+                        ? $"Rank #{currentRank}"
                         : "Rank —");
 
                 if (player.userId == localUserId)

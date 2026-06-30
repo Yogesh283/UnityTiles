@@ -21,10 +21,13 @@ def schedule_room_broadcast(room_id: str, event: str, data: dict[str, Any] | Non
     logger.info("broadcast room_id=%s event=%s", room_id, event)
 
     try:
-        loop = asyncio.get_running_loop()
-        loop.create_task(broadcast_room_event(room_id, message))
-    except RuntimeError:
-        asyncio.run(broadcast_room_event(room_id, message))
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(broadcast_room_event(room_id, message))
+        except RuntimeError:
+            asyncio.run(broadcast_room_event(room_id, message))
+    except Exception:
+        logger.exception("broadcast failed room_id=%s event=%s", room_id, event)
 
 
 def schedule_match_finished_broadcast(room_id: str, results: list[dict]) -> None:
