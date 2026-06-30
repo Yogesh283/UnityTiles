@@ -59,7 +59,7 @@ namespace Mkey.Network
                     return;
                 }
 
-                var joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                var joinResult = await JoinTournamentWithRetryAsync(tournament.id);
                 if (!joinResult.Success || joinResult.Data == null)
                 {
                     if (joinResult.StatusCode == 401)
@@ -67,12 +67,12 @@ namespace Mkey.Network
                         AuthService.Logout();
                         authResult = await EnsureAuthenticatedAsync();
                         if (authResult.Success)
-                            joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                            joinResult = await JoinTournamentWithRetryAsync(tournament.id);
                     }
                     else if (joinResult.IsServerUnavailable)
                     {
                         await Task.Delay(750);
-                        joinResult = await TournamentService.JoinTournamentAsync(tournament.id);
+                        joinResult = await JoinTournamentWithRetryAsync(tournament.id);
                     }
                 }
 
@@ -138,6 +138,33 @@ namespace Mkey.Network
                     login.IsServerUnavailable);
 
             return ApiResult<bool>.Ok(true);
+        }
+
+        private static async Task<ApiResult<RoomResponseDto>> JoinTournamentWithRetryAsync(string tournamentId)
+        {
+            const int maxAttempts = 8;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                var joinResult = await TournamentService.JoinTournamentAsync(tournamentId);
+                if (joinResult.Success && joinResult.Data != null)
+                    return joinResult;
+
+                if (!IsMatchmakingBusy(joinResult) || attempt >= maxAttempts)
+                    return joinResult;
+
+                await Task.Delay(attempt * 300);
+            }
+
+            return await TournamentService.JoinTournamentAsync(tournamentId);
+        }
+
+        private static bool IsMatchmakingBusy(ApiResult<RoomResponseDto> result)
+        {
+            if (result == null || string.IsNullOrEmpty(result.ErrorMessage))
+                return false;
+
+            return result.ErrorMessage.IndexOf("matchmaking busy", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static async Task<ApiResult<TokenResponseDto>> GuestLoginWithRetryAsync()
@@ -249,6 +276,12 @@ namespace Mkey.Network
                 onFailed?.Invoke();
                 return;
             }
+            else if (detail.IndexOf("matchmaking busy", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                Debug.LogWarning("[TournamentJoin] Matchmaking busy; silent retry.");
+                ScheduleSilentJoinRetry(dialog, retry);
+                return;
+            }
             else if (statusCode == 0)
             {
                 title = "Could Not Join";
@@ -280,6 +313,15 @@ namespace Mkey.Network
         private static bool IsInsufficientBalance(string message) =>
             !string.IsNullOrEmpty(message) &&
             message.IndexOf("insufficient", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        private static async void ScheduleSilentJoinRetry(
+            TournamentDialog dialog,
+            Action<TournamentDialog> retry)
+        {
+            await Task.Delay(800);
+            if (dialog)
+                retry?.Invoke(dialog);
+        }
 
         private static void ApplyWalletFromJoinResponse(RoomResponseDto room)
         {
