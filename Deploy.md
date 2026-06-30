@@ -64,7 +64,42 @@ GitHub par **Merge pull request** karo.
 
 ---
 
-## 2. Server — Git Deploy
+## 2. Server — Tournament deploy (NOT `origin/main`)
+
+**Do not use `git pull origin main`** — tournament realtime code is only on:
+
+`feat/realtime-tournament-and-ui-fixes` (required commit: `1bc9567`)
+
+```bash
+ssh root@72.60.102.128
+
+cd /var/www/UnityTiles
+bash Deployment/deploy-tournament.sh
+bash Deployment/verify-production.sh
+```
+
+Verify from anywhere:
+
+```bash
+curl -s https://api.matchiq.fun/health
+# must include: "commit":"1bc9567"
+```
+
+Watch WebSocket during phone test:
+
+```bash
+journalctl -u matchiq-api -f | grep -Ei 'WebSocket|accepted|join|match_start|match_finished'
+```
+
+### APK (both phones)
+
+1. Unity: **Match IQ → Prepare APK Build** (embeds git commit)
+2. Build APK → uninstall old app → install on both phones
+3. `adb logcat | findstr "Match IQ Build"` → must show `Commit: 1bc9567`
+
+---
+
+## 2b. Server — Admin / DB only (legacy)
 
 ```bash
 ssh root@72.60.102.128

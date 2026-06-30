@@ -102,8 +102,8 @@ namespace Mkey.Network
                 : CurrentRoom.searchStatus;
 
             float countdown = starting
-                ? Mathf.Max(0f, CurrentRoom.startCountdownSeconds)
-                : Mathf.Max(0f, CurrentRoom.waitingSecondsRemaining);
+                ? Mathf.Max(0f, CurrentRoom.startCountdownSeconds.GetValueOrDefault())
+                : Mathf.Max(0f, CurrentRoom.waitingSecondsRemaining.GetValueOrDefault());
 
             return new TournamentRoomSnapshot
             {
@@ -112,8 +112,8 @@ namespace Mkey.Network
                 currentPlayers = Mathf.Max(1, CurrentRoom.playerCount),
                 maxPlayers = tournament.maxPlayers,
                 countdownSeconds = countdown,
-                startCountdownSeconds = CurrentRoom.startCountdownSeconds,
-                matchStartAtMs = CurrentRoom.matchStartAtMs,
+                startCountdownSeconds = CurrentRoom.startCountdownSeconds.GetValueOrDefault(),
+                matchStartAtMs = CurrentRoom.matchStartAtMs.GetValueOrDefault(),
                 status = CurrentRoom.status,
                 searchStatus = searchPhase,
                 statusMessage = GetStatusMessage(searchPhase, CurrentRoom.playerCount, tournament.maxPlayers),
@@ -190,8 +190,8 @@ namespace Mkey.Network
                 ApplyRoomDto(TournamentSession.Tournament, CurrentRoom);
                 RoomUpdated?.Invoke();
 
-                if (eventName == "match_start" && CurrentRoom.matchStartAtMs > 0)
-                    TournamentServerClock.ScheduleServerStart(CurrentRoom.matchStartAtMs);
+                if (eventName == "match_start" && (CurrentRoom.matchStartAtMs ?? 0) > 0)
+                    TournamentServerClock.ScheduleServerStart(CurrentRoom.matchStartAtMs.Value);
             }
             catch (Exception ex)
             {
@@ -220,9 +220,9 @@ namespace Mkey.Network
             CurrentRoom.waitingSecondsRemaining = incoming.waitingSecondsRemaining;
             CurrentRoom.startCountdownSeconds = incoming.startCountdownSeconds;
             CurrentRoom.searchStatus = incoming.searchStatus ?? CurrentRoom.searchStatus;
-            if (incoming.matchStartAtMs > 0)
+            if ((incoming.matchStartAtMs ?? 0) > 0)
                 CurrentRoom.matchStartAtMs = incoming.matchStartAtMs;
-            if (incoming.serverNowMs > 0)
+            if ((incoming.serverNowMs ?? 0) > 0)
                 CurrentRoom.serverNowMs = incoming.serverNowMs;
             if (incoming.players != null)
                 CurrentRoom.players = incoming.players;
@@ -234,11 +234,11 @@ namespace Mkey.Network
         {
             if (room == null) return;
 
-            if (room.serverNowMs > 0)
-                TournamentServerClock.SyncServerTime(room.serverNowMs);
+            if ((room.serverNowMs ?? 0) > 0)
+                TournamentServerClock.SyncServerTime(room.serverNowMs.Value);
 
-            if (room.matchStartAtMs > 0)
-                TournamentServerClock.ScheduleServerStart(room.matchStartAtMs);
+            if ((room.matchStartAtMs ?? 0) > 0)
+                TournamentServerClock.ScheduleServerStart(room.matchStartAtMs.Value);
         }
 
         private static void BuildPlayerLabels(

@@ -3,6 +3,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from database.models import LeaderboardEntry, RoomPlayer, Tournament, TournamentResult, TournamentRoom, User
@@ -30,54 +31,143 @@ class MatchmakeResult:
 
 
 class RoomManager:
+    MATCHMAKE_LOCK_SECONDS = 15
+
     def __init__(self, db: Session):
         self.db = db
         self.wallet = WalletService(db)
 
-    def matchmake(self, tournament_id: str, user_id: int) -> MatchmakeResult:
+    def matchmake(self, tournament_id: str, user_id: int, *, user_uuid: str | None = None) -> MatchmakeResult:
         tournament = get_tournament(tournament_id)
         if not tournament:
             raise ValueError("Tournament not found")
 
-        existing_room = self._find_user_room(user_id, tournament_id)
-        if existing_room:
-            logger.info("matchmake rejoin user_id=%s room_id=%s", user_id, existing_room.id)
-            return MatchmakeResult(room=existing_room)
-
-        self._lock_tournament_for_matchmake(tournament_id)
+        if not user_uuid:
+            user = self.db.query(User).filter(User.id == user_id).first()
+            user_uuid = user.user_uuid if user else str(user_id)
 
         existing_room = self._find_user_room(user_id, tournament_id)
         if existing_room:
-            logger.info("matchmake rejoin after lock user_id=%s room_id=%s", user_id, existing_room.id)
-            return MatchmakeResult(room=existing_room)
-
-        if not is_instant_duel(tournament_id):
-            self._cleanup_stale_single_player_rooms(tournament_id, tournament)
-        self._cleanup_empty_waiting_rooms(tournament_id)
-        self._release_user_from_ended_rooms(user_id, tournament_id)
-
-        existing_room = self._find_user_room(user_id, tournament_id)
-        if existing_room:
-            return MatchmakeResult(room=existing_room)
-
-        open_room = self._find_open_room(tournament_id, for_update=True)
-        if open_room:
-            player = self.join_room(open_room, user_id, tournament)
-            logger.info(
-                "matchmake joined open room user_id=%s room_id=%s players=%s",
-                user_id,
-                open_room.id,
-                self.db.query(RoomPlayer).filter(RoomPlayer.room_id == open_room.id).count(),
+            self._log_matchmake_join(
+                user_uuid=user_uuid,
+                tournament_id=tournament_id,
+                room=existing_room,
+                existing_player_count=self._room_player_count(existing_room.id),
+                action="rejoin_before_lock",
+                transaction_id=None,
             )
-            self._after_player_joined(open_room, player.user_id)
-            return MatchmakeResult(room=open_room)
+            return MatchmakeResult(room=existing_room)
 
-        room = self._create_room(tournament_id, tournament)
-        self.join_room(room, user_id, tournament)
-        logger.info("matchmake created room user_id=%s room_id=%s seed=%s", user_id, room.id, room.level_seed)
+        lock_name = f"matchmake:{tournament_id}"
+        self._acquire_matchmake_lock(lock_name)
+        try:
+            self._lock_tournament_for_matchmake(tournament_id)
+
+            existing_room = self._find_user_room(user_id, tournament_id)
+            if existing_room:
+                self._log_matchmake_join(
+                    user_uuid=user_uuid,
+                    tournament_id=tournament_id,
+                    room=existing_room,
+                    existing_player_count=self._room_player_count(existing_room.id),
+                    action="rejoin_after_lock",
+                    transaction_id=None,
+                )
+                return MatchmakeResult(room=existing_room)
+
+            if not is_instant_duel(tournament_id):
+                self._cleanup_stale_single_player_rooms(tournament_id, tournament)
+            self._cleanup_empty_waiting_rooms(tournament_id)
+            self._release_user_from_ended_rooms(user_id, tournament_id)
+
+            existing_room = self._find_user_room(user_id, tournament_id)
+            if existing_room:
+                self._log_matchmake_join(
+                    user_uuid=user_uuid,
+                    tournament_id=tournament_id,
+                    room=existing_room,
+                    existing_player_count=self._room_player_count(existing_room.id),
+                    action="rejoin_after_cleanup",
+                    transaction_id=None,
+                )
+                return MatchmakeResult(room=existing_room)
+
+            open_room = self._find_open_room(tournament_id, for_update=True)
+            if open_room:
+                existing_count = self._room_player_count(open_room.id)
+                player = self.join_room(open_room, user_id, tournament)
+                tx_id = f"entry:{open_room.id}:{user_id}"
+                self._log_matchmake_join(
+                    user_uuid=user_uuid,
+                    tournament_id=tournament_id,
+                    room=open_room,
+                    existing_player_count=existing_count,
+                    action="joined_open_room",
+                    transaction_id=tx_id,
+                )
+                self._after_player_joined(open_room, player.user_id)
+                return MatchmakeResult(room=open_room)
+
+            # Second room created here when _find_open_room returns None (race / empty-room skip).
+            room = self._create_room(tournament_id, tournament)
+            self.join_room(room, user_id, tournament)
+            tx_id = f"entry:{room.id}:{user_id}"
+            self._log_matchmake_join(
+                user_uuid=user_uuid,
+                tournament_id=tournament_id,
+                room=room,
+                existing_player_count=0,
+                action="created_room",
+                transaction_id=tx_id,
+            )
+            payload = serialize_room(self.db, room)
+            schedule_room_updated(room.id, payload)
+            return MatchmakeResult(room=room)
+        finally:
+            self._release_matchmake_lock(lock_name)
+
+    def _acquire_matchmake_lock(self, lock_name: str) -> None:
+        acquired = self.db.execute(
+            text("SELECT GET_LOCK(:lock_name, :timeout)"),
+            {"lock_name": lock_name, "timeout": self.MATCHMAKE_LOCK_SECONDS},
+        ).scalar()
+        if acquired != 1:
+            raise ValueError("Matchmaking busy, try again")
+
+    def _release_matchmake_lock(self, lock_name: str) -> None:
+        self.db.execute(text("SELECT RELEASE_LOCK(:lock_name)"), {"lock_name": lock_name})
+
+    def _room_player_count(self, room_id: str) -> int:
+        return self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room_id).count()
+
+    def _log_matchmake_join(
+        self,
+        *,
+        user_uuid: str,
+        tournament_id: str,
+        room: TournamentRoom,
+        existing_player_count: int,
+        action: str,
+        transaction_id: str | None,
+    ) -> None:
+        self.db.refresh(room)
+        final_count = self._room_player_count(room.id)
         payload = serialize_room(self.db, room)
-        schedule_room_updated(room.id, payload)
-        return MatchmakeResult(room=room)
+        logger.info(
+            "MATCHMAKE_JOIN user_uuid=%s tournament_id=%s room_id=%s "
+            "existing_player_count=%s final_player_count=%s room_status=%s "
+            "action=%s transaction_id=%s start_countdown_seconds=%s match_start_at_ms=%s",
+            user_uuid,
+            tournament_id,
+            room.id,
+            existing_player_count,
+            final_count,
+            room.status,
+            action,
+            transaction_id,
+            payload.get("start_countdown_seconds"),
+            payload.get("match_start_at_ms"),
+        )
 
     def _lock_tournament_for_matchmake(self, tournament_id: str) -> None:
         """Serialize matchmaking per tournament — prevents duplicate 1-player duel rooms."""
@@ -348,7 +438,9 @@ class RoomManager:
 
         for room in rooms:
             count = self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).count()
-            if 0 < count < room.max_players:
+            # Include count==0: a committed room row may exist briefly before its first player is visible
+            # to a concurrent matcher unless the matchmake lock serializes joins.
+            if count < room.max_players:
                 return room
         return None
 

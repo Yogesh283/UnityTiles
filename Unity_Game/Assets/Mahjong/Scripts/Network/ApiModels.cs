@@ -87,10 +87,10 @@ namespace Mkey.Network
         [JsonProperty("player_count")] public int playerCount;
         [JsonProperty("max_players")] public int maxPlayers;
         [JsonProperty("waiting_seconds")] public int waitingSeconds;
-        [JsonProperty("waiting_seconds_remaining")] public int waitingSecondsRemaining;
-        [JsonProperty("start_countdown_seconds")] public int startCountdownSeconds;
-        [JsonProperty("match_start_at_ms")] public long matchStartAtMs;
-        [JsonProperty("server_now_ms")] public long serverNowMs;
+        [JsonProperty("waiting_seconds_remaining")] public int? waitingSecondsRemaining;
+        [JsonProperty("start_countdown_seconds")] public int? startCountdownSeconds;
+        [JsonProperty("match_start_at_ms")] public long? matchStartAtMs;
+        [JsonProperty("server_now_ms")] public long? serverNowMs;
         [JsonProperty("search_status")] public string searchStatus;
         [JsonProperty("wallet_balance")] public int? walletBalance;
         public bool queued;

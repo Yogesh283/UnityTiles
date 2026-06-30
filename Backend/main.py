@@ -68,11 +68,17 @@ def log_google_play_status() -> None:
 
 @app.get("/health")
 def health():
+    from deploy_info import deployed_git_info
+
     verifier = get_google_play_verifier()
+    git_info = deployed_git_info()
     return {
         "status": "ok",
         "service": "match-iq-api",
         "version": "2.0.0",
+        "git_branch": git_info.get("branch"),
+        "commit": git_info.get("commit"),
+        "commit_subject": git_info.get("subject"),
         "google_play_billing": verifier.is_configured,
         "billing_active": verifier.is_configured,
         "legal_pages": {

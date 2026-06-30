@@ -107,7 +107,7 @@ def serialize_room(db: Session, room: TournamentRoom) -> dict:
         "waiting_seconds": waiting_seconds,
         "waiting_seconds_remaining": waiting_seconds_remaining(room),
         "start_countdown_seconds": start_countdown_remaining(room),
-        "match_start_at_ms": match_start_at_ms(room),
+        "match_start_at_ms": match_start_at_ms(room) or 0,
         "server_now_ms": int(datetime.utcnow().timestamp() * 1000),
         "players": [serialize_player(db, player, room.tournament_id) for player in players],
     }
