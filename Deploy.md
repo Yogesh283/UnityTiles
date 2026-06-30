@@ -68,7 +68,7 @@ GitHub par **Merge pull request** karo.
 
 **Do not use `git pull origin main`** — tournament realtime code is only on:
 
-`feat/realtime-tournament-and-ui-fixes` (required commit: `1bc9567`)
+`feat/realtime-tournament-and-ui-fixes` (required commit: `767f74f`)
 
 ```bash
 ssh root@72.60.102.128
@@ -82,7 +82,7 @@ Verify from anywhere:
 
 ```bash
 curl -s https://api.matchiq.fun/health
-# must include: "commit":"1bc9567"
+# must include: "commit":"767f74f"
 ```
 
 Watch WebSocket during phone test:
@@ -95,7 +95,7 @@ journalctl -u matchiq-api -f | grep -Ei 'WebSocket|accepted|join|match_start|mat
 
 1. Unity: **Match IQ → Prepare APK Build** (embeds git commit)
 2. Build APK → uninstall old app → install on both phones
-3. `adb logcat | findstr "Match IQ Build"` → must show `Commit: 1bc9567`
+3. `adb logcat | findstr "Match IQ Build"` → must show `Commit: 767f74f`
 
 ---
 

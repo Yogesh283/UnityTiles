@@ -573,6 +573,9 @@ class RoomManager:
             return []
 
         players = self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room_id).all()
+        if not players:
+            raise ValueError("Room has no players")
+
         users = {
             u.id: u
             for u in self.db.query(User).filter(User.id.in_([p.user_id for p in players])).all()
@@ -592,46 +595,66 @@ class RoomManager:
             ]
         )
 
-        results = []
-        for player, rank in ranked:
-            prize = get_prize(room.tournament_id, rank)
-            db_player = next(p for p in players if p.user_id == player.user_id)
+        results: list[dict] = []
+        prize_credits: list[tuple[int, int, int]] = []
+        tournament_id = room.tournament_id
+
+        for ranked_player, rank in ranked:
+            prize = get_prize(tournament_id, rank)
+            db_player = (
+                self.db.query(RoomPlayer)
+                .filter(RoomPlayer.room_id == room_id, RoomPlayer.user_id == ranked_player.user_id)
+                .first()
+            )
+            if not db_player:
+                raise ValueError(f"Player {ranked_player.user_id} not found in room {room_id}")
+
             db_player.rank = rank
             db_player.prize = prize
             if not db_player.finished_at:
                 db_player.finished_at = datetime.utcnow()
 
-            if prize > 0:
-                self.wallet.credit_prize(player.user_id, prize, room_id, rank)
-
-            self.db.add(
-                TournamentResult(
-                    room_id=room_id,
-                    tournament_id=room.tournament_id,
-                    user_id=player.user_id,
-                    rank=rank,
-                    score=player.score,
-                    prize=prize,
+            existing_result = (
+                self.db.query(TournamentResult)
+                .filter(
+                    TournamentResult.room_id == room_id,
+                    TournamentResult.user_id == ranked_player.user_id,
                 )
+                .first()
             )
+            if not existing_result:
+                self.db.add(
+                    TournamentResult(
+                        room_id=room_id,
+                        tournament_id=tournament_id,
+                        user_id=ranked_player.user_id,
+                        rank=rank,
+                        score=ranked_player.score,
+                        prize=prize,
+                    )
+                )
 
-            entry = self.db.query(LeaderboardEntry).filter(LeaderboardEntry.user_id == player.user_id).first()
-            if not entry:
-                entry = LeaderboardEntry(user_id=player.user_id)
-                self.db.add(entry)
-            entry.tournaments_played += 1
-            entry.total_prize += prize
-            if rank == 1:
-                entry.total_wins += 1
-            if rank < entry.best_rank:
-                entry.best_rank = rank
+            entry = self.db.query(LeaderboardEntry).filter(LeaderboardEntry.user_id == ranked_player.user_id).first()
+            if not existing_result:
+                if not entry:
+                    entry = LeaderboardEntry(user_id=ranked_player.user_id)
+                    self.db.add(entry)
+                entry.tournaments_played += 1
+                entry.total_prize += prize
+                if rank == 1:
+                    entry.total_wins += 1
+                if rank < entry.best_rank:
+                    entry.best_rank = rank
+
+            if prize > 0:
+                prize_credits.append((ranked_player.user_id, prize, rank))
 
             results.append(
                 {
-                    "user_id": player.user_id,
-                    "user_uuid": users.get(player.user_id).user_uuid if users.get(player.user_id) else None,
+                    "user_id": ranked_player.user_id,
+                    "user_uuid": users.get(ranked_player.user_id).user_uuid if users.get(ranked_player.user_id) else None,
                     "rank": rank,
-                    "score": player.score,
+                    "score": ranked_player.score,
                     "prize": prize,
                 }
             )
@@ -639,6 +662,23 @@ class RoomManager:
         room.status = "finished"
         room.ended_at = datetime.utcnow()
         self.db.commit()
-        logger.info("match finished room_id=%s winner_user_id=%s", room_id, results[0]["user_id"] if results else None)
+
+        for user_id, prize, rank in prize_credits:
+            try:
+                self.wallet.credit_prize(user_id, prize, room_id, rank)
+            except Exception:
+                logger.exception(
+                    "prize credit failed room_id=%s user_id=%s rank=%s prize=%s",
+                    room_id,
+                    user_id,
+                    rank,
+                    prize,
+                )
+
+        logger.info(
+            "match finished room_id=%s winner_user_id=%s",
+            room_id,
+            results[0]["user_id"] if results else None,
+        )
         schedule_match_finished_broadcast(room_id, results)
         return results

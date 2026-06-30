@@ -455,10 +455,10 @@ namespace Mkey.Tournament
                 NameText.text = $"🙂 {displayName}";
                 UuidText.text = TournamentRankTier.FormatUuidLine(player.userUuid);
                 LevelText.text = TournamentRankTier.FormatLevelLine(
-                    player.gameLevel > 0
-                        ? player.gameLevel
+                    (player.gameLevel ?? 0) > 0
+                        ? player.gameLevel.Value
                         : (isLocal && GameLevelHolder.Instance ? GameLevelHolder.CurrentLevel + 1 : 1));
-                RankText.text = TournamentRankTier.FormatRankLine(player.currentRank, player.rankTier);
+                RankText.text = TournamentRankTier.FormatRankLine(player.currentRank ?? 0, player.rankTier);
 
                 bool online = player.isConnected;
                 OnlineText.text = online ? "● ONLINE" : "○ OFFLINE";

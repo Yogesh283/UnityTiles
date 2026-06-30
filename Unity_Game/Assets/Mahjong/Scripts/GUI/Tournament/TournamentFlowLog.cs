@@ -10,6 +10,16 @@ namespace Mkey.Tournament
         private const string Tag = "[TournamentFlow]";
 
         public static void Join(string message) => Debug.Log($"{Tag} JOIN {message}");
+        public static void JoinResponseParsed(
+            string roomId,
+            string status,
+            int playerCount,
+            long? matchStartAtMs) =>
+            Debug.Log(
+                $"{Tag} JOIN RESPONSE PARSED room_id={roomId} status={status} " +
+                $"playerCount={playerCount} match_start_at_ms={matchStartAtMs?.ToString() ?? "null"}");
+        public static void ConnectingWebSocket(string roomId) =>
+            Debug.Log($"{Tag} CONNECTING WEBSOCKET room_id={roomId}");
         public static void RoomCreated(string roomId) => Debug.Log($"{Tag} ROOM CREATED room_id={roomId}");
         public static void RoomId(string roomId) => Debug.Log($"{Tag} ROOM ID {roomId}");
         public static void PlayerJoined(string message) => Debug.Log($"{Tag} PLAYER JOINED {message}");

@@ -166,8 +166,22 @@ namespace Mkey.Network
                     if (string.IsNullOrWhiteSpace(request.downloadHandler.text))
                         return ApiResult<TResponse>.Ok(default);
 
-                    TResponse data = JsonConvert.DeserializeObject<TResponse>(request.downloadHandler.text);
-                    return ApiResult<TResponse>.Ok(data);
+                    try
+                    {
+                        TResponse data = JsonConvert.DeserializeObject<TResponse>(request.downloadHandler.text);
+                        return ApiResult<TResponse>.Ok(data);
+                    }
+                    catch (JsonSerializationException jex)
+                    {
+                        string path = string.IsNullOrEmpty(jex.Path) ? "(unknown)" : jex.Path;
+                        Debug.LogError(
+                            "[NetworkManager] JOIN RESPONSE PARSE FAILED path=" + path +
+                            " error=" + jex.Message);
+                        return ApiResult<TResponse>.Fail(
+                            "Response parse error at " + path + ": " + jex.Message,
+                            (int)code,
+                            false);
+                    }
                 }
 
                 string detail = ExtractErrorDetail(request.downloadHandler.text);

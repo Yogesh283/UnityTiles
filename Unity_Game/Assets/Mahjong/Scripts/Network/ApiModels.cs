@@ -105,14 +105,14 @@ namespace Mkey.Network
         public string username;
         [JsonProperty("display_name")] public string displayName;
         [JsonProperty("avatar_url")] public string avatarUrl;
-        [JsonProperty("current_rank")] public int currentRank;
-        [JsonProperty("game_level")] public int gameLevel;
+        [JsonProperty("current_rank")] public int? currentRank;
+        [JsonProperty("game_level")] public int? gameLevel;
         [JsonProperty("rank_tier")] public string rankTier;
         [JsonProperty("tournament_id")] public string tournamentId;
         public int score;
         public int moves;
         [JsonProperty("elapsed_seconds")] public int elapsedSeconds;
-        public int rank;
+        public int? rank;
         [JsonProperty("is_connected")] public bool isConnected;
         [JsonProperty("has_submitted")] public bool hasSubmitted;
     }
