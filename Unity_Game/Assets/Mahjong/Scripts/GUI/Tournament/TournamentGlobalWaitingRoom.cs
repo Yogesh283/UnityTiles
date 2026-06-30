@@ -9,7 +9,7 @@ namespace Mkey.Tournament
     /// </summary>
     public class TournamentGlobalWaitingRoom : MonoBehaviour
     {
-        private const int SortOrder = 4500;
+        private const int SortOrder = 9000;
 
         private static TournamentGlobalWaitingRoom instance;
 

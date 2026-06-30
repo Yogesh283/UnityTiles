@@ -60,7 +60,10 @@ namespace Mkey.Network
         private async void ConnectInternal(string roomId)
         {
             if (string.IsNullOrEmpty(roomId) || !NetworkManager.HasInstance || !NetworkManager.Instance.IsAuthenticated)
+            {
+                Debug.LogWarning("[TournamentWS] connect skipped — missing room id or auth.");
                 return;
+            }
 
             if (activeRoomId == roomId && IsConnected)
                 return;
@@ -71,19 +74,28 @@ namespace Mkey.Network
             string token = Uri.EscapeDataString(NetworkManager.Instance.AccessToken);
             string url = ApiConfig.Current.WebSocketRoot + "/" + roomId + "?token=" + token;
 
-            socket = new ClientWebSocket();
-            cancelSource = new CancellationTokenSource();
+            const int maxAttempts = 3;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                socket = new ClientWebSocket();
+                cancelSource = new CancellationTokenSource();
 
-            try
-            {
-                await socket.ConnectAsync(new Uri(url), cancelSource.Token);
-                _ = ReceiveLoop();
-                _ = PingLoop();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("[TournamentWS] connect failed: " + ex.Message);
-                DisconnectInternal();
+                try
+                {
+                    Debug.Log($"[TournamentWS] connecting ({attempt}/{maxAttempts}) room={roomId}");
+                    await socket.ConnectAsync(new Uri(url), cancelSource.Token);
+                    Debug.Log("[TournamentWS] connected room=" + roomId);
+                    _ = ReceiveLoop();
+                    _ = PingLoop();
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[TournamentWS] connect failed ({attempt}/{maxAttempts}): " + ex.Message);
+                    DisconnectInternal();
+                    if (attempt < maxAttempts)
+                        await Task.Delay(attempt * 500);
+                }
             }
         }
 

@@ -10,10 +10,14 @@ namespace Mkey.Tournament
     {
         public static void OnPageShown(Action refreshWallet)
         {
-            TournamentGlobalWaitingRoom.Hide();
-            TournamentJoinFlowGuard.Reset();
+            // Keep active matchmaking overlay visible (OnEnable also fires on app resume).
+            if (!TournamentGlobalWaitingRoom.IsVisible && !TournamentSession.IsActive)
+                TournamentGlobalWaitingRoom.Hide();
 
-            if (!TournamentMatchManager.HasActiveRoom)
+            if (!TournamentGlobalWaitingRoom.IsVisible)
+                TournamentJoinFlowGuard.Reset();
+
+            if (!TournamentMatchManager.HasActiveRoom && !TournamentSession.IsActive)
                 TournamentApiBridge.Clear();
 
             refreshWallet?.Invoke();
