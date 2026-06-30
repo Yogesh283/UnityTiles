@@ -17,11 +17,22 @@ public static class MatchIQAppIconSetup
     private const string ForegroundPath = GeneratedFolder + "/AndroidAppIconForeground.png";
     private const string BackgroundPath = GeneratedFolder + "/AndroidAppIconBackground.png";
     private const string LegacyPath = GeneratedFolder + "/AndroidAppIconLegacy.png";
+    private const string AndroidResRoot = "Assets/Plugins/Android/res";
 
     private const float IconContentScale = 0.92f;
+    private const float AdaptiveForegroundScale = 0.68f;
     private const int IconTextureSize = 1024;
 
     private static readonly Color BackgroundColor = new Color(0.04f, 0.09f, 0.05f, 1f);
+
+    private static readonly (string folder, int legacySize, int adaptiveSize)[] LauncherDensities =
+    {
+        ("mipmap-mdpi", 48, 108),
+        ("mipmap-hdpi", 72, 162),
+        ("mipmap-xhdpi", 96, 216),
+        ("mipmap-xxhdpi", 144, 324),
+        ("mipmap-xxxhdpi", 192, 432),
+    };
 
     [MenuItem("Match IQ/Apply App Logo As Android Icon")]
     public static void ApplyFromMenu()
@@ -29,7 +40,7 @@ public static class MatchIQAppIconSetup
         if (ApplyAppLogo())
         {
             Debug.Log(
-                "[Match IQ] Android icons updated (Adaptive + Legacy + Round).\n" +
+                "[Match IQ] Android icons updated (Player Settings + Plugins/Android/res).\n" +
                 "Next: Build a new APK, uninstall the old app from your phone, then install the new build.");
         }
         else
@@ -73,6 +84,8 @@ public static class MatchIQAppIconSetup
             SaveTexture(foreground, ForegroundPath);
             SaveTexture(composite, LegacyPath);
 
+            GenerateAndroidResMipmaps(logo);
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
@@ -85,11 +98,12 @@ public static class MatchIQAppIconSetup
                 return false;
             }
 
-            ConfigureAndroidIcons(iconForeground, iconBackground, iconLegacy);
+            // Use the full opaque composite for adaptive foreground — avoids black-circle launcher bugs.
+            ConfigureAndroidIcons(composite, iconBackground, iconLegacy);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            if (!VerifyAndroidIconsConfigured(iconForeground, iconBackground, iconLegacy))
+            if (!VerifyAndroidIconsConfigured(iconLegacy, iconBackground, iconLegacy))
             {
                 Debug.LogError("[Match IQ] PlayerSettings icons were not applied. Re-open Project Settings > Player > Android > Icon.");
                 return false;
@@ -121,7 +135,7 @@ public static class MatchIQAppIconSetup
     {
         var target = NamedBuildTarget.Android;
 
-        if (!IconsMatch(target, AndroidPlatformIconKind.Adaptive, foreground, background))
+        if (!IconsMatch(target, AndroidPlatformIconKind.Adaptive, legacy, background))
             return false;
         if (!IconsMatch(target, AndroidPlatformIconKind.Legacy, legacy, null))
             return false;
@@ -151,16 +165,81 @@ public static class MatchIQAppIconSetup
         return textures.Length >= 2 && textures[1] == secondary;
     }
 
-    private static void ConfigureAndroidIcons(Texture2D foreground, Texture2D background, Texture2D legacy)
+    private static void ConfigureAndroidIcons(Texture2D adaptiveForeground, Texture2D background, Texture2D legacy)
     {
         var target = NamedBuildTarget.Android;
 
-        // Adaptive: transparent foreground + solid background layer.
-        SetAllIcons(target, AndroidPlatformIconKind.Adaptive, foreground, background);
-
-        // Legacy + round are still used by many Android launchers and older devices.
+        SetAllIcons(target, AndroidPlatformIconKind.Adaptive, adaptiveForeground, background);
         SetAllIcons(target, AndroidPlatformIconKind.Round, legacy, null);
         SetAllIcons(target, AndroidPlatformIconKind.Legacy, legacy, null);
+    }
+
+    /// <summary>
+    /// Writes standard Android mipmap resources so the APK always ships real launcher icons.
+    /// </summary>
+    private static void GenerateAndroidResMipmaps(Texture2D logo)
+    {
+        string root = ToAbsoluteAssetPath(AndroidResRoot);
+        Directory.CreateDirectory(root);
+
+        foreach ((string folder, int legacySize, int adaptiveSize) in LauncherDensities)
+        {
+            string densityDir = Path.Combine(root, folder);
+            Directory.CreateDirectory(densityDir);
+
+            WritePng(Path.Combine(densityDir, "ic_launcher.png"), BuildLegacyIconAtSize(logo, legacySize));
+            WritePng(Path.Combine(densityDir, "ic_launcher_foreground.png"), BuildForegroundIconAtSize(logo, adaptiveSize));
+            WritePng(Path.Combine(densityDir, "ic_launcher_background.png"), BuildSolidTextureAtSize(BackgroundColor, adaptiveSize));
+        }
+
+        string anyDpiDir = Path.Combine(root, "mipmap-anydpi-v26");
+        Directory.CreateDirectory(anyDpiDir);
+
+        const string adaptiveXml =
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<adaptive-icon xmlns:android=\"http://schemas.android.com/apk/res/android\">\n" +
+            "    <background android:drawable=\"@mipmap/ic_launcher_background\"/>\n" +
+            "    <foreground android:drawable=\"@mipmap/ic_launcher_foreground\"/>\n" +
+            "</adaptive-icon>\n";
+
+        File.WriteAllText(Path.Combine(anyDpiDir, "ic_launcher.xml"), adaptiveXml);
+        File.WriteAllText(Path.Combine(anyDpiDir, "ic_launcher_round.xml"), adaptiveXml);
+
+        AssetDatabase.ImportAsset(AndroidResRoot, ImportAssetOptions.ImportRecursive);
+    }
+
+    private static Texture2D BuildLegacyIconAtSize(Texture2D source, int size)
+    {
+        var canvas = NewClearTexture(size);
+        FillColor(canvas, BackgroundColor);
+        BlitScaled(source, canvas, IconContentScale, keyBlackBackground: true);
+        return canvas;
+    }
+
+    private static Texture2D BuildForegroundIconAtSize(Texture2D source, int size)
+    {
+        var canvas = NewClearTexture(size);
+        BlitScaled(source, canvas, AdaptiveForegroundScale, keyBlackBackground: true);
+        return canvas;
+    }
+
+    private static Texture2D BuildSolidTextureAtSize(Color color, int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        FillColor(tex, color);
+        return tex;
+    }
+
+    private static void WritePng(string fullPath, Texture2D texture)
+    {
+        try
+        {
+            File.WriteAllBytes(fullPath, texture.EncodeToPNG());
+        }
+        finally
+        {
+            Object.DestroyImmediate(texture);
+        }
     }
 
     private static Texture2D LoadIconTexture(string assetPath)
@@ -365,7 +444,7 @@ public static class MatchIQAppIconSetup
         var settings = new TextureImporterPlatformSettings
         {
             name = platform,
-            overridden = platform != "DefaultTexturePlatform",
+            overridden = true,
             maxTextureSize = IconTextureSize,
             format = TextureImporterFormat.RGBA32,
             textureCompression = TextureImporterCompression.Uncompressed,
