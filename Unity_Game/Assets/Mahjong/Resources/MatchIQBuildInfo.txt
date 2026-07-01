@@ -1,2 +1,2 @@
-c2db5a7
-Fix tournament join diagnostics, Android app icon, and plugin collision.
+9fce073
+Fix tournament page lifecycle freeze and Android input settings.
