@@ -1,2 +1,2 @@
-9fce073
-Fix tournament page lifecycle freeze and Android input settings.
+1e4b239
+Improve tournament WebSocket connect diagnostics on Android.

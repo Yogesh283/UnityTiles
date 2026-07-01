@@ -113,6 +113,7 @@ namespace Mkey.Network
         public int moves;
         [JsonProperty("elapsed_seconds")] public int elapsedSeconds;
         public int? rank;
+        public int prize;
         [JsonProperty("is_connected")] public bool isConnected;
         [JsonProperty("has_submitted")] public bool hasSubmitted;
     }
@@ -146,6 +147,7 @@ namespace Mkey.Network
         public int rank;
         public int prize;
         [JsonProperty("room_status")] public string roomStatus;
+        [JsonProperty("wallet_balance")] public int? walletBalance;
     }
 
     [Serializable]

@@ -70,6 +70,7 @@ def serialize_player(db: Session, player: RoomPlayer, tournament_id: str) -> dic
         "moves": player.moves,
         "elapsed_seconds": player.elapsed_seconds,
         "rank": player.rank,
+        "prize": player.prize or 0,
         "is_connected": player.is_connected,
         "has_submitted": player.submitted_at is not None,
     }

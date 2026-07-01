@@ -560,7 +560,11 @@ class RoomManager:
         room.status = "locked"
         self.db.commit()
         schedule_room_updated(room.id, serialize_room(self.db, room))
-        return self.finalize_room(room.id)
+        results = self.finalize_room(room.id)
+        finished_room = self.db.query(TournamentRoom).filter(TournamentRoom.id == room.id).first()
+        if finished_room:
+            schedule_room_updated(room.id, serialize_room(self.db, finished_room))
+        return results
 
     def try_auto_finalize(self, room_id: str) -> bool:
         return self.try_instant_finalize(room_id) is not None
@@ -659,21 +663,15 @@ class RoomManager:
                 }
             )
 
+        for user_id, prize, rank in prize_credits:
+            self.wallet.credit_prize(user_id, prize, room_id, rank)
+
         room.status = "finished"
         room.ended_at = datetime.utcnow()
         self.db.commit()
 
-        for user_id, prize, rank in prize_credits:
-            try:
-                self.wallet.credit_prize(user_id, prize, room_id, rank)
-            except Exception:
-                logger.exception(
-                    "prize credit failed room_id=%s user_id=%s rank=%s prize=%s",
-                    room_id,
-                    user_id,
-                    rank,
-                    prize,
-                )
+        for entry in results:
+            entry["wallet_balance"] = self.wallet.get_balance(entry["user_id"])
 
         logger.info(
             "match finished room_id=%s winner_user_id=%s",

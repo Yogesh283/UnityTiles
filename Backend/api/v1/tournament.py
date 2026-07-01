@@ -231,12 +231,14 @@ def submit_score(
     else:
         logger.info("submit-score stored room_id=%s user_id=%s waiting_finalize", payload.room_id, user.id)
 
+    wallet_balance = WalletService(db).get_balance(user.id)
     return SubmitScoreResponse(
         ok=True,
         finalized=results is not None,
         rank=player.rank,
         prize=player.prize or 0,
         room_status=room.status,
+        wallet_balance=wallet_balance,
     )
 
 

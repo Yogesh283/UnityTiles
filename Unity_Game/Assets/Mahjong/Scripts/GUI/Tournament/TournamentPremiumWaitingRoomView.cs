@@ -13,12 +13,15 @@ namespace Mkey.Tournament
     {
         private Text titleText;
         private Text roomIdText;
+        private Text entryFeeText;
+        private Text prizeText;
         private Text playersText;
         private Text statusText;
         private Text searchText;
         private Text connectionText;
         private Text timerText;
         private Image searchPulseImage;
+        private RectTransform searchRing;
         private RectTransform duelRow;
         private RectTransform listRoot;
         private readonly List<PlayerCardView> duelCards = new List<PlayerCardView>();
@@ -85,15 +88,19 @@ namespace Mkey.Tournament
             string phase = string.IsNullOrEmpty(snap.searchStatus) ? "searching" : snap.searchStatus;
             int current = snap.hasRoom ? snap.currentPlayers : 1;
             int max = snap.maxPlayers > 0 ? snap.maxPlayers : tournament.maxPlayers;
+            bool duel = max <= 2;
+            bool roomFull = current >= max;
 
             titleText.text = $"{tournament.icon} {tournament.displayName}";
             roomIdText.text = snap.hasRoom && !string.IsNullOrEmpty(snap.roomId)
                 ? $"Room ID: {TournamentRoom.FormatShortId(snap.roomId)}"
                 : "Room ID: —";
+            entryFeeText.text = $"Entry Fee: {tournament.entryFee:N0} Coins";
+            prizeText.text = $"Prize: {TournamentPrizeTable.GetPrize(tournament.id, 1):N0} Coins";
 
             playersText.text = $"{current} / {max} Players";
             connectionText.text = TournamentApiBridge.IsOnlineMode
-                ? (TournamentRoomWebSocket.IsConnected ? "● Connected — Live" : "○ Connecting...")
+                ? (TournamentRoomWebSocket.IsConnected ? "● Live — Connected" : "○ Connecting to server...")
                 : "● Local Practice";
 
             if (snap.status == "starting" || phase == "match_found")
@@ -101,8 +108,23 @@ namespace Mkey.Tournament
                 statusText.text = "MATCH FOUND";
                 statusText.color = new Color(0.4f, 1f, 0.55f);
                 int cd = TournamentServerClock.DisplayCountdownSeconds();
-                timerText.text = cd > 0 ? $"Starting in {cd}..." : "GO!";
-                searchText.text = "Get ready!";
+                timerText.text = cd > 0 ? cd.ToString() : "START";
+                searchText.text = cd > 0 ? "Get ready..." : "GO!";
+            }
+            else if (roomFull)
+            {
+                statusText.text = "OPPONENT FOUND";
+                statusText.color = new Color(0.55f, 0.85f, 1f);
+                timerText.text = FormatWaitTimer(snap);
+                searchText.text = "Preparing match...";
+            }
+            else if (duel)
+            {
+                statusText.text = "FINDING OPPONENT";
+                statusText.color = new Color(1f, 0.92f, 0.55f);
+                timerText.text = FormatWaitTimer(snap);
+                int dots = 1 + (Mathf.FloorToInt(searchPulse * 2f) % 3);
+                searchText.text = "Finding Opponent..." + new string('.', dots);
             }
             else if (phase == "players_connected" || current >= max)
             {
@@ -129,8 +151,15 @@ namespace Mkey.Tournament
 
             if (searchPulseImage)
             {
-                float a = 0.15f + Mathf.PingPong(searchPulse * 1.5f, 0.2f);
+                float a = 0.12f + Mathf.PingPong(searchPulse * 1.5f, 0.18f);
                 searchPulseImage.color = new Color(1f, 0.82f, 0.2f, a);
+            }
+
+            if (searchRing)
+            {
+                searchRing.Rotate(0f, 0f, -45f * Time.deltaTime);
+                float ringScale = 1f + Mathf.PingPong(searchPulse, 0.06f);
+                searchRing.localScale = Vector3.one * ringScale;
             }
 
             List<RoomPlayerDto> players = BuildPlayerList(snap, tournament, current, max);
@@ -225,27 +254,53 @@ namespace Mkey.Tournament
         private void RefreshDuelCards(List<RoomPlayerDto> players, int max)
         {
             EnsureDuelCards(max);
+
+            RoomPlayerDto local = null;
+            RoomPlayerDto opponent = null;
+            int localUserId = NetworkManager.HasInstance ? NetworkManager.Instance.UserId : 0;
+            foreach (RoomPlayerDto dto in players)
+            {
+                if (dto == null) continue;
+                if (dto.userId == localUserId || (localUserId == 0 && dto.displayName == "You"))
+                    local = dto;
+                else if (opponent == null)
+                    opponent = dto;
+            }
+
+            if (local == null && players.Count > 0)
+                local = players[0];
+            if (opponent == null)
+            {
+                foreach (RoomPlayerDto dto in players)
+                {
+                    if (dto != null && dto != local)
+                    {
+                        opponent = dto;
+                        break;
+                    }
+                }
+            }
+
             float[] anchors = { 0f, 0.58f };
             float[] anchorMax = { 0.38f, 1f };
 
-            for (int i = 0; i < duelCards.Count; i++)
+            duelCards[0].Root.gameObject.SetActive(true);
+            RectTransform leftRt = duelCards[0].Root;
+            leftRt.anchorMin = new Vector2(anchors[0], 0f);
+            leftRt.anchorMax = new Vector2(anchorMax[0], 1f);
+            leftRt.offsetMin = Vector2.zero;
+            leftRt.offsetMax = Vector2.zero;
+            duelCards[0].Bind(local, true, local != null);
+
+            if (duelCards.Count > 1)
             {
-                if (i >= max)
-                {
-                    duelCards[i].Root.gameObject.SetActive(false);
-                    continue;
-                }
-
-                duelCards[i].Root.gameObject.SetActive(true);
-                RectTransform rt = duelCards[i].Root;
-                rt.anchorMin = new Vector2(anchors[i], 0f);
-                rt.anchorMax = new Vector2(anchorMax[i], 1f);
-                rt.offsetMin = Vector2.zero;
-                rt.offsetMax = Vector2.zero;
-
-                RoomPlayerDto dto = i < players.Count ? players[i] : null;
-                bool isLocal = dto != null && IsLocalPlayer(dto);
-                duelCards[i].Bind(dto, isLocal, dto != null);
+                duelCards[1].Root.gameObject.SetActive(true);
+                RectTransform rightRt = duelCards[1].Root;
+                rightRt.anchorMin = new Vector2(anchors[1], 0f);
+                rightRt.anchorMax = new Vector2(anchorMax[1], 1f);
+                rightRt.offsetMin = Vector2.zero;
+                rightRt.offsetMax = Vector2.zero;
+                duelCards[1].Bind(opponent, false, opponent != null);
             }
         }
 
@@ -298,45 +353,75 @@ namespace Mkey.Tournament
 
         private void BuildUi()
         {
-            Image backdrop = CreateImage(transform, "Backdrop", new Color(0.02f, 0.06f, 0.05f, 0.96f));
+            Image backdrop = CreateImage(transform, "Backdrop", new Color(0.01f, 0.04f, 0.03f, 0.97f));
             Stretch(backdrop.rectTransform);
 
-            Image panel = CreateImage(transform, "Panel", new Color(0.06f, 0.14f, 0.1f, 0.98f));
+            Image glass = CreateImage(transform, "Glass", new Color(0.08f, 0.16f, 0.12f, 0.72f));
+            Stretch(glass.rectTransform);
+
+            Image panel = CreateImage(transform, "Panel", new Color(0.06f, 0.14f, 0.1f, 0.94f));
             RectTransform panelRt = panel.rectTransform;
-            panelRt.anchorMin = new Vector2(0.04f, 0.06f);
-            panelRt.anchorMax = new Vector2(0.96f, 0.94f);
+            panelRt.anchorMin = new Vector2(0.03f, 0.04f);
+            panelRt.anchorMax = new Vector2(0.97f, 0.96f);
             panelRt.offsetMin = Vector2.zero;
             panelRt.offsetMax = Vector2.zero;
 
-            searchPulseImage = CreateImage(panel.transform, "SearchPulse", new Color(1f, 0.82f, 0.2f, 0.12f));
+            Image panelBorder = CreateImage(panel.transform, "Border", new Color(1f, 0.84f, 0.38f, 0.35f));
+            RectTransform borderRt = panelBorder.rectTransform;
+            borderRt.anchorMin = Vector2.zero;
+            borderRt.anchorMax = Vector2.one;
+            borderRt.offsetMin = new Vector2(-2f, -2f);
+            borderRt.offsetMax = new Vector2(2f, 2f);
+            panelBorder.raycastTarget = false;
+
+            searchPulseImage = CreateImage(panel.transform, "SearchPulse", new Color(1f, 0.82f, 0.2f, 0.1f));
             Stretch(searchPulseImage.rectTransform);
 
-            titleText = CreateText(panel.transform, "Tournament", 42, FontStyle.Bold, TournamentPremiumTheme.GoldBright);
-            LayoutTop(titleText.rectTransform, 0.9f, 0.98f);
+            GameObject ringGo = new GameObject("SearchRing", typeof(RectTransform), typeof(Image));
+            ringGo.transform.SetParent(panel.transform, false);
+            searchRing = ringGo.GetComponent<RectTransform>();
+            searchRing.anchorMin = new Vector2(0.35f, 0.44f);
+            searchRing.anchorMax = new Vector2(0.65f, 0.62f);
+            searchRing.offsetMin = Vector2.zero;
+            searchRing.offsetMax = Vector2.zero;
+            Image ringImage = ringGo.GetComponent<Image>();
+            ringImage.color = new Color(1f, 0.82f, 0.2f, 0.22f);
+            ringImage.raycastTarget = false;
 
-            roomIdText = CreateText(panel.transform, "Room ID", 22, FontStyle.Normal, new Color(0.75f, 0.75f, 0.8f));
-            LayoutTop(roomIdText.rectTransform, 0.83f, 0.9f);
+            titleText = CreateText(panel.transform, "Tournament", 44, FontStyle.Bold, TournamentPremiumTheme.GoldBright);
+            LayoutTop(titleText.rectTransform, 0.91f, 0.98f);
 
-            playersText = CreateText(panel.transform, "1 / 2 Players", 28, FontStyle.Bold, Color.white);
-            LayoutTop(playersText.rectTransform, 0.76f, 0.83f);
+            roomIdText = CreateText(panel.transform, "Room ID", 20, FontStyle.Normal, TournamentPremiumTheme.TextMuted);
+            LayoutTop(roomIdText.rectTransform, 0.86f, 0.91f);
 
-            statusText = CreateText(panel.transform, "SEARCHING", 34, FontStyle.Bold, new Color(1f, 0.92f, 0.55f));
-            LayoutTop(statusText.rectTransform, 0.68f, 0.76f);
+            entryFeeText = CreateText(panel.transform, "Entry Fee", 22, FontStyle.Bold, TournamentPremiumTheme.TextSoft);
+            LayoutTop(entryFeeText.rectTransform, 0.81f, 0.86f);
+            entryFeeText.alignment = TextAnchor.MiddleLeft;
 
-            searchText = CreateText(panel.transform, "Searching...", 24, FontStyle.Italic, new Color(0.9f, 0.9f, 0.95f));
-            LayoutTop(searchText.rectTransform, 0.61f, 0.68f);
+            prizeText = CreateText(panel.transform, "Prize", 22, FontStyle.Bold, TournamentPremiumTheme.GoldBright);
+            LayoutTop(prizeText.rectTransform, 0.81f, 0.86f);
+            prizeText.alignment = TextAnchor.MiddleRight;
 
-            timerText = CreateText(panel.transform, "00:12", 30, FontStyle.Bold, Color.white);
-            LayoutTop(timerText.rectTransform, 0.54f, 0.61f);
+            playersText = CreateText(panel.transform, "1 / 2 Players", 26, FontStyle.Bold, Color.white);
+            LayoutTop(playersText.rectTransform, 0.75f, 0.81f);
 
-            connectionText = CreateText(panel.transform, "Connecting...", 20, FontStyle.Normal, new Color(0.5f, 1f, 0.65f));
-            LayoutTop(connectionText.rectTransform, 0.02f, 0.08f);
+            statusText = CreateText(panel.transform, "SEARCHING", 32, FontStyle.Bold, new Color(1f, 0.92f, 0.55f));
+            LayoutTop(statusText.rectTransform, 0.68f, 0.75f);
+
+            searchText = CreateText(panel.transform, "Finding Opponent...", 24, FontStyle.Italic, TournamentPremiumTheme.TextSoft);
+            LayoutTop(searchText.rectTransform, 0.62f, 0.68f);
+
+            timerText = CreateText(panel.transform, "00:12", 36, FontStyle.Bold, TournamentPremiumTheme.GoldBright);
+            LayoutTop(timerText.rectTransform, 0.55f, 0.62f);
+
+            connectionText = CreateText(panel.transform, "Connecting...", 18, FontStyle.Normal, new Color(0.5f, 1f, 0.65f));
+            LayoutTop(connectionText.rectTransform, 0.02f, 0.07f);
 
             GameObject duelHost = new GameObject("DuelRow", typeof(RectTransform));
             duelHost.transform.SetParent(panel.transform, false);
             duelRow = duelHost.GetComponent<RectTransform>();
-            duelRow.anchorMin = new Vector2(0.04f, 0.12f);
-            duelRow.anchorMax = new Vector2(0.96f, 0.52f);
+            duelRow.anchorMin = new Vector2(0.04f, 0.1f);
+            duelRow.anchorMax = new Vector2(0.96f, 0.5f);
             duelRow.offsetMin = Vector2.zero;
             duelRow.offsetMax = Vector2.zero;
 
@@ -456,13 +541,12 @@ namespace Mkey.Tournament
             {
                 if (!occupied)
                 {
-                    NameText.text = "Searching...";
-                    UuidText.text = "Waiting for player";
+                    NameText.text = "Searching for Player...";
+                    UuidText.text = string.Empty;
                     LevelText.text = string.Empty;
                     RankText.text = string.Empty;
-                    OnlineText.text = "○ OFFLINE";
-                    OnlineText.color = new Color(0.55f, 0.55f, 0.6f);
-                    AvatarImage.color = new Color(0.2f, 0.2f, 0.24f);
+                    OnlineText.text = string.Empty;
+                    AvatarImage.color = new Color(0.14f, 0.16f, 0.2f, 0.85f);
                     AvatarImage.sprite = null;
                     return;
                 }
@@ -473,12 +557,9 @@ namespace Mkey.Tournament
                 if (isLocal && string.IsNullOrEmpty(displayName))
                     displayName = "You";
 
-                NameText.text = $"🙂 {displayName}";
+                NameText.text = displayName;
                 UuidText.text = TournamentRankTier.FormatUuidLine(player.userUuid);
-                LevelText.text = TournamentRankTier.FormatLevelLine(
-                    (player.gameLevel ?? 0) > 0
-                        ? player.gameLevel.Value
-                        : (isLocal && GameLevelHolder.Instance ? GameLevelHolder.CurrentLevel + 1 : 1));
+                LevelText.text = string.Empty;
                 RankText.text = TournamentRankTier.FormatRankLine(player.currentRank ?? 0, player.rankTier);
 
                 bool online = player.isConnected;

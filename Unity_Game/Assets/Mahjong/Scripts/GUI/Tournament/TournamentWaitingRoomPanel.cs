@@ -14,12 +14,14 @@ namespace Mkey.Tournament
         private TournamentVsIntroView vsIntro;
         private TournamentDefinition tournament;
         private int currentPlayers;
+        private int lastObservedPlayerCount;
         private float timeLeft;
         private Action onComplete;
         private bool launchStarted;
         private float searchPulse;
         private bool isVisible;
         private bool vsIntroPlayed;
+        private bool isDuel;
 
         public bool IsShowing => isVisible && premiumView != null && premiumView.IsVisible;
 
@@ -33,6 +35,8 @@ namespace Mkey.Tournament
             launchStarted = false;
             searchPulse = 0f;
             vsIntroPlayed = false;
+            isDuel = data != null && data.maxPlayers <= 2;
+            lastObservedPlayerCount = 0;
 
             TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(data.id);
             currentPlayers = snap.hasRoom ? snap.currentPlayers : 1;
@@ -55,6 +59,7 @@ namespace Mkey.Tournament
             vsIntro?.Hide();
             premiumView?.Hide();
             isVisible = false;
+            launchStarted = false;
         }
 
         public static TournamentWaitingRoomPanel Create(Transform parent)
@@ -83,6 +88,20 @@ namespace Mkey.Tournament
                 timeLeft = snap.countdownSeconds;
             }
 
+            if (isDuel && lastObservedPlayerCount >= tournament.maxPlayers &&
+                snap.currentPlayers < tournament.maxPlayers)
+            {
+                vsIntroPlayed = false;
+                vsIntro?.Hide();
+                if (launchStarted)
+                {
+                    launchStarted = false;
+                    StopAllCoroutines();
+                    StartCoroutine(WaitingRoutine());
+                }
+            }
+
+            lastObservedPlayerCount = snap.currentPlayers;
             RefreshView();
         }
 
@@ -99,6 +118,7 @@ namespace Mkey.Tournament
         private IEnumerator WaitingRoutine()
         {
             float fallbackPoll = 0f;
+            float localSimStartedAt = Time.realtimeSinceStartup;
 
             while (!launchStarted)
             {
@@ -108,7 +128,7 @@ namespace Mkey.Tournament
                 if (TournamentApiBridge.IsOnlineMode)
                 {
                     fallbackPoll += Time.deltaTime;
-                    if (fallbackPoll >= 1.5f)
+                    if (fallbackPoll >= 1.0f)
                     {
                         fallbackPoll = 0f;
                         yield return RefreshApiRoomCoroutine();
@@ -122,14 +142,47 @@ namespace Mkey.Tournament
                     timeLeft = snap.countdownSeconds;
                 }
 
-                if (snap.status == "starting" || snap.status == "active" || snap.shouldLaunch)
+                lastObservedPlayerCount = currentPlayers;
+
+                if (TryHandleSearchTimeout(snap))
+                {
+                    yield return HandleSearchTimeoutRoutine();
+                    yield break;
+                }
+
+                bool roomFull = currentPlayers >= tournament.maxPlayers;
+                bool serverCountdown = snap.status == "starting";
+                bool serverActive = snap.status == "active";
+
+                if (isDuel && roomFull && (serverCountdown || serverActive))
                 {
                     launchStarted = true;
                     yield return RunMatchStartSequence(snap);
                     yield break;
                 }
 
-                if (!TournamentApiBridge.IsOnlineMode &&
+                if (!isDuel && (serverCountdown || serverActive || snap.shouldLaunch) && roomFull)
+                {
+                    launchStarted = true;
+                    yield return RunMatchStartSequence(snap);
+                    yield break;
+                }
+
+                if (!TournamentApiBridge.IsOnlineMode && isDuel)
+                {
+                    if (Time.realtimeSinceStartup - localSimStartedAt >= tournament.waitingSeconds + 2f)
+                    {
+                        TournamentRoomRegistry.ForcePrepareForLaunch();
+                        currentPlayers = tournament.maxPlayers;
+                        snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
+                        launchStarted = true;
+                        RefreshView();
+                        yield return RunMatchStartSequence(snap);
+                        yield break;
+                    }
+                }
+
+                if (!TournamentApiBridge.IsOnlineMode && !isDuel &&
                     Time.realtimeSinceStartup >= tournament.waitingSeconds + 5f)
                 {
                     TournamentRoomRegistry.ForcePrepareForLaunch();
@@ -145,6 +198,53 @@ namespace Mkey.Tournament
             }
         }
 
+        private bool TryHandleSearchTimeout(TournamentRoomSnapshot snap)
+        {
+            if (!TournamentApiBridge.IsOnlineMode || !isDuel || !snap.hasRoom)
+                return false;
+            if (currentPlayers >= tournament.maxPlayers)
+                return false;
+            if (snap.status != "waiting")
+                return false;
+
+            float remaining = snap.countdownSeconds;
+            if (remaining > 0f)
+                return false;
+
+            return true;
+        }
+
+        private IEnumerator HandleSearchTimeoutRoutine()
+        {
+            launchStarted = true;
+            Hide();
+
+            if (NetworkManager.HasInstance)
+            {
+                var walletTask = WalletService.SyncToCoinsHolderAsync();
+                while (!walletTask.IsCompleted)
+                    yield return null;
+            }
+
+            TournamentApiBridge.Clear();
+            TournamentJoinFlowGuard.Reset();
+            TournamentSession.Clear();
+
+            bool closed = false;
+            TournamentMessagePopup.Show(
+                "No Opponent Found",
+                "We couldn't find an opponent in time.\n\nPlease try again.",
+                () =>
+                {
+                    if (closed) return;
+                    closed = true;
+                    TournamentPageLifecycle.OnReturningFromMatch(null);
+                },
+                autoCloseSeconds: 4f);
+
+            yield return new WaitForSecondsRealtime(4.5f);
+        }
+
         private IEnumerator RunMatchStartSequence(TournamentRoomSnapshot snap)
         {
             if ((TournamentApiBridge.CurrentRoom?.serverNowMs ?? 0) > 0)
@@ -155,12 +255,28 @@ namespace Mkey.Tournament
             else if ((TournamentApiBridge.CurrentRoom?.matchStartAtMs ?? 0) > 0)
                 TournamentServerClock.ScheduleServerStart(TournamentApiBridge.CurrentRoom.matchStartAtMs.Value);
 
-            if (!vsIntroPlayed && tournament.maxPlayers <= 2)
+            if (isDuel && currentPlayers >= tournament.maxPlayers)
             {
-                vsIntroPlayed = true;
                 RoomPlayerDto local = FindLocalPlayer(snap);
                 RoomPlayerDto opponent = FindOpponentPlayer(snap);
-                yield return vsIntro.PlayRoutine(local, opponent, null);
+
+                if (!vsIntroPlayed)
+                {
+                    vsIntroPlayed = true;
+                    yield return vsIntro.PlayVsRevealRoutine(local, opponent);
+                }
+
+                yield return vsIntro.PlayServerCountdownRoutine();
+            }
+            else
+            {
+                while (TournamentServerClock.HasScheduledStart &&
+                       TournamentServerClock.SecondsUntilStart() > 0.05f)
+                {
+                    searchPulse += Time.unscaledDeltaTime;
+                    RefreshView();
+                    yield return null;
+                }
             }
 
             while (!TournamentServerClock.IsStartTimeReached())
@@ -171,7 +287,7 @@ namespace Mkey.Tournament
             }
 
             RefreshView();
-            yield return new WaitForSecondsRealtime(0.25f);
+            yield return new WaitForSecondsRealtime(0.2f);
             onComplete?.Invoke();
             Hide();
         }
