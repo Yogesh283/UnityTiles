@@ -1,6 +1,7 @@
 using System;
 using Mkey;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Mkey.Tournament
@@ -8,7 +9,7 @@ namespace Mkey.Tournament
     /// <summary>
     /// JOIN hit area bound to one TournamentDefinition instance (no shared closure).
     /// </summary>
-    public class TournamentJoinButton : MonoBehaviour
+    public class TournamentJoinButton : MonoBehaviour, IPointerDownHandler, IPointerClickHandler
     {
         [SerializeField] private string tournamentId;
         [SerializeField] private string tournamentName;
@@ -31,11 +32,40 @@ namespace Mkey.Tournament
 
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(OnButtonClicked);
+
+            if (definition != null && definition.id == TournamentJoinDebug.FirstJoinId)
+            {
+                Image hit = GetComponent<Image>();
+                TournamentJoinDebug.Log(
+                    $"Join button bound: onClick listeners={button.onClick.GetPersistentEventCount()}+1, " +
+                    $"interactable={button.interactable}, raycast={(hit ? hit.raycastTarget : false)}");
+            }
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (tournament == null || tournament.id != TournamentJoinDebug.FirstJoinId)
+                return;
+
+            Debug.Log("[TournamentJoin] JOIN BUTTON CLICKED (PointerDown)");
+            TournamentJoinDebug.LogPointerDown(gameObject, "IPointerDownHandler");
+            TournamentJoinDebug.LogUiState(gameObject, "PointerDown");
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (tournament == null || tournament.id != TournamentJoinDebug.FirstJoinId)
+                return;
+
+            TournamentJoinDebug.LogPointerClick(gameObject, "IPointerClickHandler");
         }
 
         private void OnButtonClicked()
         {
-            if (!TournamentJoinFlowGuard.CanStartJoin)
+            if (tournament != null && tournament.id == TournamentJoinDebug.FirstJoinId)
+                TournamentJoinDebug.LogButtonOnClickExecuted(name);
+
+            if (!TournamentJoinFlowGuard.CheckCanStartJoin("TournamentJoinButton.OnButtonClicked"))
                 return;
 
             if (tournament == null)

@@ -48,6 +48,7 @@ namespace Mkey.Tournament
 
             if (results.Count == 0)
             {
+                Debug.LogWarning("[TournamentJoin] JOIN BUTTON CLICK BLOCKED — no UI raycast hits inside JOIN rect");
                 TournamentJoinDebug.LogClickBlocked(screenPos, joinButton, "No UI raycast hits inside JOIN rect", null);
                 return;
             }
@@ -55,6 +56,9 @@ namespace Mkey.Tournament
             GameObject top = results[0].gameObject;
             if (IsJoinButtonHit(top)) return;
 
+            Debug.LogWarning(
+                "[TournamentJoin] JOIN BUTTON CLICK BLOCKED — top hit: " +
+                TournamentJoinDebug.FirstJoinObjectName + " expected, got " + top.name);
             TournamentJoinDebug.LogClickBlocked(
                 screenPos,
                 joinButton,

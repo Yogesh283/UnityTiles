@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Mkey.Tournament;
+using UnityEngine;
 
 namespace Mkey.Network
 {
@@ -28,6 +29,9 @@ namespace Mkey.Network
 
         public static async Task<ApiResult<RoomResponseDto>> JoinTournamentAsync(string tournamentId)
         {
+            if (tournamentId == TournamentJoinDebug.FirstJoinId)
+                Debug.Log("[TournamentJoin] ENTER JoinTournamentAsync");
+
             if (ApiConfig.Current.UseLocalSimulation)
                 return ApiResult<RoomResponseDto>.Fail("Development mode enabled.");
 

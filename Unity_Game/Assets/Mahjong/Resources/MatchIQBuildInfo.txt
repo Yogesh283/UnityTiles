@@ -1,2 +1,2 @@
-1bc9567
-Fix 1v1 duel root causes: atomic matchmaking, WebSocket, and sync.
+77041c9
+Fix tournament join parsing, submit-score finalize, and E2E verification.

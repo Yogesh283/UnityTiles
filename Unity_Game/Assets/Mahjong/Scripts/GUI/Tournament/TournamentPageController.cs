@@ -45,6 +45,7 @@ namespace Mkey.Tournament
             BuildPage();
             pageBuilt = true;
             RefreshWallet();
+            TournamentJoinFlowGuard.LogState("TournamentPageController.Start");
 
             if (!ApiConfig.Current.UseLocalSimulation)
                 StartCoroutine(SyncOnlineDataRoutine());
@@ -64,6 +65,7 @@ namespace Mkey.Tournament
                 StartCoroutine(SyncWalletRoutine());
 
             RefreshWallet();
+            TournamentJoinFlowGuard.LogState("TournamentPageController.OnEnable");
         }
 
         private void OnDisable()
@@ -249,7 +251,10 @@ namespace Mkey.Tournament
         {
             try
             {
-                if (!TournamentJoinFlowGuard.CanStartJoin)
+                if (tournament != null && tournament.id == TournamentJoinDebug.FirstJoinId)
+                    Debug.Log("[TournamentJoin] ENTER OnJoinTournament");
+
+                if (!TournamentJoinFlowGuard.CheckCanStartJoin("TournamentPageController.OnJoinTournament"))
                     return;
 
                 TournamentJoinDebug.LogOnJoinTournamentEnter(tournament);
@@ -296,6 +301,9 @@ namespace Mkey.Tournament
         {
             try
             {
+                if (tournament != null && tournament.id == TournamentJoinDebug.FirstJoinId)
+                    Debug.Log("[TournamentJoin] ENTER ConfirmJoin");
+
                 if (!TournamentJoinFlowGuard.TryBegin())
                     return;
 
@@ -306,7 +314,7 @@ namespace Mkey.Tournament
                     waitingRoom,
                     RefreshWallet,
                     t => OnJoinTournament(t),
-                    TournamentJoinFlowGuard.Reset);
+                    () => TournamentJoinFlowGuard.Reset());
             }
             catch (Exception ex)
             {
@@ -506,5 +514,6 @@ namespace Mkey.Tournament
                 () => OpenDepositPanel(() => OnJoinTournament(tournament)),
                 null);
         }
+
     }
 }
