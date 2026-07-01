@@ -79,23 +79,24 @@ public static class MatchIQAppIconSetup
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
+            var iconForeground = LoadIconTexture(ForegroundPath);
             var iconBackground = LoadIconTexture(BackgroundPath);
             var iconLegacy = LoadIconTexture(LegacyPath);
-            if (!iconBackground || !iconLegacy)
+            if (!iconForeground || !iconBackground || !iconLegacy)
             {
                 Debug.LogError("[Match IQ] Generated icon textures are missing or invalid.");
                 return false;
             }
 
-            // Opaque composite foreground avoids empty adaptive-icon slots (black launcher circle).
-            ConfigureAndroidIcons(iconLegacy, iconBackground);
+            ConfigureAndroidIcons(iconForeground, iconBackground, iconLegacy);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
+            iconForeground = LoadIconTexture(ForegroundPath);
             iconBackground = LoadIconTexture(BackgroundPath);
             iconLegacy = LoadIconTexture(LegacyPath);
 
-            if (!VerifyAndroidIconsConfigured(iconLegacy, iconBackground))
+            if (!VerifyAndroidIconsConfigured(iconForeground, iconBackground, iconLegacy))
             {
                 Debug.LogError("[Match IQ] PlayerSettings icons were not applied. Re-open Project Settings > Player > Android > Icon.");
                 return false;
@@ -133,18 +134,36 @@ public static class MatchIQAppIconSetup
 
     private static bool HasAndroidIconsConfigured()
     {
+        var foreground = LoadIconTexture(ForegroundPath);
         var background = LoadIconTexture(BackgroundPath);
         var legacy = LoadIconTexture(LegacyPath);
-        if (!background || !legacy)
+        if (!foreground || !background || !legacy)
             return false;
 
-        return VerifyAndroidIconsConfigured(legacy, background);
+        return VerifyAndroidIconsConfigured(foreground, background, legacy);
     }
 
-    private static bool VerifyAndroidIconsConfigured(Texture2D adaptiveForeground, Texture2D background)
+    private static bool VerifyAndroidIconsConfigured(
+        Texture2D adaptiveForeground,
+        Texture2D background,
+        Texture2D legacy)
     {
         var target = NamedBuildTarget.Android;
-        return IconsMatch(target, AndroidPlatformIconKind.Adaptive, adaptiveForeground, background);
+        if (!IconsMatch(target, AndroidPlatformIconKind.Adaptive, adaptiveForeground, background))
+            return false;
+
+        return IconsMatchSingle(target, AndroidPlatformIconKind.Legacy, legacy)
+            && IconsMatchSingle(target, AndroidPlatformIconKind.Round, legacy);
+    }
+
+    private static bool IconsMatchSingle(NamedBuildTarget target, PlatformIconKind kind, Texture2D texture)
+    {
+        var icons = PlayerSettings.GetPlatformIcons(target, kind);
+        if (icons == null || icons.Length == 0)
+            return false;
+
+        var textures = icons[0].GetTextures();
+        return textures != null && textures.Length > 0 && TexturesEqual(textures[0], texture);
     }
 
     private static bool IconsMatch(
@@ -177,10 +196,88 @@ public static class MatchIQAppIconSetup
         return !string.IsNullOrEmpty(pathA) && pathA == pathB;
     }
 
-    private static void ConfigureAndroidIcons(Texture2D adaptiveForeground, Texture2D background)
+    private static void ConfigureAndroidIcons(
+        Texture2D adaptiveForeground,
+        Texture2D background,
+        Texture2D legacy)
     {
         var target = NamedBuildTarget.Android;
         SetAllIcons(target, AndroidPlatformIconKind.Adaptive, adaptiveForeground, background);
+        SetSingleTextureIcons(target, AndroidPlatformIconKind.Legacy, legacy);
+        SetSingleTextureIcons(target, AndroidPlatformIconKind.Round, legacy);
+    }
+
+    internal static void InjectLauncherMipmaps(string unityLibraryGradlePath)
+    {
+        string launcherRes = Path.GetFullPath(
+            Path.Combine(unityLibraryGradlePath, "..", "launcher", "src", "main", "res"));
+        if (!Directory.Exists(launcherRes))
+        {
+            Debug.LogError("[Match IQ] Launcher res folder missing: " + launcherRes);
+            return;
+        }
+
+        Texture2D foreground = LoadIconTexture(ForegroundPath);
+        Texture2D background = LoadIconTexture(BackgroundPath);
+        Texture2D legacy = LoadIconTexture(LegacyPath);
+        if (!foreground || !background || !legacy)
+        {
+            Debug.LogError("[Match IQ] Cannot inject launcher mipmaps — icon textures missing.");
+            return;
+        }
+
+        WriteLauncherMipmaps(launcherRes, foreground, background, legacy);
+        Debug.Log("[Match IQ] Injected launcher mipmap PNGs into " + launcherRes);
+    }
+
+    private static readonly (string folder, int legacyPx, int adaptivePx)[] DensityBuckets =
+    {
+        ("mipmap-mdpi", 48, 108),
+        ("mipmap-hdpi", 72, 162),
+        ("mipmap-xhdpi", 96, 216),
+        ("mipmap-xxhdpi", 144, 324),
+        ("mipmap-xxxhdpi", 192, 432),
+    };
+
+    private static void WriteLauncherMipmaps(
+        string launcherRes,
+        Texture2D foreground,
+        Texture2D background,
+        Texture2D legacy)
+    {
+        foreach ((string folder, int legacyPx, int adaptivePx) in DensityBuckets)
+        {
+            string dir = Path.Combine(launcherRes, folder);
+            Directory.CreateDirectory(dir);
+
+            WriteScaledPng(legacy, Path.Combine(dir, "app_icon.png"), legacyPx);
+            WriteScaledPng(legacy, Path.Combine(dir, "app_icon_round.png"), legacyPx);
+            WriteScaledPng(foreground, Path.Combine(dir, "ic_launcher_foreground.png"), adaptivePx);
+            WriteScaledPng(background, Path.Combine(dir, "ic_launcher_background.png"), adaptivePx);
+        }
+    }
+
+    private static void WriteScaledPng(Texture2D source, string destPath, int size)
+    {
+        Texture2D scaled = ScaleTexture(source, size, size);
+        File.WriteAllBytes(destPath, scaled.EncodeToPNG());
+        Object.DestroyImmediate(scaled);
+    }
+
+    private static Texture2D ScaleTexture(Texture2D source, int width, int height)
+    {
+        var rt = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
+        var previous = RenderTexture.active;
+        Graphics.Blit(source, rt);
+        RenderTexture.active = rt;
+
+        var result = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        result.Apply();
+
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(rt);
+        return result;
     }
 
     private static Texture2D LoadIconTexture(string assetPath)
@@ -230,6 +327,21 @@ public static class MatchIQAppIconSetup
 
         for (var i = 0; i < icons.Length; i++)
             icons[i].SetTextures(new[] { primary, secondary });
+
+        PlayerSettings.SetPlatformIcons(target, kind, icons);
+    }
+
+    private static void SetSingleTextureIcons(
+        NamedBuildTarget target,
+        PlatformIconKind kind,
+        Texture2D texture)
+    {
+        var icons = PlayerSettings.GetPlatformIcons(target, kind);
+        if (icons == null || icons.Length == 0)
+            return;
+
+        for (var i = 0; i < icons.Length; i++)
+            icons[i].SetTextures(new[] { texture });
 
         PlayerSettings.SetPlatformIcons(target, kind, icons);
     }
@@ -407,6 +519,19 @@ public class MatchIQAndroidIconBuildProcessor : IPreprocessBuildWithReport
 
         if (!MatchIQAppIconSetup.ApplyAppLogo())
             throw new BuildFailedException("[Match IQ] Failed to configure Android application icons.");
+    }
+}
+
+/// <summary>
+/// Unity 6 sometimes emits adaptive-icon XML without mipmap PNGs — inject them into launcher/res.
+/// </summary>
+public class MatchIQAndroidIconGradleInjector : IPostGenerateGradleAndroidProject
+{
+    public int callbackOrder => 0;
+
+    public void OnPostGenerateGradleAndroidProject(string path)
+    {
+        MatchIQAppIconSetup.InjectLauncherMipmaps(path);
     }
 }
 #endif

@@ -111,6 +111,9 @@ namespace Mkey.Network
             string url = BuildUrl(relativePath);
             float timeout = Mathf.Max(1f, ApiConfig.Current.requestTimeoutSeconds);
 
+            if (relativePath != null && relativePath.Contains("tournaments/join"))
+                Debug.Log("[TournamentJoin] HTTP REQUEST START " + url);
+
             using var request = new UnityWebRequest(url, method);
             request.downloadHandler = new DownloadHandlerBuffer();
             request.timeout = Mathf.CeilToInt(timeout);

@@ -46,6 +46,7 @@ namespace Mkey.Tournament
         public static void LogPointerClick(GameObject target, string source)
         {
             if (!IsFirstJoinObject(target)) return;
+            Debug.Log("[TournamentJoin] JOIN BUTTON CLICKED");
             Log("1 vs 1 JOIN button clicked");
             Log($"Click received via: {source}");
             Log("Is the Button receiving the click? YES");
@@ -54,7 +55,26 @@ namespace Mkey.Tournament
         public static void LogButtonOnClickExecuted(string buttonName)
         {
             if (buttonName != FirstJoinObjectName) return;
+            Debug.Log("[TournamentJoin] ONCLICK FIRED");
             Log("Button OnClick event executed");
+        }
+
+        public static void LogJoinBlocked(string step)
+        {
+            LogWarning(
+                $"STOP at {step}: CanStartJoin=false " +
+                $"(IsJoining={TournamentJoinFlowGuard.IsJoining}, " +
+                $"IsRoomEstablished={TournamentJoinFlowGuard.IsRoomEstablished}, " +
+                $"GlobalWaitingRoom={TournamentGlobalWaitingRoom.IsVisible})");
+        }
+
+        public static void LogConfirmJoinBlocked(string step)
+        {
+            LogWarning(
+                $"STOP at {step}: TryBegin failed " +
+                $"(IsJoining={TournamentJoinFlowGuard.IsJoining}, " +
+                $"IsRoomEstablished={TournamentJoinFlowGuard.IsRoomEstablished}, " +
+                $"GlobalWaitingRoom={TournamentGlobalWaitingRoom.IsVisible})");
         }
 
         public static void LogOnJoinTournamentEnter(TournamentDefinition tournament)
