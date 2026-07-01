@@ -40,6 +40,33 @@ namespace Mkey.Tournament
                 instance.panel.Hide();
         }
 
+        /// <summary>
+        /// Tournament page open: remove leftover DDOL overlay from a prior matchmaking session.
+        /// Returns true when a stale overlay was torn down.
+        /// </summary>
+        public static bool ClearStaleOnPageOpen()
+        {
+            if (!IsVisible)
+                return false;
+
+            if (TournamentJoinFlowGuard.IsActiveMatchmaking)
+                return false;
+
+            DestroyStaleOverlay();
+            return true;
+        }
+
+        public static void DestroyStaleOverlay()
+        {
+            Hide();
+
+            if (!instance)
+                return;
+
+            UnityEngine.Object.Destroy(instance.gameObject);
+            instance = null;
+        }
+
         private static TournamentGlobalWaitingRoom EnsureInstance()
         {
             if (instance) return instance;

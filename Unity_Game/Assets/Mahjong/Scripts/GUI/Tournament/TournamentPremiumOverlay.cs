@@ -16,6 +16,12 @@ namespace Mkey.Tournament
         public static bool IsVisible =>
             TournamentPremiumOverlayHost.Instance != null && TournamentPremiumOverlayHost.Instance.IsShowing;
 
+        public static void ForceDismiss()
+        {
+            if (TournamentPremiumOverlayHost.Instance != null)
+                TournamentPremiumOverlayHost.Instance.Dismiss();
+        }
+
         public static void Show(
             string title,
             string subtitle,
@@ -143,6 +149,8 @@ namespace Mkey.Tournament
             yield return new WaitForSecondsRealtime(0.15f);
             CompleteAndClose();
         }
+
+        public void Dismiss() => CompleteAndClose();
 
         private void CompleteAndClose()
         {

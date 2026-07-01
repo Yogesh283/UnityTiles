@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace Mkey.Tournament
@@ -46,6 +47,27 @@ namespace Mkey.Tournament
         public static Sprite BackCircle => _backCircle ?? (_backCircle = BuildBackCircle());
         public static Sprite GlassSheen => _glassSheen ?? (_glassSheen = BuildGlassSheen());
         public static Sprite BambooStripe => _bambooStripe ?? (_bambooStripe = BuildBambooStripe());
+
+        /// <summary>Spread first-time procedural sprite builds across frames to avoid a single-frame hitch.</summary>
+        public static IEnumerator WarmUpCoroutine()
+        {
+            _ = SoftCircle;
+            yield return null;
+            _ = CardBackground;
+            yield return null;
+            _ = Badge;
+            yield return null;
+            _ = GoldFrame;
+            yield return null;
+            _ = Wallet;
+            yield return null;
+            _ = ButtonOrange;
+            yield return null;
+            _ = ButtonGreen;
+            yield return null;
+            _ = BackCircle;
+            yield return null;
+        }
 
         private static Vector4 CardBorders => new Vector4(12f, 12f, 12f, 12f);
         private static Vector4 PillBorders => new Vector4(32f, 32f, 32f, 32f);

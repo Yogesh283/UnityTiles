@@ -1,2 +1,2 @@
-77041c9
-Fix tournament join parsing, submit-score finalize, and E2E verification.
+c2db5a7
+Fix tournament join diagnostics, Android app icon, and plugin collision.
