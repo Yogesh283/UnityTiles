@@ -22,6 +22,7 @@ namespace Mkey.Tournament
         private bool isVisible;
         private bool vsIntroPlayed;
         private bool isDuel;
+        private float waitRoomShownAt;
 
         public bool IsShowing => isVisible && premiumView != null && premiumView.IsVisible;
 
@@ -37,6 +38,7 @@ namespace Mkey.Tournament
             vsIntroPlayed = false;
             isDuel = data != null && data.maxPlayers <= 2;
             lastObservedPlayerCount = 0;
+            waitRoomShownAt = Time.realtimeSinceStartup;
 
             TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(data.id);
             currentPlayers = snap.hasRoom ? snap.currentPlayers : 1;
@@ -111,8 +113,17 @@ namespace Mkey.Tournament
                 return;
 
             TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
-            premiumView.Bind(tournament, snap, searchPulse);
+            float clientWaitSeconds = GetClientWaitSecondsRemaining(snap);
+            premiumView.Bind(tournament, snap, searchPulse, clientWaitSeconds);
             isVisible = true;
+        }
+
+        private float GetClientWaitSecondsRemaining(TournamentRoomSnapshot snap)
+        {
+            if (snap.hasRoom && snap.countdownSeconds > 0f)
+                return snap.countdownSeconds;
+
+            return Mathf.Max(0f, tournament.waitingSeconds - (Time.realtimeSinceStartup - waitRoomShownAt));
         }
 
         private IEnumerator WaitingRoutine()
@@ -200,15 +211,16 @@ namespace Mkey.Tournament
 
         private bool TryHandleSearchTimeout(TournamentRoomSnapshot snap)
         {
-            if (!TournamentApiBridge.IsOnlineMode || !isDuel || !snap.hasRoom)
+            if (!TournamentApiBridge.IsOnlineMode || !isDuel)
                 return false;
             if (currentPlayers >= tournament.maxPlayers)
                 return false;
-            if (snap.status != "waiting")
+
+            float remaining = GetClientWaitSecondsRemaining(snap);
+            if (remaining > 0f)
                 return false;
 
-            float remaining = snap.countdownSeconds;
-            if (remaining > 0f)
+            if (snap.hasRoom && snap.status != "waiting" && snap.status != "starting")
                 return false;
 
             return true;

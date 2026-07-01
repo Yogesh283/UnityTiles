@@ -33,6 +33,7 @@ namespace Mkey.Network
             }
 
             joinRequestInFlight = true;
+            ShowWaitingRoomImmediately(tournament);
 
             try
             {
@@ -43,6 +44,21 @@ namespace Mkey.Network
             {
                 joinRequestInFlight = false;
             }
+        }
+
+        private static void ShowWaitingRoomImmediately(TournamentDefinition tournament)
+        {
+            TournamentSession.Begin(tournament);
+            TournamentRoomRegistry.JoinOrGetRoom(tournament);
+            TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
+        }
+
+        private static void AbortWaitingRoomOnJoinFailure()
+        {
+            TournamentGlobalWaitingRoom.Hide();
+            TournamentApiBridge.Clear();
+            TournamentSession.Clear();
+            TournamentJoinFlowGuard.Reset();
         }
 
         private static async Task ConfirmJoinOnlineAsync(
@@ -59,6 +75,7 @@ namespace Mkey.Network
                 ApiResult<bool> authResult = await EnsureAuthenticatedAsync();
                 if (!authResult.Success)
                 {
+                    AbortWaitingRoomOnJoinFailure();
                     ShowJoinError(
                         dialog,
                         tournament,
@@ -80,6 +97,7 @@ namespace Mkey.Network
                     CoinsHolder.Instance &&
                     CoinsHolder.Count < tournament.entryFee)
                 {
+                    AbortWaitingRoomOnJoinFailure();
                     onJoinFailed?.Invoke();
                     dialog.ShowInsufficientCoins(
                         tournament.entryFee,
@@ -114,6 +132,7 @@ namespace Mkey.Network
 
                 if (!joinResult.Success || joinResult.Data == null)
                 {
+                    AbortWaitingRoomOnJoinFailure();
                     ShowJoinError(
                         dialog,
                         tournament,
@@ -125,7 +144,6 @@ namespace Mkey.Network
                         refreshWallet,
                         retryJoin,
                         onJoinFailed);
-                    TournamentJoinFlowGuard.Reset();
                     return;
                 }
 
@@ -146,6 +164,7 @@ namespace Mkey.Network
                 if (!wsConnected)
                 {
                     TournamentFlowLog.WebSocketDisconnected(joinResult.Data.roomId, "initial_connect_failed");
+                    AbortWaitingRoomOnJoinFailure();
                     ShowJoinError(
                         dialog,
                         tournament,
@@ -157,8 +176,6 @@ namespace Mkey.Network
                         refreshWallet,
                         retryJoin,
                         onJoinFailed);
-                    TournamentApiBridge.Clear();
-                    TournamentJoinFlowGuard.Reset();
                     return;
                 }
 
@@ -171,12 +188,11 @@ namespace Mkey.Network
                     await WalletService.SyncToCoinsHolderAsync();
                     refreshWallet?.Invoke();
                 }
-
-                EnterMatchAfterJoin(tournament);
             }
             catch (Exception ex)
             {
                 Debug.LogException(ex);
+                AbortWaitingRoomOnJoinFailure();
                 ShowJoinError(
                     dialog,
                     tournament,
@@ -188,7 +204,6 @@ namespace Mkey.Network
                     refreshWallet,
                     retryJoin,
                     onJoinFailed);
-                TournamentJoinFlowGuard.Reset();
             }
         }
 
@@ -265,17 +280,10 @@ namespace Mkey.Network
                 return;
             }
 
+            ShowWaitingRoomImmediately(tournament);
             CoinsHolder.Add(-tournament.entryFee);
             refreshWallet?.Invoke();
-            TournamentSession.Begin(tournament);
-            TournamentRoomRegistry.JoinOrGetRoom(tournament);
             TournamentJoinFlowGuard.MarkRoomEstablished();
-            EnterMatchAfterJoin(tournament);
-        }
-
-        private static void EnterMatchAfterJoin(TournamentDefinition tournament)
-        {
-            TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
         }
 
         private static void OpenDeposit(

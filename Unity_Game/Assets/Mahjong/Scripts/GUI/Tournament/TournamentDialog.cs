@@ -183,6 +183,37 @@ namespace Mkey.Tournament
             callback?.Invoke();
         }
 
+        public void ShowJoinConfirm(
+            string tournamentName,
+            int entryFee,
+            int winPrize,
+            Action confirm,
+            Action cancel)
+        {
+            string message =
+                $"Entry Fee\n{entryFee:N0} Coins\n\n" +
+                $"Winning Prize\n{winPrize:N0} Coins";
+
+            GuiController gui = EnsureGuiController();
+            if (!gui || !messagePrefab)
+            {
+                TournamentJoinDebug.LogDialogFailed("TournamentDialog.ShowJoinConfirm", !gui ? "GuiController is null" : "Message prefab is null");
+                return;
+            }
+
+            WarningMessController popup = gui.ShowMessageWithYesNoCloseButton(
+                messagePrefab,
+                tournamentName,
+                message,
+                confirm,
+                cancel,
+                null);
+
+            SetButtonLabel(popup?.yesButton, "OK");
+            SetButtonLabel(popup?.cancelButton, "Cancel");
+            TournamentJoinDebug.Log("TournamentDialog opened join confirm (OK/Cancel)");
+        }
+
         public void Show(string title, string message, bool showCancel, Action confirm, Action cancel)
         {
             TournamentJoinDebug.Log($"TournamentDialog.Show called — title=\"{title}\", showCancel={showCancel}");
@@ -196,7 +227,9 @@ namespace Mkey.Tournament
 
             if (showCancel)
             {
-                gui.ShowMessageWithYesNoCloseButton(messagePrefab, title, message, confirm, cancel, null);
+                WarningMessController popup = gui.ShowMessageWithYesNoCloseButton(messagePrefab, title, message, confirm, cancel, null);
+                SetButtonLabel(popup?.yesButton, "OK");
+                SetButtonLabel(popup?.cancelButton, "Cancel");
                 TournamentJoinDebug.Log("TournamentDialog opened via GuiController (Yes/Cancel)");
                 return;
             }
