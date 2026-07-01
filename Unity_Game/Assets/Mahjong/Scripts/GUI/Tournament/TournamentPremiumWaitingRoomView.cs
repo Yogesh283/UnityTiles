@@ -81,7 +81,7 @@ namespace Mkey.Tournament
             }
         }
 
-        public void Bind(TournamentDefinition tournament, TournamentRoomSnapshot snap, float searchPulse)
+        public void Bind(TournamentDefinition tournament, TournamentRoomSnapshot snap, float searchPulse, float clientWaitSeconds = 0f)
         {
             if (tournament == null) return;
 
@@ -90,18 +90,17 @@ namespace Mkey.Tournament
             int max = snap.maxPlayers > 0 ? snap.maxPlayers : tournament.maxPlayers;
             bool duel = max <= 2;
             bool roomFull = current >= max;
+            float waitDisplay = clientWaitSeconds > 0f ? clientWaitSeconds : snap.countdownSeconds;
 
             titleText.text = $"{tournament.icon} {tournament.displayName}";
             roomIdText.text = snap.hasRoom && !string.IsNullOrEmpty(snap.roomId)
                 ? $"Room ID: {TournamentRoom.FormatShortId(snap.roomId)}"
                 : "Room ID: —";
             entryFeeText.text = $"Entry Fee: {tournament.entryFee:N0} Coins";
-            prizeText.text = $"Prize: {TournamentPrizeTable.GetPrize(tournament.id, 1):N0} Coins";
+            prizeText.text = $"Winning Prize: {TournamentPrizeTable.GetPrize(tournament.id, 1):N0} Coins";
 
             playersText.text = $"{current} / {max} Players";
-            connectionText.text = TournamentApiBridge.IsOnlineMode
-                ? (TournamentRoomWebSocket.IsConnected ? "● Live — Connected" : "○ Connecting to server...")
-                : "● Local Practice";
+            connectionText.text = ResolveConnectionStatus();
 
             if (snap.status == "starting" || phase == "match_found")
             {
@@ -113,16 +112,16 @@ namespace Mkey.Tournament
             }
             else if (roomFull)
             {
-                statusText.text = "OPPONENT FOUND";
+                statusText.text = "PLAYER FOUND!";
                 statusText.color = new Color(0.55f, 0.85f, 1f);
-                timerText.text = FormatWaitTimer(snap);
+                timerText.text = FormatWaitTimer(waitDisplay);
                 searchText.text = "Preparing match...";
             }
             else if (duel)
             {
-                statusText.text = "FINDING OPPONENT";
+                statusText.text = "SEARCHING";
                 statusText.color = new Color(1f, 0.92f, 0.55f);
-                timerText.text = FormatWaitTimer(snap);
+                timerText.text = FormatWaitTimer(waitDisplay);
                 int dots = 1 + (Mathf.FloorToInt(searchPulse * 2f) % 3);
                 searchText.text = "Finding Opponent..." + new string('.', dots);
             }
@@ -130,21 +129,21 @@ namespace Mkey.Tournament
             {
                 statusText.text = "ROOM FULL";
                 statusText.color = new Color(1f, 0.85f, 0.35f);
-                timerText.text = FormatWaitTimer(snap);
+                timerText.text = FormatWaitTimer(waitDisplay);
                 searchText.text = TournamentPlayerSearchPresenter.StatusForPhase("players_connected", 0);
             }
             else if (phase == "player_joined" || current >= 2)
             {
                 statusText.text = "PLAYER JOINED";
                 statusText.color = new Color(0.55f, 0.85f, 1f);
-                timerText.text = FormatWaitTimer(snap);
+                timerText.text = FormatWaitTimer(waitDisplay);
                 searchText.text = TournamentPlayerSearchPresenter.StatusForPhase("player_joined", 0);
             }
             else
             {
                 statusText.text = "SEARCHING";
                 statusText.color = new Color(1f, 0.92f, 0.55f);
-                timerText.text = FormatWaitTimer(snap);
+                timerText.text = FormatWaitTimer(waitDisplay);
                 int dots = 1 + (Mathf.FloorToInt(searchPulse * 2f) % 3);
                 searchText.text = TournamentPlayerSearchPresenter.StatusForPhase("searching", dots);
             }
@@ -168,7 +167,7 @@ namespace Mkey.Tournament
             listRoot.gameObject.SetActive(!duelLayout);
 
             if (duelLayout)
-                RefreshDuelCards(players, max);
+                RefreshDuelCards(players, max, searchPulse);
             else
                 RefreshListCards(players, max);
 
@@ -178,12 +177,27 @@ namespace Mkey.Tournament
             lastPlayerCount = current;
         }
 
-        private static string FormatWaitTimer(TournamentRoomSnapshot snap)
+        private static string FormatWaitTimer(float displaySeconds)
         {
-            float displayTime = snap.hasRoom ? snap.countdownSeconds : 0f;
-            int minutes = Mathf.FloorToInt(displayTime / 60f);
-            int seconds = Mathf.FloorToInt(displayTime % 60f);
+            int minutes = Mathf.FloorToInt(displaySeconds / 60f);
+            int seconds = Mathf.FloorToInt(displaySeconds % 60f);
             return $"{minutes:00}:{seconds:00}";
+        }
+
+        private static string ResolveConnectionStatus()
+        {
+            if (!TournamentApiBridge.IsOnlineMode)
+                return "● Local Practice";
+
+            if (TournamentJoinFlowGuard.IsJoining && !TournamentJoinFlowGuard.IsRoomEstablished)
+                return "○ Joining match...";
+
+            if (!TournamentApiBridge.HasActiveApiSession)
+                return "○ Connecting to server...";
+
+            return TournamentRoomWebSocket.IsConnected
+                ? "● Live — Connected"
+                : "○ Connecting to server...";
         }
 
         private static List<RoomPlayerDto> BuildPlayerList(
@@ -251,7 +265,7 @@ namespace Mkey.Tournament
             };
         }
 
-        private void RefreshDuelCards(List<RoomPlayerDto> players, int max)
+        private void RefreshDuelCards(List<RoomPlayerDto> players, int max, float searchPulse)
         {
             EnsureDuelCards(max);
 
@@ -290,7 +304,7 @@ namespace Mkey.Tournament
             leftRt.anchorMax = new Vector2(anchorMax[0], 1f);
             leftRt.offsetMin = Vector2.zero;
             leftRt.offsetMax = Vector2.zero;
-            duelCards[0].Bind(local, true, local != null);
+            duelCards[0].Bind(local, true, local != null, searchPulse);
 
             if (duelCards.Count > 1)
             {
@@ -300,7 +314,7 @@ namespace Mkey.Tournament
                 rightRt.anchorMax = new Vector2(anchorMax[1], 1f);
                 rightRt.offsetMin = Vector2.zero;
                 rightRt.offsetMax = Vector2.zero;
-                duelCards[1].Bind(opponent, false, opponent != null);
+                duelCards[1].Bind(opponent, false, opponent != null, searchPulse);
             }
         }
 
@@ -537,7 +551,7 @@ namespace Mkey.Tournament
             public Text RankText;
             public Text OnlineText;
 
-            public void Bind(RoomPlayerDto player, bool isLocal, bool occupied)
+            public void Bind(RoomPlayerDto player, bool isLocal, bool occupied, float searchPulse = 0f)
             {
                 if (!occupied)
                 {
@@ -545,11 +559,16 @@ namespace Mkey.Tournament
                     UuidText.text = string.Empty;
                     LevelText.text = string.Empty;
                     RankText.text = string.Empty;
-                    OnlineText.text = string.Empty;
-                    AvatarImage.color = new Color(0.14f, 0.16f, 0.2f, 0.85f);
+                    OnlineText.text = "Searching...";
+                    OnlineText.color = new Color(1f, 0.85f, 0.35f, 0.9f);
+                    float pulse = 0.55f + Mathf.PingPong(searchPulse * 2f, 0.35f);
+                    AvatarImage.color = new Color(0.18f, 0.22f, 0.28f, pulse);
                     AvatarImage.sprite = null;
+                    Root.localScale = Vector3.one * (1f + Mathf.PingPong(searchPulse * 1.5f, 0.04f));
                     return;
                 }
+
+                Root.localScale = Vector3.one;
 
                 string displayName = !string.IsNullOrEmpty(player.username)
                     ? player.username

@@ -287,13 +287,11 @@ namespace Mkey.Tournament
                 }
 
                 TournamentDefinition currentTournament = tournament;
-                dialog.Show(
-                    string.Empty,
-                    "Join Tournament?\n\n" +
-                    $"Join {currentTournament.displayName}?\n\n" +
-                    $"Entry Fee: {currentTournament.entryFee:N0} Coins\n" +
-                    $"Prize Pool: {currentTournament.prizePool:N0} Coins",
-                    false,
+                int winPrize = TournamentPrizeTable.GetPrize(currentTournament.id, 1);
+                dialog.ShowJoinConfirm(
+                    currentTournament.displayName,
+                    currentTournament.entryFee,
+                    winPrize,
                     () => ConfirmJoin(currentTournament),
                     null);
 
