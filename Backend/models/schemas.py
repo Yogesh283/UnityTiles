@@ -126,6 +126,7 @@ class SubmitScoreResponse(BaseModel):
     rank: int | None = None
     prize: int = 0
     room_status: str = "active"
+    wallet_balance: int | None = None
 
 
 class TournamentLevelRewardRequest(BaseModel):

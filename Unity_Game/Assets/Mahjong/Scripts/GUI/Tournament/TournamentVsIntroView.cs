@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace Mkey.Tournament
 {
     /// <summary>
-    /// Premium VS intro: player cards, glow pulse, 3-2-1-GO countdown.
+    /// Premium VS intro: player cards, glow pulse, server-synced 3-2-1-START countdown.
     /// </summary>
     public class TournamentVsIntroView : MonoBehaviour
     {
@@ -38,47 +38,85 @@ namespace Mkey.Tournament
             return view;
         }
 
+        /// <summary>VS reveal with player cards — no countdown (waiting room stays visible underneath).</summary>
+        public IEnumerator PlayVsRevealRoutine(
+            RoomPlayerDto localPlayer,
+            RoomPlayerDto opponentPlayer)
+        {
+            showing = true;
+            gameObject.SetActive(true);
+            canvasGroup.alpha = 0f;
+            countdownText.text = string.Empty;
+
+            leftCard.Bind(localPlayer, true, localPlayer != null);
+            rightCard.Bind(opponentPlayer, false, opponentPlayer != null);
+
+            float vsScale = 0.6f;
+            vsText.transform.localScale = Vector3.one * vsScale;
+
+            float fade = 0f;
+            while (fade < 1f)
+            {
+                fade += Time.unscaledDeltaTime * 2.5f;
+                canvasGroup.alpha = Mathf.Clamp01(fade);
+                vsScale = Mathf.Lerp(0.6f, 1.15f, Mathf.Clamp01(fade));
+                vsText.transform.localScale = Vector3.one * vsScale;
+                PulseGlow();
+                yield return null;
+            }
+
+            float pulseT = 0f;
+            while (pulseT < 0.85f)
+            {
+                pulseT += Time.unscaledDeltaTime;
+                float bounce = 1.15f + Mathf.Sin(pulseT * 12f) * 0.08f;
+                vsText.transform.localScale = Vector3.one * bounce;
+                PulseGlow();
+                yield return null;
+            }
+
+            vsText.transform.localScale = Vector3.one;
+            yield return new WaitForSecondsRealtime(0.35f);
+        }
+
+        /// <summary>Server-authoritative countdown using match_start_at_ms.</summary>
+        public IEnumerator PlayServerCountdownRoutine()
+        {
+            showing = true;
+            gameObject.SetActive(true);
+            canvasGroup.alpha = 1f;
+
+            int lastShown = -1;
+            while (TournamentServerClock.HasScheduledStart &&
+                   TournamentServerClock.SecondsUntilStart() > 0.08f)
+            {
+                int sec = TournamentServerClock.DisplayCountdownSeconds();
+                if (sec > 0 && sec != lastShown)
+                {
+                    countdownText.text = sec.ToString();
+                    countdownText.fontSize = 120;
+                    lastShown = sec;
+                    PlayTickSound();
+                }
+
+                PulseGlow();
+                yield return null;
+            }
+
+            countdownText.text = "START";
+            countdownText.fontSize = 88;
+            PlayGoSound();
+            yield return new WaitForSecondsRealtime(0.35f);
+            Hide();
+        }
+
         public IEnumerator PlayRoutine(
             RoomPlayerDto localPlayer,
             RoomPlayerDto opponentPlayer,
             Action onComplete)
         {
-            showing = true;
-            gameObject.SetActive(true);
-            canvasGroup.alpha = 0f;
-
-            leftCard.Bind(localPlayer, true, localPlayer != null);
-            rightCard.Bind(opponentPlayer, false, opponentPlayer != null);
-
-            float fade = 0f;
-            while (fade < 1f)
-            {
-                fade += Time.unscaledDeltaTime * 3f;
-                canvasGroup.alpha = Mathf.Clamp01(fade);
-                PulseGlow();
-                yield return null;
-            }
-
-            for (int i = 3; i >= 1; i--)
-            {
-                countdownText.text = i.ToString();
-                countdownText.fontSize = 120;
-                PlayTickSound();
-                float t = 0f;
-                while (t < 1f)
-                {
-                    t += Time.unscaledDeltaTime;
-                    PulseGlow();
-                    yield return null;
-                }
-            }
-
-            countdownText.text = "START!";
-            countdownText.fontSize = 88;
-            PlayGoSound();
-
-            yield return new WaitForSecondsRealtime(0.45f);
-            Hide();
+            yield return PlayVsRevealRoutine(localPlayer, opponentPlayer);
+            yield return PlayServerCountdownRoutine();
             onComplete?.Invoke();
         }
 
@@ -101,7 +139,7 @@ namespace Mkey.Tournament
         {
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
-            Image backdrop = CreateImage(transform, "Backdrop", new Color(0f, 0f, 0f, 0.92f));
+            Image backdrop = CreateImage(transform, "Backdrop", new Color(0f, 0f, 0f, 0.55f));
             Stretch(backdrop.rectTransform);
 
             glowImage = CreateImage(transform, "Glow", new Color(1f, 0.82f, 0.2f, 0.25f));

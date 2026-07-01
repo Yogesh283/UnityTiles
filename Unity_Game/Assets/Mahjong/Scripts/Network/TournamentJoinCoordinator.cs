@@ -166,8 +166,11 @@ namespace Mkey.Network
 
                 ApplyWalletFromJoinResponse(joinResult.Data);
                 refreshWallet?.Invoke();
-                await WalletService.SyncToCoinsHolderAsync();
-                refreshWallet?.Invoke();
+                if (!joinResult.Data.walletBalance.HasValue)
+                {
+                    await WalletService.SyncToCoinsHolderAsync();
+                    refreshWallet?.Invoke();
+                }
 
                 EnterMatchAfterJoin(tournament);
             }
@@ -270,19 +273,8 @@ namespace Mkey.Network
             EnterMatchAfterJoin(tournament);
         }
 
-        private static bool IsInstantDuel(TournamentDefinition tournament) =>
-            tournament != null && tournament.maxPlayers <= 2;
-
         private static void EnterMatchAfterJoin(TournamentDefinition tournament)
         {
-            if (IsInstantDuel(tournament))
-            {
-                if (ApiConfig.Current.UseLocalSimulation)
-                    TournamentRoomRegistry.ForcePrepareForLaunch();
-                TournamentGameBridge.LaunchGameFromWaitingRoom();
-                return;
-            }
-
             TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
         }
 

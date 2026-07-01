@@ -21,6 +21,7 @@ namespace Mkey.Tournament
         private static int pendingPrize;
         private static bool pendingDuelWin;
         private static bool pendingResultCached;
+        private static int? pendingWalletBalance;
 
         private float onlineRoomPollTimer;
         private bool onlineRoomPollInFlight;
@@ -357,7 +358,10 @@ namespace Mkey.Tournament
 
                 bool localFinished = room.localPlayer != null && room.localPlayer.hasCompleted;
                 if (!localFinished)
+                {
+                    StopLocalGameplayInstant();
                     ApplyServerFinish(2, 0, duelWin: false);
+                }
                 else
                     ApplyServerRankFromSnapshot(snapshot);
 
@@ -438,7 +442,9 @@ namespace Mkey.Tournament
             if (localDto != null && (localDto.rank ?? 0) > 0)
             {
                 int rank = localDto.rank.Value;
-                int prize = TournamentPrizeTable.GetPrize(room.tournament.id, rank);
+                int prize = localDto.prize > 0
+                    ? localDto.prize
+                    : TournamentPrizeTable.GetPrize(room.tournament.id, rank);
                 bool duelWin = room.IsDuel && rank == 1;
                 ApplyServerFinish(rank, prize, duelWin);
                 return;
@@ -449,7 +455,10 @@ namespace Mkey.Tournament
 
             RoomPlayerDto opponent = FindOpponentPlayer(snapshot);
             if (opponent != null && opponent.hasSubmitted && (localDto == null || !localDto.hasSubmitted))
+            {
+                StopLocalGameplayInstant();
                 ApplyServerFinish(2, 0, duelWin: false);
+            }
         }
 
         private static RoomPlayerDto FindOpponentPlayer(RoomResponseDto snapshot)
@@ -608,6 +617,9 @@ namespace Mkey.Tournament
 
             if (submitTask.Result.Data.finalized)
             {
+                if (submitTask.Result.Data.walletBalance.HasValue)
+                    pendingWalletBalance = submitTask.Result.Data.walletBalance;
+
                 ApplyServerFinish(
                     submitTask.Result.Data.rank,
                     submitTask.Result.Data.prize,
@@ -889,7 +901,37 @@ namespace Mkey.Tournament
             pendingDuelWin = duelWin;
             pendingResultCached = true;
 
+            if (TournamentApiBridge.IsOnlineMode && instance != null)
+                instance.StartCoroutine(FinishResultFlowRoutine());
+            else
+                ShowPendingResultDialog();
+        }
+
+        private static IEnumerator FinishResultFlowRoutine()
+        {
+            if (pendingWalletBalance.HasValue)
+                ApplyWalletBalance(pendingWalletBalance);
+
+            if (TournamentApiBridge.IsOnlineMode)
+            {
+                var walletTask = WalletService.SyncToCoinsHolderAsync();
+                while (!walletTask.IsCompleted)
+                    yield return null;
+
+                if (walletTask.Result.Success)
+                    ApplyWalletBalance(walletTask.Result.Data);
+            }
+
             ShowPendingResultDialog();
+        }
+
+        private static void ApplyWalletBalance(int? balance)
+        {
+            if (!balance.HasValue || !CoinsHolder.Instance)
+                return;
+
+            CoinsHolder.Instance.SetCount(balance.Value);
+            WalletService.CachedBalance = balance.Value;
         }
 
         public static void ShowPendingResultDialog()
@@ -927,6 +969,7 @@ namespace Mkey.Tournament
             pendingRank = 0;
             pendingPrize = 0;
             pendingDuelWin = false;
+            pendingWalletBalance = null;
         }
 
         private static void FreezeLocalGameplay()
@@ -1021,6 +1064,8 @@ namespace Mkey.Tournament
 
                     rank = item["rank"]?.Value<int>() ?? rank;
                     prize = item["prize"]?.Value<int>() ?? 0;
+                    if (item["wallet_balance"] != null)
+                        pendingWalletBalance = item["wallet_balance"].Value<int>();
                     break;
                 }
             }
@@ -1077,8 +1122,6 @@ namespace Mkey.Tournament
 
                 duelServerScoreSubmitted = true;
             }
-
-            duelServerScoreSubmitted = false;
 
             var walletTask = WalletService.SyncToCoinsHolderAsync();
             while (!walletTask.IsCompleted)
