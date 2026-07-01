@@ -42,13 +42,7 @@ namespace Mkey.Tournament
         private void Start()
         {
             ApplyLocalTestWallet();
-            BuildPage();
-            pageBuilt = true;
-            RefreshWallet();
-            TournamentJoinFlowGuard.LogState("TournamentPageController.Start");
-
-            if (!ApiConfig.Current.UseLocalSimulation)
-                StartCoroutine(SyncOnlineDataRoutine());
+            StartCoroutine(BuildPageRoutine());
         }
 
         private void OnEnable()
@@ -123,14 +117,16 @@ namespace Mkey.Tournament
                 CoinsHolder.Instance.SetCount(LocalTestWalletCoins);
         }
 
-        private void BuildPage()
+        private IEnumerator BuildPageRoutine()
         {
             Sprite pageSprite = TournamentUITheme.PageDesign;
             if (!pageSprite)
             {
                 Debug.LogError("Tournament page image missing: Resources/Tournament/turnamant1.png");
-                return;
+                yield break;
             }
+
+            yield return TournamentSpriteFactory.WarmUpCoroutine();
 
             float pageW = TournamentPngLayout.RefWidth;
             float pageH = TournamentPngLayout.RefHeight;
@@ -138,6 +134,7 @@ namespace Mkey.Tournament
             Canvas canvas = CreateCanvas();
             pageRoot = TournamentUIFactory.CreateRect(canvas.transform, "TournamentPage");
             TournamentUIFactory.StretchRect(pageRoot);
+            yield return null;
 
             RectTransform scrollRoot = TournamentUIFactory.CreateRect(pageRoot, "MainScroll");
             TournamentUIFactory.StretchRect(scrollRoot);
@@ -168,6 +165,7 @@ namespace Mkey.Tournament
             pageImage.color = Color.white;
             pageImage.preserveAspect = false;
             pageImage.raycastTarget = false;
+            yield return null;
 
             RectTransform overlay = TournamentUIFactory.CreateRect(scrollContent, "Overlay");
             TournamentUIFactory.StretchRect(overlay);
@@ -182,6 +180,7 @@ namespace Mkey.Tournament
             hitAreas.gameObject.AddComponent<TournamentJoinButtonsSelfTest>();
 
             TournamentUIFactory.CreateInvisibleButton(hitAreas, "BackButton", TournamentPngLayout.Back, OnBackClicked);
+            yield return null;
 
             int cardIndex = 0;
             foreach (TournamentDefinition tournament in TournamentCatalog.All)
@@ -194,10 +193,12 @@ namespace Mkey.Tournament
                 cardView.Setup(tournament, OnJoinTournament, 0f, cardIndex, hitAreas);
                 cardView.BindJoinButton(hitAreas, TournamentPngLayout.GetJoinRect(cardIndex), OnJoinTournament);
                 cardIndex++;
+                yield return null;
             }
 
             int balance = CoinsHolder.Instance ? CoinsHolder.Count : 0;
             TournamentCardOverlays.Build(overlay, balance);
+            yield return null;
 
             walletText = TournamentUIFactory.CreateWalletBalance(overlay);
             walletPulse = walletText.gameObject.AddComponent<TournamentWalletPulse>();
@@ -220,14 +221,23 @@ namespace Mkey.Tournament
 
             RectTransform depositButton = TournamentUIFactory.CreateDepositButton(overlay, () => OpenDepositPanel(null));
             depositButton.SetAsLastSibling();
+            yield return null;
 
             dialog = TournamentDialog.Create(pageRoot);
             waitingRoom = TournamentWaitingRoomPanel.Create(pageRoot);
+            yield return null;
 
             TournamentPageIntro.Play(pageRoot.gameObject);
 
             TournamentPageResponsive responsive = pageRoot.gameObject.AddComponent<TournamentPageResponsive>();
             responsive.Configure(scrollRoot, scrollContent);
+
+            pageBuilt = true;
+            RefreshWallet();
+            TournamentJoinFlowGuard.LogState("TournamentPageController.BuildPageRoutine complete");
+
+            if (!ApiConfig.Current.UseLocalSimulation)
+                StartCoroutine(SyncOnlineDataRoutine());
         }
 
         private Canvas CreateCanvas()

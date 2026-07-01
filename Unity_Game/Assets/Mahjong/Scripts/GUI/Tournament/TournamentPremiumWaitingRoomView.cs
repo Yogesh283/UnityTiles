@@ -55,6 +55,27 @@ namespace Mkey.Tournament
         {
             visible = false;
             gameObject.SetActive(false);
+            DisableFullscreenRaycasts();
+        }
+
+        private void DisableFullscreenRaycasts()
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                Image image = images[i];
+                if (!image)
+                    continue;
+
+                RectTransform rt = image.rectTransform;
+                if (rt.anchorMin == Vector2.zero &&
+                    rt.anchorMax == Vector2.one &&
+                    rt.offsetMin == Vector2.zero &&
+                    rt.offsetMax == Vector2.zero)
+                {
+                    image.raycastTarget = false;
+                }
+            }
         }
 
         public void Bind(TournamentDefinition tournament, TournamentRoomSnapshot snap, float searchPulse)

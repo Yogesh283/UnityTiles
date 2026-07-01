@@ -14,6 +14,13 @@ namespace Mkey.Tournament
         public static bool CanStartJoin =>
             !IsJoining && !IsRoomEstablished && !TournamentGlobalWaitingRoom.IsVisible;
 
+        /// <summary>True while a join/matchmaking flow is legitimately in progress (overlay may stay up).</summary>
+        public static bool IsActiveMatchmaking =>
+            IsJoining ||
+            (IsRoomEstablished &&
+             TournamentSession.IsActive &&
+             TournamentMatchManager.HasActiveRoom);
+
         public static void LogState(string context)
         {
             bool waitingVisible = TournamentGlobalWaitingRoom.IsVisible;

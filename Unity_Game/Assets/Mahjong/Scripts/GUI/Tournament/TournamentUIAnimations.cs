@@ -176,6 +176,7 @@ namespace Mkey.Tournament
             g.alpha = 0f;
             for (float t = 0f; t < 0.45f; t += Time.deltaTime) { g.alpha = t / 0.45f; yield return null; }
             g.alpha = 1f;
+            g.blocksRaycasts = true;
         }
     }
 }
