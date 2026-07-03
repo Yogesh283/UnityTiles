@@ -8,8 +8,7 @@ namespace Mkey.Tournament
     /// </summary>
     public static class TournamentCardOverlays
     {
-        private static readonly Color StatTextColor = new Color(0.12f, 0.1f, 0.08f, 0.98f);
-        private static readonly Color PlayersEntryTextColor = new Color(0.95f, 0.88f, 0.68f, 1f);
+        private static readonly Color StatTextColor = Color.black;
 
         public static void Build(Transform statsLayer)
         {
@@ -106,12 +105,8 @@ namespace Mkey.Tournament
 
         private static void CreateStatCell(Transform statsLayer, string column, string name, Rect rect, string value)
         {
-            Color color = column == "Players" || column == "Entry"
-                ? PlayersEntryTextColor
-                : StatTextColor;
-
             RectTransform rt = TournamentUIFactory.CreateRect(statsLayer, name);
-            TournamentPngLayout.PlaceFromTopLeft(rt, rect);
+            TournamentPngLayout.PlaceFromTopLeftAnchored(rt, rect);
 
             CanvasGroup group = rt.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
@@ -120,9 +115,9 @@ namespace Mkey.Tournament
             Text label = rt.gameObject.AddComponent<Text>();
             label.font = TournamentUITheme.Font;
             label.text = value;
-            label.fontSize = TournamentPngLayout.OverlayFont(column == "Players" || column == "Entry" ? 18f : 17f);
+            label.fontSize = TournamentPngLayout.OverlayFont(18f);
             label.fontStyle = FontStyle.Bold;
-            label.color = color;
+            label.color = StatTextColor;
             label.alignment = TextAnchor.MiddleCenter;
             label.supportRichText = false;
             label.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -138,7 +133,10 @@ namespace Mkey.Tournament
 
             Text label = cell.GetComponent<Text>();
             if (label)
+            {
                 label.text = value;
+                label.color = StatTextColor;
+            }
         }
 
         private static void ClearChildren(Transform parent)
