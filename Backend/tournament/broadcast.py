@@ -18,7 +18,12 @@ def schedule_room_broadcast(room_id: str, event: str, data: dict[str, Any] | Non
     if data:
         message.update(data)
 
-    logger.info("broadcast room_id=%s event=%s", room_id, event)
+    logger.info(
+        "[TournamentWsProbe] Broadcast scheduled room_id=%s event=%s subscribers=%s",
+        room_id,
+        event,
+        ws_manager.subscriber_count(room_id),
+    )
 
     try:
         try:

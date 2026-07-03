@@ -11,7 +11,11 @@ from database.models import User, Wallet
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 settings = get_settings()
 
-NEW_USER_STARTING_COINS = 0
+
+def _starting_coins() -> int:
+    if settings.environment == "development":
+        return 5000
+    return 0
 
 
 def hash_password(password: str) -> str:
@@ -52,7 +56,7 @@ def register_user(db: Session, email: str, password: str, display_name: str) -> 
     )
     db.add(user)
     db.flush()
-    db.add(Wallet(user_id=user.id, balance=NEW_USER_STARTING_COINS))
+    db.add(Wallet(user_id=user.id, balance=_starting_coins()))
     db.commit()
     db.refresh(user)
     return user
@@ -71,8 +75,11 @@ def login_user(db: Session, email: str, password: str) -> User | None:
 
 def _ensure_wallet(db: Session, user_id: int) -> None:
     wallet = db.query(Wallet).filter(Wallet.user_id == user_id).first()
+    starting = _starting_coins()
     if not wallet:
-        db.add(Wallet(user_id=user_id, balance=NEW_USER_STARTING_COINS))
+        db.add(Wallet(user_id=user_id, balance=starting))
+    elif starting > 0 and wallet.balance < starting:
+        wallet.balance = starting
 
 
 def guest_login(db: Session, guest_id: str, display_name: str = "Guest") -> User:
@@ -91,7 +98,7 @@ def guest_login(db: Session, guest_id: str, display_name: str = "Guest") -> User
     )
     db.add(user)
     db.flush()
-    db.add(Wallet(user_id=user.id, balance=NEW_USER_STARTING_COINS))
+    db.add(Wallet(user_id=user.id, balance=_starting_coins()))
     db.commit()
     db.refresh(user)
     return user
@@ -113,7 +120,7 @@ def google_login(db: Session, google_id: str, email: str, display_name: str) -> 
     )
     db.add(user)
     db.flush()
-    db.add(Wallet(user_id=user.id, balance=NEW_USER_STARTING_COINS))
+    db.add(Wallet(user_id=user.id, balance=_starting_coins()))
     db.commit()
     db.refresh(user)
     return user

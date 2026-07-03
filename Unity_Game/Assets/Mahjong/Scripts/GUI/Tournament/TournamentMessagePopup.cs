@@ -54,6 +54,8 @@ namespace Mkey.Tournament
             if (popup?.noButton)
                 popup.noButton.gameObject.SetActive(false);
 
+            TournamentPopupBackdrop.AttachKeeper(popup);
+
             if (autoCloseSeconds > 0f && popup)
                 popup.CloseWindow(autoCloseSeconds, complete);
         }

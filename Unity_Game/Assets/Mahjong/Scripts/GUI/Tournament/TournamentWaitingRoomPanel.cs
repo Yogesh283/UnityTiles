@@ -15,14 +15,23 @@ namespace Mkey.Tournament
         private TournamentDefinition tournament;
         private int currentPlayers;
         private int lastObservedPlayerCount;
+        private int lastLoggedPlayerCount;
         private float timeLeft;
         private Action onComplete;
         private bool launchStarted;
+        private bool launchSequenceRunning;
         private float searchPulse;
         private bool isVisible;
         private bool vsIntroPlayed;
         private bool isDuel;
         private float waitRoomShownAt;
+        private string lastLoggedPhase;
+
+        private const float DuelPollIntervalSeconds = 1.0f;
+        private const float MultiPollIntervalSeconds = 1.0f;
+
+        private float roomPollTimer;
+        private bool immediatePollDone;
 
         public bool IsShowing => isVisible && premiumView != null && premiumView.IsVisible;
 
@@ -31,14 +40,22 @@ namespace Mkey.Tournament
             if (TournamentJoinDebug.IsFirstJoin(data))
                 TournamentJoinDebug.Log("WaitingRoom.Show — premium multiplayer lobby");
 
+            isVisible = true;
             tournament = data;
             onComplete = completeCallback;
             launchStarted = false;
+            launchSequenceRunning = false;
             searchPulse = 0f;
             vsIntroPlayed = false;
             isDuel = data != null && data.maxPlayers <= 2;
             lastObservedPlayerCount = 0;
+            lastLoggedPlayerCount = 0;
             waitRoomShownAt = Time.realtimeSinceStartup;
+            lastLoggedPhase = string.Empty;
+            roomPollTimer = 0f;
+            immediatePollDone = false;
+            ResetTransitionProbe();
+            TournamentFlowLog.Searching("waiting room panel shown");
 
             TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(data.id);
             currentPlayers = snap.hasRoom ? snap.currentPlayers : 1;
@@ -49,9 +66,34 @@ namespace Mkey.Tournament
             TournamentApiBridge.RoomUpdated += OnRoomUpdated;
 
             EnsureViews();
-            premiumView.Show();
+            premiumView.Show(CancelMatchmaking);
             RefreshView();
             StartCoroutine(WaitingRoutine());
+        }
+
+        public void CancelMatchmaking()
+        {
+            if (launchStarted)
+                return;
+
+            AbortWaitingState("user cancelled from waiting room");
+        }
+
+        private void AbortWaitingState(string reason)
+        {
+            TournamentFlowLog.RoomClosed(reason);
+            TournamentFlowLog.WaitingState("cancelled", reason);
+            TournamentJoinCoordinator.NotifyWaitingRoomClosed();
+            TournamentApiBridge.RoomUpdated -= OnRoomUpdated;
+            StopAllCoroutines();
+            TournamentRoomWebSocket.StopMaintainingConnection();
+            TournamentApiBridge.Clear();
+            TournamentSession.Clear();
+            TournamentJoinFlowGuard.Reset();
+            vsIntro?.Hide();
+            premiumView?.Hide();
+            isVisible = false;
+            launchStarted = false;
         }
 
         public void Hide()
@@ -105,6 +147,62 @@ namespace Mkey.Tournament
 
             lastObservedPlayerCount = snap.currentPlayers;
             RefreshView();
+            TryBeginLaunchFromRoomUpdate(snap);
+        }
+
+        private void TryBeginLaunchFromRoomUpdate(TournamentRoomSnapshot snap)
+        {
+            if (!TryClaimLaunch(snap))
+                return;
+
+            TournamentFlowLog.GameStart(
+                $"trigger=room_updated status={snap.status} players={snap.currentPlayers}/{tournament.maxPlayers}");
+            StartCoroutine(RunMatchStartSequence(snap));
+        }
+
+        private bool TryClaimLaunch(TournamentRoomSnapshot snap)
+        {
+            if (launchStarted || launchSequenceRunning || tournament == null)
+                return false;
+
+            if (!CanLaunchMatch(snap))
+                return false;
+
+            launchStarted = true;
+            return true;
+        }
+
+        private bool CanLaunchMatch(TournamentRoomSnapshot snap)
+        {
+            int players = snap.hasRoom ? snap.currentPlayers : currentPlayers;
+            bool roomFull = players >= tournament.maxPlayers;
+            if (!roomFull)
+                return false;
+
+            bool serverReady = !TournamentApiBridge.IsOnlineMode || TournamentApiBridge.HasActiveApiSession;
+            if (!serverReady)
+                return false;
+
+            EnsureServerClockFromApi();
+
+            string status = snap.status ?? string.Empty;
+            if (snap.shouldLaunch)
+                return true;
+
+            return status is "starting" or "active" or "locked";
+        }
+
+        private static void EnsureServerClockFromApi()
+        {
+            RoomResponseDto room = TournamentApiBridge.CurrentRoom;
+            if (room == null)
+                return;
+
+            if ((room.serverNowMs ?? 0) > 0)
+                TournamentServerClock.SyncServerTime(room.serverNowMs.Value);
+
+            if ((room.matchStartAtMs ?? 0) > 0)
+                TournamentServerClock.ScheduleServerStart(room.matchStartAtMs.Value);
         }
 
         private void RefreshView()
@@ -116,14 +214,69 @@ namespace Mkey.Tournament
             float clientWaitSeconds = GetClientWaitSecondsRemaining(snap);
             premiumView.Bind(tournament, snap, searchPulse, clientWaitSeconds);
             isVisible = true;
+            LogWaitingPhaseFromSnapshot(snap, snap.hasRoom ? snap.currentPlayers : 1);
         }
+
+        private void LogWaitingPhaseFromSnapshot(TournamentRoomSnapshot snap, int players)
+        {
+            string phase;
+            if (!TournamentApiBridge.HasActiveApiSession)
+                phase = TournamentApiBridge.IsBackgroundJoinActive ? "searching" : "joining";
+            else if (players < tournament.maxPlayers)
+                phase = "searching";
+            else if (snap.status == "starting")
+                phase = "starting";
+            else if (snap.status == "active" || snap.status == "locked")
+                phase = "active";
+            else
+                phase = "found";
+
+            if (players >= 2 && lastLoggedPlayerCount < 2)
+                TournamentFlowLog.PlayerFound($"players={players}/{tournament.maxPlayers}");
+
+            if (players >= tournament.maxPlayers && lastLoggedPlayerCount < tournament.maxPlayers)
+                TournamentFlowLog.RoomFull($"players={players}/{tournament.maxPlayers}");
+
+            lastLoggedPlayerCount = players;
+
+            if (snap.status == "starting" && lastLoggedPhase != "starting")
+                TournamentFlowLog.CountdownStart(
+                    $"players={players} countdown={snap.countdownSeconds:F1}s match_start_at_ms={snap.matchStartAtMs}");
+
+            LogWaitingPhase(phase, $"players={players}/{tournament.maxPlayers} status={snap.status}");
+        }
+
+        private void LogWaitingPhase(string phase, string detail)
+        {
+            if (phase == lastLoggedPhase)
+                return;
+
+            lastLoggedPhase = phase;
+            TournamentFlowLog.WaitingState(phase, detail);
+        }
+
+        private void ResetTransitionProbe()
+        {
+            TournamentTransitionProbe.Reset();
+        }
+
+        private float GetElapsedSearchSeconds() =>
+            Mathf.Max(0f, Time.realtimeSinceStartup - waitRoomShownAt);
 
         private float GetClientWaitSecondsRemaining(TournamentRoomSnapshot snap)
         {
-            if (snap.hasRoom && snap.countdownSeconds > 0f)
+            if (snap.hasRoom && snap.status == "starting" && snap.countdownSeconds > 0f)
                 return snap.countdownSeconds;
 
-            return Mathf.Max(0f, tournament.waitingSeconds - (Time.realtimeSinceStartup - waitRoomShownAt));
+            if (snap.hasRoom && snap.countdownSeconds > 0f &&
+                (snap.status == "active" || snap.status == "locked"))
+                return snap.countdownSeconds;
+
+            if (!TournamentApiBridge.HasActiveApiSession ||
+                (snap.hasRoom && snap.currentPlayers < tournament.maxPlayers))
+                return GetElapsedSearchSeconds();
+
+            return Mathf.Max(0f, tournament.waitingSeconds - GetElapsedSearchSeconds());
         }
 
         private IEnumerator WaitingRoutine()
@@ -136,13 +289,29 @@ namespace Mkey.Tournament
                 searchPulse += Time.deltaTime;
                 RefreshView();
 
-                if (TournamentApiBridge.IsOnlineMode)
+                if (TournamentApiBridge.IsOnlineMode && TournamentApiBridge.HasMatchedRoom)
+                {
+                    float pollInterval = isDuel ? DuelPollIntervalSeconds : MultiPollIntervalSeconds;
+                    if (!immediatePollDone)
+                    {
+                        immediatePollDone = true;
+                        yield return RefreshApiRoomCoroutine();
+                    }
+
+                    roomPollTimer += Time.deltaTime;
+                    if (roomPollTimer >= pollInterval)
+                    {
+                        roomPollTimer = 0f;
+                        yield return RefreshApiRoomCoroutine();
+                    }
+                }
+                else if (TournamentApiBridge.IsOnlineMode)
                 {
                     fallbackPoll += Time.deltaTime;
-                    if (fallbackPoll >= 1.0f)
+                    if (fallbackPoll >= 1f)
                     {
                         fallbackPoll = 0f;
-                        yield return RefreshApiRoomCoroutine();
+                        RefreshView();
                     }
                 }
 
@@ -161,18 +330,29 @@ namespace Mkey.Tournament
                     yield break;
                 }
 
-                bool roomFull = currentPlayers >= tournament.maxPlayers;
-                bool serverCountdown = snap.status == "starting";
-                bool serverActive = snap.status == "active";
+                EnsureServerClockFromApi();
 
-                if (isDuel && roomFull && (serverCountdown || serverActive))
+                if (TryClaimLaunch(snap))
                 {
-                    launchStarted = true;
+                    TournamentFlowLog.GameStart(
+                        $"trigger=waiting_routine status={snap.status} players={snap.currentPlayers}/{tournament.maxPlayers}");
                     yield return RunMatchStartSequence(snap);
                     yield break;
                 }
 
-                if (!isDuel && (serverCountdown || serverActive || snap.shouldLaunch) && roomFull)
+                bool roomFull = currentPlayers >= tournament.maxPlayers;
+                bool serverCountdown = snap.status == "starting";
+                bool serverActive = snap.status == "active" || snap.status == "locked";
+                bool serverReady = TournamentApiBridge.IsOnlineMode
+                    ? TournamentApiBridge.HasActiveApiSession
+                    : true;
+                bool willEnter = isDuel && roomFull && serverReady && (serverCountdown || serverActive || snap.shouldLaunch);
+
+                if (isDuel && roomFull && serverReady)
+                    TournamentTransitionProbe.LogWaitingGate(
+                        snap, tournament.maxPlayers, roomFull, serverCountdown, serverActive, willEnter);
+
+                if (!isDuel && snap.shouldLaunch && roomFull && serverReady)
                 {
                     launchStarted = true;
                     yield return RunMatchStartSequence(snap);
@@ -216,11 +396,11 @@ namespace Mkey.Tournament
             if (currentPlayers >= tournament.maxPlayers)
                 return false;
 
-            float remaining = GetClientWaitSecondsRemaining(snap);
-            if (remaining > 0f)
+            if (GetElapsedSearchSeconds() < tournament.waitingSeconds)
                 return false;
 
-            if (snap.hasRoom && snap.status != "waiting" && snap.status != "starting")
+            string status = snap.hasRoom ? (snap.status ?? "waiting") : "waiting";
+            if (status != "waiting" && status != "starting")
                 return false;
 
             return true;
@@ -229,22 +409,32 @@ namespace Mkey.Tournament
         private IEnumerator HandleSearchTimeoutRoutine()
         {
             launchStarted = true;
-            Hide();
+            int balanceBefore = CoinsHolder.Instance ? CoinsHolder.Count : 0;
+            AbortWaitingState("no player found in time");
 
             if (NetworkManager.HasInstance)
             {
                 var walletTask = WalletService.SyncToCoinsHolderAsync();
                 while (!walletTask.IsCompleted)
                     yield return null;
-            }
 
-            TournamentApiBridge.Clear();
-            TournamentJoinFlowGuard.Reset();
-            TournamentSession.Clear();
+                if (walletTask.Result.Success)
+                {
+                    int balanceAfter = walletTask.Result.Data;
+                    if (balanceAfter > balanceBefore)
+                        TournamentFlowLog.RefundCompleted($"balance={balanceAfter} refunded={balanceAfter - balanceBefore}");
+                    else
+                        TournamentFlowLog.RefundCompleted($"balance synced={balanceAfter}");
+                }
+                else
+                {
+                    TournamentFlowLog.ApiRetry($"wallet sync after timeout err={walletTask.Result.ErrorMessage}");
+                }
+            }
 
             bool closed = false;
             TournamentMessagePopup.Show(
-                "No Opponent Found",
+                "No player found.",
                 "We couldn't find an opponent in time.\n\nPlease try again.",
                 () =>
                 {
@@ -259,6 +449,15 @@ namespace Mkey.Tournament
 
         private IEnumerator RunMatchStartSequence(TournamentRoomSnapshot snap)
         {
+            if (launchSequenceRunning)
+                yield break;
+
+            launchSequenceRunning = true;
+            try
+            {
+            TournamentTransitionProbe.LogRunMatchStartEntered(snap);
+            EnsureServerClockFromApi();
+
             if ((TournamentApiBridge.CurrentRoom?.serverNowMs ?? 0) > 0)
                 TournamentServerClock.SyncServerTime(TournamentApiBridge.CurrentRoom.serverNowMs.Value);
 
@@ -278,10 +477,15 @@ namespace Mkey.Tournament
                     yield return vsIntro.PlayVsRevealRoutine(local, opponent);
                 }
 
-                yield return vsIntro.PlayServerCountdownRoutine();
+                if (TournamentServerClock.HasScheduledStart)
+                    yield return vsIntro.PlayServerCountdownRoutine();
+                else
+                    TournamentFlowLog.CountdownStart("skipped — no match_start_at_ms yet; launching when server time reached");
             }
             else
             {
+                TournamentTransitionProbe.LogCountdownStarted();
+                TournamentFlowLog.CountdownStart("multiplayer lobby countdown");
                 while (TournamentServerClock.HasScheduledStart &&
                        TournamentServerClock.SecondsUntilStart() > 0.05f)
                 {
@@ -291,17 +495,27 @@ namespace Mkey.Tournament
                 }
             }
 
-            while (!TournamentServerClock.IsStartTimeReached())
+            float launchWait = 12f;
+            while (!TournamentServerClock.IsStartTimeReached() && launchWait > 0f)
             {
+                EnsureServerClockFromApi();
                 searchPulse += Time.unscaledDeltaTime;
                 RefreshView();
+                launchWait -= Time.unscaledDeltaTime;
                 yield return null;
             }
 
             RefreshView();
             yield return new WaitForSecondsRealtime(0.2f);
+            TournamentTransitionProbe.LogLaunchGameFromWaitingRoom();
+            TournamentFlowLog.GameStarted($"tournament={tournament.id} room={snap.roomId}");
             onComplete?.Invoke();
             Hide();
+            }
+            finally
+            {
+                launchSequenceRunning = false;
+            }
         }
 
         private static RoomPlayerDto FindLocalPlayer(TournamentRoomSnapshot snap)

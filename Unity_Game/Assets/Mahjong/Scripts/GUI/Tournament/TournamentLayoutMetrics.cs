@@ -4,12 +4,12 @@ using UnityEngine.UI;
 namespace Mkey.Tournament
 {
     /// <summary>
-    /// Scales tournament UI from PNG reference (852×1846) and applies safe-area insets.
+    /// Scales tournament UI from PNG reference (862×1825) and applies safe-area insets.
     /// </summary>
     public static class TournamentLayoutMetrics
     {
-        public const float RefWidth = 852f;
-        public const float RefHeight = 1846f;
+        public const float RefWidth = 862f;
+        public const float RefHeight = 1825f;
 
         public static float Scale { get; private set; } = 1f;
         public static float WidthScale { get; private set; } = 1f;
@@ -42,7 +42,7 @@ namespace Mkey.Tournament
     }
 
     /// <summary>
-    /// Hit areas aligned to turnamant1.png (852×1846 reference pixels).
+    /// Hit areas aligned to turnamant1.png (862×1825 reference pixels).
     /// Coordinates are top-left origin in reference image space.
     /// </summary>
     public static class TournamentPngLayout
@@ -57,27 +57,105 @@ namespace Mkey.Tournament
 
         private static readonly float[] CardTops = { 309f, 498f, 684f, 871f, 1053f, 1230f };
 
+        /// <summary>PNG card order — always map tournament id to layout index (API order may differ).</summary>
+        private static readonly string[] CardTournamentIds =
+        {
+            "duel_1v1",
+            "quick_cup",
+            "mega_clash",
+            "grand_clash",
+            "championship",
+            "world_cup"
+        };
+
         /// <summary>Measured from turnamant1.png JOIN buttons (top-left origin), with touch padding.</summary>
         private static readonly Rect[] JoinRects =
         {
-            new Rect(632f, 340f, 188f, 58f),   // 1 vs 1 Duel — PNG ~(647,352,163,35)
-            new Rect(639f, 529f, 183f, 63f),   // Quick Cup — PNG ~(654,541,157,43)
-            new Rect(632f, 715f, 188f, 58f),   // Mega Clash — PNG ~(647,727,162,37)
-            new Rect(632f, 897f, 188f, 58f),   // Grand Clash — PNG ~(647,909,162,38)
-            new Rect(637f, 1078f, 185f, 55f),  // Championship — PNG ~(652,1090,159,31)
-            new Rect(632f, 1254f, 188f, 58f)   // World Cup — PNG ~(647,1266,161,35)
+            new Rect(635f, 406f, 148f, 53f),   // 1 vs 1 Duel
+            new Rect(635f, 574f, 148f, 51f),   // Quick Cup
+            new Rect(635f, 738f, 148f, 51f),   // Mega Clash
+            new Rect(635f, 901f, 148f, 51f),   // Grand Clash
+            new Rect(635f, 1063f, 148f, 43f),  // Championship
+            new Rect(635f, 1223f, 148f, 50f)   // World Cup
         };
 
         public static readonly Rect Back = new Rect(13f, 15f, 69f, 84f);
-        public static readonly Rect WalletMask = new Rect(628f, 10f, 210f, 102f);
-        public static readonly Rect Wallet = new Rect(634f, 14f, 200f, 91f);
-        public static readonly Rect Deposit = new Rect(548f, 14f, 82f, 91f);
+        /// <summary>Black balance interior on turnamant1.png (right header).</summary>
+        public static readonly Rect Wallet = new Rect(602f, 72f, 258f, 26f);
+        /// <summary>Gold + deposit hit area (left of wallet).</summary>
+        public static readonly Rect Deposit = new Rect(448f, 8f, 154f, 90f);
+
+        public const float CardStatsRowHeight = 26f;
+        public const float CardStatColumnWidth = 100f;
+        /// <summary>Column centers on turnamant1.png — Players, Entry Fee, Prize Pool, Top Win.</summary>
+        private static readonly float[] CardStatColumnCenterX = { 221f, 329f, 437f, 545f };
+        /// <summary>Pixels below each card top to the dash value row center (measured on turnamant1.png).</summary>
+        private static readonly float[] CardStatOffsetFromCardTop = { 179f, 164f, 142f, 115f, 96f, 179f };
+
+        public static Rect GetCardStatRect(int column, int cardIndex)
+        {
+            float centerY = GetCardTop(cardIndex) + (
+                cardIndex >= 0 && cardIndex < CardStatOffsetFromCardTop.Length
+                    ? CardStatOffsetFromCardTop[cardIndex]
+                    : 130f);
+            float centerX = column >= 0 && column < CardStatColumnCenterX.Length
+                ? CardStatColumnCenterX[column]
+                : CardStatColumnCenterX[0];
+            return new Rect(
+                centerX - CardStatColumnWidth * 0.5f,
+                centerY - CardStatsRowHeight * 0.5f,
+                CardStatColumnWidth,
+                CardStatsRowHeight);
+        }
+
+        public static Rect GetCardStatRect(int column, float cardTop)
+        {
+            int index = 0;
+            float best = float.MaxValue;
+            for (int i = 0; i < CardTops.Length; i++)
+            {
+                float d = Mathf.Abs(CardTops[i] - cardTop);
+                if (d < best)
+                {
+                    best = d;
+                    index = i;
+                }
+            }
+
+            return GetCardStatRect(column, index);
+        }
 
         public static float GetCardTop(int index)
         {
             if (index >= 0 && index < CardTops.Length)
                 return CardTops[index];
             return FirstCardTop + index * (CardHeight + CardGap);
+        }
+
+        public static int GetCardIndexForTournament(string tournamentId)
+        {
+            if (string.IsNullOrEmpty(tournamentId))
+                return -1;
+
+            for (int i = 0; i < CardTournamentIds.Length; i++)
+            {
+                if (CardTournamentIds[i] == tournamentId)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        /// <summary>862×1825 pixel layer aligned with turnamant1.png on PageLayer.</summary>
+        public static RectTransform CreatePagePixelLayer(RectTransform pageLayer, string name)
+        {
+            RectTransform layer = TournamentUIFactory.CreateRect(pageLayer, name);
+            layer.anchorMin = new Vector2(0.5f, 1f);
+            layer.anchorMax = new Vector2(0.5f, 1f);
+            layer.pivot = new Vector2(0.5f, 1f);
+            layer.sizeDelta = new Vector2(RefWidth, RefHeight);
+            layer.anchoredPosition = Vector2.zero;
+            return layer;
         }
 
         public static Rect GetJoinRect(int index)
@@ -90,10 +168,23 @@ namespace Mkey.Tournament
 
         public static void PlaceFromTopLeft(RectTransform rt, Rect rect)
         {
+            // Top-left pixel coords on the 862×1825 page (parent must be PageLayer-sized).
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(rect.width, rect.height);
+            rt.anchoredPosition = new Vector2(
+                rect.x + rect.width * 0.5f,
+                -(rect.y + rect.height * 0.5f));
+        }
+
+        /// <summary>Fractional placement for full-stretch parents (join buttons, wallet, stats).</summary>
+        public static void PlaceFromTopLeftAnchored(RectTransform rt, Rect rect)
+        {
+            rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchorMin = new Vector2(rect.x / RefWidth, 1f - (rect.y + rect.height) / RefHeight);
             rt.anchorMax = new Vector2((rect.x + rect.width) / RefWidth, 1f - rect.y / RefHeight);
             rt.offsetMin = rt.offsetMax = Vector2.zero;
-            rt.pivot = new Vector2(0.5f, 0.5f);
         }
 
         public static int OverlayFont(float sizeAtRef) =>

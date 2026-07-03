@@ -167,16 +167,40 @@ namespace Mkey.Tournament
 
     public class TournamentPageIntro : MonoBehaviour
     {
-        public static void Play(GameObject root) => root.AddComponent<TournamentPageIntro>();
+        public static void Play(GameObject root)
+        {
+            if (!root)
+                return;
+
+            foreach (TournamentPageIntro old in root.GetComponents<TournamentPageIntro>())
+            {
+                if (old && old != null)
+                    Destroy(old);
+            }
+
+            if (!root.GetComponent<CanvasGroup>())
+                root.AddComponent<CanvasGroup>();
+
+            root.AddComponent<TournamentPageIntro>();
+        }
+
         private IEnumerator Start()
         {
-            CanvasGroup g = gameObject.GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+            CanvasGroup g = gameObject.GetComponent<CanvasGroup>();
+            if (!g)
+                yield break;
+
             g.blocksRaycasts = false;
             g.interactable = true;
             g.alpha = 0f;
-            for (float t = 0f; t < 0.45f; t += Time.deltaTime) { g.alpha = t / 0.45f; yield return null; }
+            for (float t = 0f; t < 0.45f; t += Time.deltaTime)
+            {
+                g.alpha = t / 0.45f;
+                yield return null;
+            }
+
             g.alpha = 1f;
-            g.blocksRaycasts = true;
+            g.blocksRaycasts = false;
         }
     }
 }

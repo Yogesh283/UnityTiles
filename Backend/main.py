@@ -92,4 +92,11 @@ def health():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host=settings.api_host, port=settings.api_port, reload=True)
+    uvicorn.run(
+        "main:app",
+        host=settings.api_host,
+        port=settings.api_port,
+        reload=True,
+        ws_ping_interval=30,
+        ws_ping_timeout=60,
+    )

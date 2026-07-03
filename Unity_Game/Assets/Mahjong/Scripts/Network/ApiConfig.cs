@@ -21,6 +21,8 @@ namespace Mkey.Network
         [Header("Mode")]
         [Tooltip("When enabled, all systems use local simulation (no API calls).")]
         public bool developmentMode;
+        [Tooltip("Feature flag: use Nakama for tournament realtime networking only.")]
+        public bool useNakamaRealtime;
 
         [Header("Request")]
         public float requestTimeoutSeconds = 15f;
@@ -49,5 +51,6 @@ namespace Mkey.Network
         public string WebSocketRoot => ServerRoot.Replace("https://", "wss://").Replace("http://", "ws://") + "/ws/tournament";
 
         public bool UseLocalSimulation => developmentMode;
+        public bool UseNakamaRealtimeNetworking => !developmentMode && useNakamaRealtime;
     }
 }

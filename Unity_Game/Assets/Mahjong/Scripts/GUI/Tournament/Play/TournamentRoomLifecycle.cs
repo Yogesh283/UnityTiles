@@ -1,3 +1,4 @@
+using Mkey.Network;
 using UnityEngine;
 
 namespace Mkey.Tournament
@@ -34,7 +35,9 @@ namespace Mkey.Tournament
         private void Update()
         {
             float dt = Time.unscaledDeltaTime;
-            TournamentRoomRegistry.TickWaitingRoom(dt);
+            // Online duels are server-driven; local TickWaitingRoom simulates fake opponents.
+            if (!TournamentApiBridge.IsOnlineMode)
+                TournamentRoomRegistry.TickWaitingRoom(dt);
             TournamentRoomRegistry.TickActiveMatch(dt);
         }
 

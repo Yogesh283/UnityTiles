@@ -1,0 +1,54 @@
+# Match IQ — Phase 1.5 Nakama POC (isolated from production FastAPI stack)
+# Usage: docker compose -f Nakama/docker-compose.nakama.yml up --build
+# Console: http://localhost:7351  (admin / password)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: matchiq-nakama-postgres
+    environment:
+      POSTGRES_USER: nakama
+      POSTGRES_PASSWORD: nakama_local_dev
+      POSTGRES_DB: nakama
+    ports:
+      - "5433:5432"
+    volumes:
+      - nakama_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nakama -d nakama"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  nakama:
+    image: heroiclabs/nakama:3.16.0
+    container_name: matchiq-nakama
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint:
+      - "/bin/sh"
+      - "-ecx"
+      - >
+        /nakama/nakama migrate up --database.address nakama:nakama_local_dev@postgres:5432/nakama?sslmode=disable &&
+        exec /nakama/nakama
+        --name matchiq-poc
+        --database.address nakama:nakama_local_dev@postgres:5432/nakama?sslmode=disable
+        --logger.level DEBUG
+        --session.token_expiry_sec 7200
+        --socket.server_key defaultkey
+        --runtime.path /nakama/data/modules
+    ports:
+      - "7349:7349"
+      - "7350:7350"
+      - "7351:7351"
+    volumes:
+      - ./runtime:/nakama/data/modules:ro
+    healthcheck:
+      test: ["CMD", "/nakama/nakama", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+volumes:
+  nakama_postgres_data:

@@ -9,11 +9,6 @@ namespace Mkey.Tournament
     /// </summary>
     public class TournamentJoinButtonsSelfTest : MonoBehaviour
     {
-        private void Start()
-        {
-            Run();
-        }
-
         [ContextMenu("Run JOIN Buttons Self Test")]
         public void Run()
         {

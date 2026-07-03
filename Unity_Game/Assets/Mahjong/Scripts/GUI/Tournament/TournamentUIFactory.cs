@@ -147,7 +147,7 @@ namespace Mkey.Tournament
         public static void CreateInvisibleButton(Transform parent, string name, Rect rect, Action onClick)
         {
             RectTransform rt = CreateRect(parent, name);
-            TournamentPngLayout.PlaceFromTopLeft(rt, rect);
+            TournamentPngLayout.PlaceFromTopLeftAnchored(rt, rect);
             Image hit = rt.gameObject.AddComponent<Image>();
             hit.sprite = TournamentSpriteFactory.SoftCircle;
             hit.type = Image.Type.Simple;
@@ -170,7 +170,7 @@ namespace Mkey.Tournament
 
             string buttonName = tournament != null ? "Join_" + tournament.id : "Join_unknown";
             RectTransform rt = CreateRect(parent, buttonName);
-            TournamentPngLayout.PlaceFromTopLeft(rt, rect);
+            TournamentPngLayout.PlaceFromTopLeftAnchored(rt, rect);
 
             Image hit = rt.gameObject.AddComponent<Image>();
             hit.sprite = TournamentSpriteFactory.SoftCircle;
@@ -181,90 +181,75 @@ namespace Mkey.Tournament
             Button button = rt.gameObject.AddComponent<Button>();
             button.targetGraphic = hit;
             button.transition = Selectable.Transition.None;
-            button.interactable = true;
+
+            bool isFull = tournament != null &&
+                string.Equals(tournament.statusLabel, "FULL", StringComparison.OrdinalIgnoreCase);
+            button.interactable = !isFull;
 
             rt.gameObject.AddComponent<TournamentJoinHitArea>();
 
             TournamentJoinButton joinButton = rt.gameObject.AddComponent<TournamentJoinButton>();
             joinButton.Bind(tournament, onJoin);
+            CreateJoinButtonLabel(rt, isFull);
 
             if (tournament != null && tournament.id == TournamentJoinDebug.FirstJoinId)
                 TournamentJoinDebug.LogFirstJoinButtonSetup(rt, rect);
         }
 
+        private static void CreateJoinButtonLabel(RectTransform buttonRt, bool isFull)
+        {
+            Text label = CreateText(
+                buttonRt,
+                "Label",
+                isFull ? "FULL" : "JOIN",
+                TournamentPngLayout.OverlayFont(20f),
+                FontStyle.Bold,
+                Color.white,
+                TextAnchor.MiddleCenter);
+            StretchRect(label.rectTransform);
+            label.raycastTarget = false;
+            AddShadow(label, new Color(0f, 0f, 0f, 0.55f), new Vector2(1f, -1f));
+        }
+
         public static Text CreateWalletBalance(Transform parent)
         {
-            Image pngMask = CreateImage(parent, "WalletPngMask", new Color(0.02f, 0.08f, 0.05f, 1f), TournamentSpriteFactory.SoftCircle, false);
-            TournamentPngLayout.PlaceFromTopLeft(pngMask.rectTransform, TournamentPngLayout.WalletMask);
-
-            RectTransform panel = CreateRect(parent, "WalletPanel");
-            TournamentPngLayout.PlaceFromTopLeft(panel, TournamentPngLayout.Wallet);
+            RectTransform panel = CreateRect(parent, "WalletBalance");
+            TournamentPngLayout.PlaceFromTopLeftAnchored(panel, TournamentPngLayout.Wallet);
 
             CanvasGroup group = panel.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
             group.interactable = false;
 
-            Image bg = CreateSlicedImage(panel, "Bg", TournamentPremiumTheme.EmeraldVip, TournamentSpriteFactory.CardBackground, false);
-            StretchRect(bg.rectTransform);
-
-            Image inner = CreateSlicedImage(panel, "Inner", new Color(0.03f, 0.12f, 0.08f, 1f), TournamentSpriteFactory.CardBackground, false);
-            RectTransform innerRt = inner.rectTransform;
-            innerRt.anchorMin = Vector2.zero;
-            innerRt.anchorMax = Vector2.one;
-            innerRt.offsetMin = new Vector2(4f, 4f);
-            innerRt.offsetMax = new Vector2(-4f, -4f);
-
-            Image border = CreateSlicedImage(panel, "GoldBorder", TournamentPremiumTheme.Gold, TournamentSpriteFactory.GoldFrame, false);
-            StretchRect(border.rectTransform);
-            border.rectTransform.offsetMin = new Vector2(1f, 1f);
-            border.rectTransform.offsetMax = new Vector2(-1f, -1f);
-
-            Text coin = CreateText(panel, "CoinIcon", "🪙", TournamentPngLayout.OverlayFont(18f),
-                FontStyle.Normal, TournamentPremiumTheme.GoldBright, TextAnchor.MiddleRight);
-            RectTransform coinRt = coin.rectTransform;
-            coinRt.anchorMin = new Vector2(0.08f, 0.52f);
-            coinRt.anchorMax = new Vector2(0.28f, 0.86f);
-            coinRt.offsetMin = coinRt.offsetMax = Vector2.zero;
-
-            Text label = CreateText(panel, "BalanceLabel", "Balance", TournamentPngLayout.OverlayFont(15f),
-                FontStyle.Bold, TournamentPremiumTheme.GoldLabel, TextAnchor.MiddleLeft);
-            RectTransform labelRt = label.rectTransform;
-            labelRt.anchorMin = new Vector2(0.28f, 0.52f);
-            labelRt.anchorMax = new Vector2(0.92f, 0.86f);
-            labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
-
-            Text amount = CreateText(panel, "WalletText", string.Empty, TournamentPngLayout.OverlayFont(32f),
-                FontStyle.Bold, TournamentPremiumTheme.GoldBright, TextAnchor.MiddleCenter);
-            RectTransform amountRt = amount.rectTransform;
-            amountRt.anchorMin = new Vector2(0.06f, 0.1f);
-            amountRt.anchorMax = new Vector2(0.94f, 0.5f);
-            amountRt.offsetMin = amountRt.offsetMax = Vector2.zero;
-            AddShadow(amount, new Color(0f, 0f, 0f, 0.45f), new Vector2(1f, -1f));
+            int fontSize = Mathf.Max(16, TournamentPngLayout.OverlayFont(20f));
+            Text amount = CreateText(
+                panel,
+                "WalletText",
+                string.Empty,
+                fontSize,
+                FontStyle.Bold,
+                Color.white,
+                TextAnchor.MiddleCenter);
+            StretchRect(amount.rectTransform);
+            amount.alignByGeometry = true;
+            amount.horizontalOverflow = HorizontalWrapMode.Overflow;
+            amount.verticalOverflow = VerticalWrapMode.Truncate;
+            amount.resizeTextForBestFit = true;
+            amount.resizeTextMinSize = 12;
+            amount.resizeTextMaxSize = fontSize;
+            amount.raycastTarget = false;
             return amount;
         }
 
         public static RectTransform CreateDepositButton(Transform parent, UnityEngine.Events.UnityAction onClick)
         {
             RectTransform panel = CreateRect(parent, "DepositButton");
-            TournamentPngLayout.PlaceFromTopLeft(panel, TournamentPngLayout.Deposit);
+            TournamentPngLayout.PlaceFromTopLeftAnchored(panel, TournamentPngLayout.Deposit);
 
-            Image bg = CreateSlicedImage(panel, "Bg", TournamentPremiumTheme.Gold, TournamentSpriteFactory.GoldFrame, true);
-            StretchRect(bg.rectTransform);
-
-            Image inner = CreateSlicedImage(panel, "Inner", new Color(0.12f, 0.38f, 0.24f, 1f), TournamentSpriteFactory.CardBackground, true);
-            RectTransform innerRt = inner.rectTransform;
-            innerRt.anchorMin = Vector2.zero;
-            innerRt.anchorMax = Vector2.one;
-            innerRt.offsetMin = new Vector2(3f, 3f);
-            innerRt.offsetMax = new Vector2(-3f, -3f);
-
-            Text label = CreateText(panel, "Label", "+", TournamentPngLayout.OverlayFont(36f),
-                FontStyle.Bold, TournamentPremiumTheme.GoldBright, TextAnchor.MiddleCenter);
-            StretchRect(label.rectTransform);
-            AddShadow(label, new Color(0f, 0f, 0f, 0.45f), new Vector2(1f, -1f));
+            Image hit = CreateImage(panel, "Hit", new Color(1f, 1f, 1f, 0.02f), TournamentSpriteFactory.SoftCircle, true);
+            StretchRect(hit.rectTransform);
 
             Button button = panel.gameObject.AddComponent<Button>();
-            button.targetGraphic = bg;
+            button.targetGraphic = hit;
             button.onClick.AddListener(onClick);
             return panel;
         }
@@ -272,7 +257,7 @@ namespace Mkey.Tournament
         public static Text CreateOverlayText(Transform parent, string name, Rect rect, string content, int fontSize, FontStyle style, Color color, TextAnchor anchor)
         {
             RectTransform rt = CreateRect(parent, name);
-            TournamentPngLayout.PlaceFromTopLeft(rt, rect);
+            TournamentPngLayout.PlaceFromTopLeftAnchored(rt, rect);
             CanvasGroup group = rt.gameObject.AddComponent<CanvasGroup>();
             group.blocksRaycasts = false;
             group.interactable = false;

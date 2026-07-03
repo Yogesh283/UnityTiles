@@ -59,10 +59,22 @@ namespace Mkey.Tournament
         {
             LogState($"TryBegin from {caller}");
 
-            if (!CanStartJoin)
+            if (IsRoomEstablished)
             {
-                Debug.LogWarning($"{Tag} TryBegin BLOCKED from {caller} — {GetBlockReason()}");
+                Debug.LogWarning($"{Tag} TryBegin BLOCKED from {caller} — room already established");
                 return false;
+            }
+
+            if (IsJoining && !TournamentGlobalWaitingRoom.IsVisible)
+            {
+                Debug.LogWarning($"{Tag} TryBegin — clearing stale IsJoining (waiting room not visible)");
+                IsJoining = false;
+            }
+
+            if (IsJoining)
+            {
+                Debug.Log($"{Tag} TryBegin OK from {caller} — join already in progress");
+                return true;
             }
 
             IsJoining = true;

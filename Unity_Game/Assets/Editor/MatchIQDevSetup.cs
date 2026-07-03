@@ -54,6 +54,34 @@ public static class MatchIQDevSetup
             "• For final check before APK build");
     }
 
+    [MenuItem("Match IQ/Local LAN Server Testing (same WiFi, 2 phones)...", false, 12)]
+    public static void EnableLocalLanServerTesting()
+    {
+        string ip = LanIpPrompt.Show(ReadBaseUrl());
+        if (string.IsNullOrWhiteSpace(ip))
+            return;
+
+        ip = ip.Trim();
+        string lanUrl = "http://" + ip + ":8000";
+        ApplyApiConfig(localSimulation: false, useProductionUrl: false, baseUrl: lanUrl);
+        ConfigureAndroidHttp(true);
+
+        Debug.Log(
+            "[Match IQ] Local LAN ON → " + lanUrl + "\n" +
+            "Backend: cd Backend && python main.py\n" +
+            "Build once: Match IQ → Prepare LAN APK Build");
+    }
+
+    [MenuItem("Match IQ/Prepare LAN APK Build (local WiFi server)", false, 41)]
+    public static void PrepareLanApkBuild()
+    {
+        EnableLocalLanServerTesting();
+        FixAndroidSplashTexture();
+        MatchIQAppIconSetup.ApplyFromMenu();
+        string commit = WriteBuildInfoFile();
+        Debug.Log("[Match IQ] LAN APK ready. Build once → install on BOTH phones. Commit: " + commit);
+    }
+
     [MenuItem("Match IQ/Open Tournament Test Scene", false, 20)]
     public static void OpenTournamentScene()
     {
@@ -74,10 +102,11 @@ public static class MatchIQDevSetup
         EditorApplication.isPlaying = true;
     }
 
-    [MenuItem("Match IQ/Prepare APK Build (production server)", false, 40)]
+    [MenuItem("Match IQ/Prepare APK Build (production server)", false, 42)]
     public static void PrepareApkBuild()
     {
         ApplyApiConfig(localSimulation: false, useProductionUrl: true);
+        ConfigureAndroidHttp(false);
         FixAndroidSplashTexture();
         MatchIQAppIconSetup.ApplyFromMenu();
         string commit = WriteBuildInfoFile();
@@ -138,7 +167,7 @@ public static class MatchIQDevSetup
         }
     }
 
-    private static void ApplyApiConfig(bool localSimulation, bool useProductionUrl)
+    private static void ApplyApiConfig(bool localSimulation, bool useProductionUrl, string baseUrl = null)
     {
         var config = AssetDatabase.LoadAssetAtPath<ScriptableObject>(ApiConfigPath);
         if (!config)
@@ -150,9 +179,64 @@ public static class MatchIQDevSetup
         var serialized = new SerializedObject(config);
         serialized.FindProperty("developmentMode").boolValue = localSimulation;
         serialized.FindProperty("useProductionUrl").boolValue = useProductionUrl;
+        if (!string.IsNullOrEmpty(baseUrl))
+            serialized.FindProperty("baseUrl").stringValue = baseUrl;
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(config);
         AssetDatabase.SaveAssets();
+    }
+
+    private static string ReadBaseUrl()
+    {
+        var config = AssetDatabase.LoadAssetAtPath<ScriptableObject>(ApiConfigPath);
+        if (!config)
+            return "http://localhost:8000";
+        return new SerializedObject(config).FindProperty("baseUrl").stringValue;
+    }
+
+    private static void ConfigureAndroidHttp(bool allow)
+    {
+        SetAndroidCleartextTraffic(allow);
+        SetInsecureHttpOption(allow);
+    }
+
+    /// <summary>
+    /// Unity 6 blocks http:// unless insecureHttpOption is enabled (separate from Android manifest).
+    /// </summary>
+    private static void SetInsecureHttpOption(bool allow)
+    {
+        Object[] projectSettings = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset");
+        if (projectSettings == null || projectSettings.Length == 0)
+            return;
+
+        var ps = new SerializedObject(projectSettings[0]);
+        SerializedProperty prop = ps.FindProperty("insecureHttpOption");
+        if (prop == null)
+            return;
+
+        // 0 = NotAllowed, 1 = DevelopmentOnly, 2 = AlwaysAllowed
+        prop.intValue = allow ? 2 : 0;
+        ps.ApplyModifiedPropertiesWithoutUndo();
+        AssetDatabase.SaveAssets();
+    }
+
+    private static void SetAndroidCleartextTraffic(bool allow)
+    {
+        const string manifestPath = "Assets/Plugins/Android/AndroidManifest.xml";
+        if (!File.Exists(manifestPath))
+            return;
+
+        string text = File.ReadAllText(manifestPath);
+        string value = allow ? "true" : "false";
+        string updated = System.Text.RegularExpressions.Regex.Replace(
+            text,
+            "android:usesCleartextTraffic=\"(true|false)\"",
+            "android:usesCleartextTraffic=\"" + value + "\"");
+        if (updated != text)
+        {
+            File.WriteAllText(manifestPath, updated);
+            AssetDatabase.ImportAsset(manifestPath);
+        }
     }
 
     /// <summary>
@@ -228,6 +312,43 @@ public static class MatchIQDevSetup
         }
 
         return null;
+    }
+}
+
+internal class LanIpPrompt : EditorWindow
+{
+    private string input = "192.168.1.42";
+    private bool done;
+    private bool ok;
+
+    public static string Show(string currentUrl)
+    {
+        string defaultIp = "192.168.1.42";
+        try
+        {
+            if (!string.IsNullOrEmpty(currentUrl))
+                defaultIp = new System.Uri(currentUrl).Host;
+        }
+        catch { }
+
+        var window = CreateInstance<LanIpPrompt>();
+        window.input = defaultIp;
+        window.titleContent = new GUIContent("Local LAN IP");
+        window.minSize = new Vector2(380, 120);
+        window.maxSize = new Vector2(420, 120);
+        window.ShowModalUtility();
+        return window.ok ? window.input : null;
+    }
+
+    private void OnGUI()
+    {
+        EditorGUILayout.LabelField("PC LAN IP (same WiFi as phones). Example: 192.168.1.42");
+        input = EditorGUILayout.TextField("IP", input);
+        GUILayout.FlexibleSpace();
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Cancel")) { ok = false; Close(); }
+        if (GUILayout.Button("Apply")) { ok = true; Close(); }
+        EditorGUILayout.EndHorizontal();
     }
 }
 #endif

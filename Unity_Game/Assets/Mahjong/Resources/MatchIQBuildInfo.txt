@@ -1,2 +1,2 @@
-1e4b239
-Improve tournament WebSocket connect diagnostics on Android.
+527f4b1
+Show duel waiting room instantly on join confirm.

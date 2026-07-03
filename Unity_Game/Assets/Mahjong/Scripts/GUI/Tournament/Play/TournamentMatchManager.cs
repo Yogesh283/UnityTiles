@@ -288,10 +288,14 @@ namespace Mkey.Tournament
                 if (!fetchTask.Result.Success || fetchTask.Result.Data == null)
                     yield break;
 
-                if (fetchTask.Result.Data.players != null)
-                    TournamentRoomRegistry.LocalRoom?.ApplyOnlinePlayers(fetchTask.Result.Data.players);
+                RoomResponseDto snapshot = fetchTask.Result.Data;
+                if (TournamentSession.Tournament != null)
+                    TournamentApiBridge.MergeAndNotify(snapshot);
 
-                ApplyOnlineRoomSnapshot(fetchTask.Result.Data);
+                if (snapshot.players != null)
+                    TournamentRoomRegistry.LocalRoom?.ApplyOnlinePlayers(snapshot.players);
+
+                ApplyOnlineRoomSnapshot(snapshot);
             }
             finally
             {
@@ -553,6 +557,7 @@ namespace Mkey.Tournament
 
         private static void HandleDuelLocalComplete(int score, int moves, float elapsedSeconds)
         {
+            TournamentFlowLog.PlayerFinished($"score={score} moves={moves} elapsed={elapsedSeconds:F1}s");
             double nowMs = TournamentServerClock.NowMs;
             TournamentMatchParticipant opponent = GetDuelOpponent();
 
@@ -652,9 +657,15 @@ namespace Mkey.Tournament
             rank = Mathf.Max(1, rank);
             prize = Mathf.Max(0, prize);
             if (duelWin)
+            {
+                TournamentFlowLog.WinnerSelected($"rank={rank} prize={prize}");
                 TournamentFlowLog.Winner($"rank={rank} prize={prize}");
+            }
             else if (room.IsDuel)
+            {
+                TournamentFlowLog.LoserSelected($"rank={rank}");
                 TournamentFlowLog.Loser($"rank={rank}");
+            }
 
             room.isLocked = true;
             room.state = TournamentRoomState.Locked;
@@ -944,22 +955,26 @@ namespace Mkey.Tournament
 
             if (duelWin)
             {
-                TournamentResultDialog.ShowDuelWin(prize, () => TournamentResultDialog.ReturnToTournamentPage());
+                TournamentFlowLog.PopupOpened($"YOU WIN rank={rank} prize={prize}");
+                TournamentResultDialog.ShowDuelWin(prize, rank, () => TournamentResultDialog.ReturnToTournamentPage());
                 return;
             }
 
             if (prize > 0)
             {
+                TournamentFlowLog.PopupOpened($"YOU WIN rank={rank} prize={prize}");
                 TournamentResultDialog.ShowRankWin(rank, prize, () => TournamentResultDialog.ReturnToTournamentPage());
                 return;
             }
 
             if (!duelWin && room.IsDuel)
             {
+                TournamentFlowLog.PopupOpened("YOU LOSE duel");
                 TournamentResultDialog.ShowDuelLoss(() => TournamentResultDialog.ReturnToTournamentPage());
                 return;
             }
 
+            TournamentFlowLog.PopupOpened($"YOU LOSE rank={rank}");
             TournamentResultDialog.ShowRankLoss(room.tournament.id, rank, () => TournamentResultDialog.ReturnToTournamentPage());
         }
 

@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Mkey;
 using Mkey.Network;
 using UnityEngine;
@@ -14,11 +13,19 @@ namespace Mkey.Tournament
 
         public static bool IsVisible => TournamentMessagePopup.IsVisible;
 
-        public static void ShowDuelWin(int prizeCoins, Action onClosed)
+        public static void ShowDuelWin(int prizeCoins, Action onClosed) =>
+            ShowDuelWin(prizeCoins, 1, onClosed);
+
+        public static void ShowDuelWin(int prizeCoins, int rank, Action onClosed)
         {
+            string rankLine = rank > 0 ? $"Rank #{rank}" : string.Empty;
+            string body = string.IsNullOrEmpty(rankLine)
+                ? $"Prize Coins +{prizeCoins:N0}"
+                : $"Prize Coins +{prizeCoins:N0}\n{rankLine}";
+
             TournamentMessagePopup.Show(
                 "YOU WIN",
-                $"Prize Coins +{prizeCoins:N0}",
+                body,
                 onClosed,
                 autoCloseSeconds: AutoReturnSeconds);
         }
@@ -27,7 +34,7 @@ namespace Mkey.Tournament
         {
             TournamentMessagePopup.Show(
                 "YOU LOSE",
-                string.Empty,
+                "Better luck next time.",
                 onClosed,
                 autoCloseSeconds: AutoReturnSeconds);
         }
@@ -45,15 +52,19 @@ namespace Mkey.Tournament
         {
             TournamentMessagePopup.Show(
                 "YOU LOSE",
-                string.Empty,
+                "Better luck next time.",
                 onClosed,
                 autoCloseSeconds: AutoReturnSeconds);
         }
 
         public static void ReturnToTournamentPage()
         {
+            TournamentFlowLog.ReturnToTournament("auto after result popup");
+            TournamentRoomWebSocket.StopMaintainingConnection();
+            TournamentApiBridge.Clear();
             TournamentMatchManager.DestroyRoom();
             TournamentSession.Clear();
+            TournamentJoinCoordinator.NotifyWaitingRoomClosed();
             TournamentPageLifecycle.OnReturningFromMatch(RequestWalletRefreshOnReturn);
 
             if (SceneLoader.Instance)

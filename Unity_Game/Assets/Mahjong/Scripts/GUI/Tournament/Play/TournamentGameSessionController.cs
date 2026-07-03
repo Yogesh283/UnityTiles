@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Threading.Tasks;
 using Mkey.Network;
@@ -18,6 +19,8 @@ namespace Mkey.Tournament
 
         private float resultDialogWatchdog;
         private const float ResultDialogWatchdogSeconds = 2f;
+        private const float OnlineDuelSyncTimeoutSeconds = 15f;
+        private const float OnlineDuelForceStartGraceSeconds = 2f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -73,6 +76,7 @@ namespace Mkey.Tournament
                     if (resultDialogWatchdog >= ResultDialogWatchdogSeconds)
                     {
                         resultDialogWatchdog = 0f;
+                        TournamentMatchManager.TryApplyOnlineSnapshot();
                         TournamentMatchManager.ShowPendingResultDialog();
                     }
                 }
@@ -106,6 +110,7 @@ namespace Mkey.Tournament
 
         private IEnumerator BeginRound()
         {
+            TournamentGameStartProbe.LogSceneEnter();
             yield return null;
 
             float timeout = 5f;
@@ -117,11 +122,14 @@ namespace Mkey.Tournament
 
             if (!TournamentSession.IsActive) yield break;
 
+            yield return EnsureApiRoomSession();
+
             if (!TournamentMatchManager.HasActiveRoom && TournamentRoomRegistry.HasLocalRoom)
                 TournamentMatchManager.AttachRoom(TournamentRoomRegistry.LocalRoom);
 
             if (!TournamentMatchManager.HasActiveRoom)
             {
+                TournamentGameStartProbe.LogAbort("no active room — match timer not started");
                 Debug.LogWarning("TournamentGameSessionController: no active room — match timer not started.");
                 yield break;
             }
@@ -129,83 +137,223 @@ namespace Mkey.Tournament
             if (!TournamentMatchManager.PrepareMatchFromRoom())
                 TournamentRoomRegistry.ForcePrepareForLaunch();
 
+            ReapplyServerClockFromApi();
+
             TournamentMatchManager.EnsureGameplayFrozen();
             TournamentFlowLog.BoardFrozen("begin round");
 
             if (TournamentApiBridge.IsOnlineMode && TournamentSession.Tournament != null &&
                 TournamentSession.Tournament.maxPlayers <= 2)
             {
-                yield return WaitForInstantDuelSyncStart();
+                yield return WaitForOnlineDuelGameplayStart();
             }
             else if (TournamentApiBridge.IsOnlineMode)
             {
-                while (TournamentSession.IsActive && !TournamentServerClock.IsStartTimeReached())
+                yield return WaitForOnlineRaceGameplayStart();
+            }
+
+            if (!TournamentSession.IsActive)
+            {
+                TournamentGameStartProbe.LogAbort("session cleared during sync wait");
+                yield break;
+            }
+
+            yield return UnlockGameplayWhenReady();
+        }
+
+        private static IEnumerator EnsureApiRoomSession()
+        {
+            if (TournamentApiBridge.HasMatchedRoom)
+                yield break;
+
+            string roomId = TournamentSession.ActiveRoomId;
+            if (string.IsNullOrEmpty(roomId) || TournamentSession.Tournament == null)
+                yield break;
+
+            Task<ApiResult<RoomResponseDto>> fetch = TournamentService.FetchRoomSnapshotAsync(roomId);
+            while (!fetch.IsCompleted)
+                yield return null;
+
+            if (fetch.Result.Success && fetch.Result.Data != null)
+                TournamentApiBridge.ApplyRoomDto(TournamentSession.Tournament, fetch.Result.Data);
+        }
+
+        private static void ReapplyServerClockFromApi()
+        {
+            RoomResponseDto room = TournamentApiBridge.CurrentRoom;
+            if (room == null)
+                return;
+
+            if ((room.serverNowMs ?? 0) > 0)
+                TournamentServerClock.SyncServerTime(room.serverNowMs.Value);
+
+            if ((room.matchStartAtMs ?? 0) > 0)
+                TournamentServerClock.ScheduleServerStart(room.matchStartAtMs.Value);
+        }
+
+        private static IEnumerator WaitForOnlineDuelGameplayStart()
+        {
+            bool roomUpdated = false;
+            Action onRoomUpdated = () => roomUpdated = true;
+            TournamentApiBridge.RoomUpdated += onRoomUpdated;
+
+            float timeout = OnlineDuelSyncTimeoutSeconds;
+            float pollTimer = 0f;
+            float sceneEnter = Time.realtimeSinceStartup;
+            bool forceStart = false;
+
+            TournamentFlowLog.BoardFrozen("waiting for opponent + server active sync");
+
+            try
+            {
+                while (TournamentSession.IsActive && timeout > 0f)
                 {
+                    ReapplyServerClockFromApi();
+                    RoomResponseDto apiRoom = TournamentApiBridge.CurrentRoom;
+
+                    if (IsOnlineDuelGameplayReady(apiRoom))
+                    {
+                        TournamentGameStartProbe.LogSyncPoll(apiRoom);
+                        break;
+                    }
+
+                    if (ShouldForceOnlineDuelStart(apiRoom, sceneEnter))
+                    {
+                        forceStart = true;
+                        TournamentGameStartProbe.LogSyncPoll(apiRoom, forceStart: true);
+                        break;
+                    }
+
+                    timeout -= Time.unscaledDeltaTime;
+                    pollTimer += Time.unscaledDeltaTime;
+
+                    if (roomUpdated || pollTimer >= 0.5f)
+                    {
+                        roomUpdated = false;
+                        pollTimer = 0f;
+
+                        if (apiRoom != null)
+                        {
+                            if (apiRoom.status == "starting")
+                                TournamentFlowLog.Countdown(
+                                    $"remaining={apiRoom.startCountdownSeconds}s players={apiRoom.playerCount}");
+                            else if (apiRoom.playerCount >= 2 && apiRoom.status == "active")
+                                TournamentFlowLog.MatchStart($"players={apiRoom.playerCount}");
+                        }
+
+                        Task<bool> refresh = TournamentApiBridge.RefreshActiveRoomAsync();
+                        while (!refresh.IsCompleted)
+                            yield return null;
+                    }
+
                     TournamentMatchManager.EnsureGameplayFrozen();
                     yield return null;
                 }
             }
-
-            RoomResponseDto readyRoom = TournamentApiBridge.CurrentRoom;
-            if (!TournamentSession.IsActive ||
-                (TournamentApiBridge.IsOnlineMode &&
-                 TournamentSession.Tournament != null &&
-                 TournamentSession.Tournament.maxPlayers <= 2 &&
-                 (readyRoom == null || readyRoom.status != "active" ||
-                  !TournamentServerClock.IsServerStartTimeReached())))
+            finally
             {
-                TournamentFlowLog.BoardFrozen("abort — server never confirmed active start");
-                yield break;
+                TournamentApiBridge.RoomUpdated -= onRoomUpdated;
             }
 
+            if (!TournamentSession.IsActive)
+                yield break;
+
+            if (!forceStart && !IsOnlineDuelGameplayReady(TournamentApiBridge.CurrentRoom))
+                TournamentGameStartProbe.LogAbort("server never confirmed gameplay-ready state");
+        }
+
+        private static IEnumerator WaitForOnlineRaceGameplayStart()
+        {
+            while (TournamentSession.IsActive && !TournamentServerClock.IsStartTimeReached())
+            {
+                ReapplyServerClockFromApi();
+                TournamentMatchManager.EnsureGameplayFrozen();
+                yield return null;
+            }
+        }
+
+        private static bool IsOnlineDuelGameplayReady(RoomResponseDto apiRoom)
+        {
+            if (apiRoom == null || apiRoom.playerCount < 2)
+                return false;
+
+            if (!TournamentServerClock.HasScheduledStart)
+            {
+                if ((apiRoom.matchStartAtMs ?? 0) > 0)
+                    TournamentServerClock.ScheduleServerStart(apiRoom.matchStartAtMs.Value);
+            }
+
+            if (!TournamentServerClock.HasScheduledStart)
+                return false;
+
+            if (!TournamentServerClock.IsServerStartTimeReached())
+                return false;
+
+            string status = apiRoom.status ?? string.Empty;
+            return status is "active" or "locked" or "starting";
+        }
+
+        private static bool ShouldForceOnlineDuelStart(RoomResponseDto apiRoom, float sceneEnterRealtime)
+        {
+            if (apiRoom == null || apiRoom.playerCount < 2)
+                return false;
+
+            if (Time.realtimeSinceStartup - sceneEnterRealtime < OnlineDuelForceStartGraceSeconds)
+                return false;
+
+            if (TournamentServerClock.HasScheduledStart && TournamentServerClock.IsServerStartTimeReached())
+                return true;
+
+            string status = apiRoom.status ?? string.Empty;
+            return status is "active" or "locked" or "starting";
+        }
+
+        private static IEnumerator UnlockGameplayWhenReady()
+        {
+            float levelTimeout = 8f;
+            while (TournamentSession.IsActive &&
+                   TournamentMatchManager.MatchLevelIndex < 0 &&
+                   levelTimeout > 0f)
+            {
+                if (!TournamentMatchManager.PrepareMatchFromRoom())
+                    TournamentRoomRegistry.ForcePrepareForLaunch();
+                levelTimeout -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            TournamentGameStartProbe.LogBeforeBeginRound();
+            Debug.Log("[TournamentGameStart] Countdown Finish (lobby) — unlocking board");
+
             TournamentMatchManager.BeginSynchronizedMatch();
-            TournamentFlowLog.BoardUnfrozen("server active + match_start_at_ms reached");
+
+            bool gameplayRunning = TournamentSession.GameplayRunning;
+            bool waitingForSync = TournamentMatchManager.IsWaitingForOpponentSync;
 
             if (GameBoard.Instance)
                 GameBoard.Instance.SetControlActivity(true, true);
 
+            bool boardUnlocked = GameBoard.Instance != null;
+            TournamentGameStartProbe.LogAfterBeginRound(!waitingForSync, gameplayRunning, boardUnlocked);
+
+            if (gameplayRunning)
+            {
+                TournamentFlowLog.BoardUnfrozen("server active + match_start_at_ms reached");
+                Debug.Log("[TournamentGameStart] Game Started");
+                Debug.Log("[TournamentGameStart] Timer Started");
+                Debug.Log("[TournamentGameStart] Board Unlocked");
+                Debug.Log("[TournamentGameStart] Input Enabled");
+                Debug.Log("[TournamentGameStart] Tiles Enabled");
+            }
+            else
+            {
+                TournamentFlowLog.BoardFrozen("BeginSynchronizedMatch did not arm gameplay");
+                TournamentGameStartProbe.LogAbort("BeginSynchronizedMatch returned without starting");
+                yield break;
+            }
+
             GameEvents.MatchSpritesEvent += OnMatchMade;
             timerHud = TournamentTimerHud.Create();
-        }
-
-        private static IEnumerator WaitForInstantDuelSyncStart()
-        {
-            float pollTimer = 0f;
-            TournamentFlowLog.BoardFrozen("waiting for opponent + server active sync");
-
-            while (TournamentSession.IsActive)
-            {
-                RoomResponseDto apiRoom = TournamentApiBridge.CurrentRoom;
-
-                if (apiRoom != null &&
-                    apiRoom.playerCount >= 2 &&
-                    apiRoom.status == "active" &&
-                    TournamentServerClock.HasScheduledStart &&
-                    TournamentServerClock.IsServerStartTimeReached())
-                    break;
-
-                pollTimer += Time.unscaledDeltaTime;
-                if (pollTimer >= 1.0f)
-                {
-                    pollTimer = 0f;
-                    Task<bool> refresh = TournamentApiBridge.RefreshActiveRoomAsync();
-                    while (!refresh.IsCompleted)
-                        yield return null;
-
-                    apiRoom = TournamentApiBridge.CurrentRoom;
-                    if (apiRoom != null)
-                    {
-                        if (apiRoom.status == "starting")
-                            TournamentFlowLog.Countdown(
-                                $"remaining={apiRoom.startCountdownSeconds}s players={apiRoom.playerCount}");
-                        else if (apiRoom.playerCount >= 2 && apiRoom.status == "active")
-                            TournamentFlowLog.MatchStart($"players={apiRoom.playerCount}");
-                    }
-                }
-
-                TournamentMatchManager.EnsureGameplayFrozen();
-                yield return null;
-            }
+            TournamentGameStartProbe.LogGameStarted(timerHud != null);
         }
 
         private static void OnMatchMade(Sprite _, Sprite __)

@@ -4,92 +4,219 @@ using UnityEngine.UI;
 namespace Mkey.Tournament
 {
     /// <summary>
-    /// Live status + fee labels aligned to turnamant1.png card rows (no layout redesign).
+    /// Live stats over turnamant1.png dash placeholders (Players, Entry, Prize Pool, Top Win).
     /// </summary>
     public static class TournamentCardOverlays
     {
-        public static void Build(Transform overlay, int balance)
+        private static readonly Color StatTextColor = new Color(0.12f, 0.1f, 0.08f, 0.98f);
+        private static readonly Color PlayersEntryTextColor = new Color(0.95f, 0.88f, 0.68f, 1f);
+
+        public static void Build(Transform statsLayer)
         {
-            int index = 0;
+            if (!statsLayer)
+                return;
+
             foreach (TournamentDefinition tournament in TournamentCatalog.All)
             {
-                float top = TournamentPngLayout.GetCardTop(index);
-                CreateStatusBadge(overlay, new Rect(24f, top + 6f, 128f, 30f), tournament.statusLabel);
-                CreateFeeLine(overlay, new Rect(24f, top + 38f, 280f, 26f), tournament, balance);
-                index++;
+                int cardIndex = TournamentPngLayout.GetCardIndexForTournament(tournament.id);
+                if (cardIndex < 0)
+                    continue;
+
+                CreateStatCell(statsLayer, "Players", StatName("Players", tournament.id),
+                    TournamentPngLayout.GetCardStatRect(0, cardIndex), FormatPlayers(tournament));
+                CreateStatCell(statsLayer, "Entry", StatName("Entry", tournament.id),
+                    TournamentPngLayout.GetCardStatRect(1, cardIndex), FormatEntryFee(tournament));
+                CreateStatCell(statsLayer, "Prize", StatName("Prize", tournament.id),
+                    TournamentPngLayout.GetCardStatRect(2, cardIndex), FormatPrizePool(tournament));
+                CreateStatCell(statsLayer, "Extra", StatName("Extra", tournament.id),
+                    TournamentPngLayout.GetCardStatRect(3, cardIndex), FormatFourthColumn(tournament));
             }
         }
 
-        private static void CreateStatusBadge(Transform parent, Rect rect, string status)
+        public static void Rebuild(Transform statsLayer)
         {
-            RectTransform rt = TournamentUIFactory.CreateRect(parent, "Status_" + status);
+            if (!statsLayer)
+                return;
+
+            ClearChildren(statsLayer);
+            Build(statsLayer);
+        }
+
+        public static void EnsureBuilt(Transform statsLayer)
+        {
+            if (!statsLayer)
+                return;
+
+            if (statsLayer.childCount == 0)
+                Build(statsLayer);
+            else
+                RefreshAll(statsLayer);
+        }
+
+        public static void RefreshAll(Transform statsLayer, Transform hitOverlay = null)
+        {
+            if (!statsLayer)
+                return;
+
+            foreach (TournamentDefinition tournament in TournamentCatalog.All)
+            {
+                SetStatText(statsLayer, StatName("Players", tournament.id), FormatPlayers(tournament));
+                SetStatText(statsLayer, StatName("Entry", tournament.id), FormatEntryFee(tournament));
+                SetStatText(statsLayer, StatName("Prize", tournament.id), FormatPrizePool(tournament));
+                SetStatText(statsLayer, StatName("Extra", tournament.id), FormatFourthColumn(tournament));
+            }
+
+            if (hitOverlay)
+                RefreshJoinButtons(hitOverlay);
+        }
+
+        public static void RefreshJoinButtons(Transform overlay)
+        {
+            if (!overlay)
+                return;
+
+            Transform hitAreas = overlay.Find("HitAreas");
+            if (!hitAreas)
+                return;
+
+            foreach (Transform child in hitAreas)
+            {
+                if (!child.name.StartsWith("Join_"))
+                    continue;
+
+                string tournamentId = child.name.Substring("Join_".Length);
+                TournamentDefinition tournament = FindCatalogTournament(tournamentId);
+                if (tournament == null)
+                    continue;
+
+                TournamentJoinButton join = child.GetComponent<TournamentJoinButton>();
+                if (join)
+                    join.RefreshTournament(tournament);
+
+                bool isFull = IsFull(tournament);
+                Text label = child.Find("Label")?.GetComponent<Text>();
+                if (label)
+                    label.text = isFull ? "FULL" : "JOIN";
+
+                Button button = child.GetComponent<Button>();
+                if (button)
+                    button.interactable = !isFull;
+            }
+        }
+
+        private static void CreateStatCell(Transform statsLayer, string column, string name, Rect rect, string value)
+        {
+            Color color = column == "Players" || column == "Entry"
+                ? PlayersEntryTextColor
+                : StatTextColor;
+
+            RectTransform rt = TournamentUIFactory.CreateRect(statsLayer, name);
             TournamentPngLayout.PlaceFromTopLeft(rt, rect);
 
-            Color bg = TournamentPremiumUI.GetStatusColor(status);
-            Image panel = TournamentUIFactory.CreateSlicedImage(rt, "Bg", bg, TournamentSpriteFactory.Badge, false);
-            TournamentUIFactory.StretchRect(panel.rectTransform);
+            CanvasGroup group = rt.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
 
-            Text label = TournamentUIFactory.CreateText(
-                rt, "Label", string.IsNullOrEmpty(status) ? "OPEN" : status,
-                TournamentPngLayout.OverlayFont(14f), FontStyle.Bold,
-                TournamentPremiumTheme.TextWhite, TextAnchor.MiddleCenter);
-            TournamentUIFactory.StretchRect(label.rectTransform);
+            Text label = rt.gameObject.AddComponent<Text>();
+            label.font = TournamentUITheme.Font;
+            label.text = value;
+            label.fontSize = TournamentPngLayout.OverlayFont(column == "Players" || column == "Entry" ? 18f : 17f);
+            label.fontStyle = FontStyle.Bold;
+            label.color = color;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.supportRichText = false;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.verticalOverflow = VerticalWrapMode.Truncate;
+            label.raycastTarget = false;
         }
 
-        private static void CreateFeeLine(
-            Transform parent,
-            Rect rect,
-            TournamentDefinition tournament,
-            int balance)
+        private static void SetStatText(Transform statsLayer, string name, string value)
         {
-            RectTransform rt = TournamentUIFactory.CreateRect(parent, "Fee_" + tournament.id);
-            TournamentPngLayout.PlaceFromTopLeft(rt, rect);
+            Transform cell = statsLayer.Find(name);
+            if (!cell)
+                return;
 
-            bool canAfford = balance >= tournament.entryFee;
-            Color color = canAfford
-                ? new Color(0.75f, 0.95f, 0.78f, 0.95f)
-                : new Color(1f, 0.55f, 0.45f, 0.95f);
-
-            string text = $"Entry {tournament.entryFee:N0}  •  Win up to {GetTopPrize(tournament):N0}";
-            Text label = TournamentUIFactory.CreateText(
-                rt, "Label", text, TournamentPngLayout.OverlayFont(13f), FontStyle.Bold,
-                color, TextAnchor.MiddleLeft);
-            TournamentUIFactory.StretchRect(label.rectTransform);
+            Text label = cell.GetComponent<Text>();
+            if (label)
+                label.text = value;
         }
 
-        private static int GetTopPrize(TournamentDefinition tournament)
+        private static void ClearChildren(Transform parent)
         {
-            if (tournament == null) return 0;
-            return TournamentPrizeTable.GetPrize(tournament.id, 1);
-        }
-
-        public static void RefreshAffordability(Transform overlay, int balance)
-        {
-            if (!overlay) return;
-            foreach (Transform child in overlay)
+            for (int i = parent.childCount - 1; i >= 0; i--)
             {
-                if (!child.name.StartsWith("Fee_")) continue;
-                Text label = child.GetComponentInChildren<Text>();
-                if (!label) continue;
-
-                string id = child.name.Substring("Fee_".Length);
-                TournamentDefinition tournament = FindTournament(id);
-                if (tournament == null) continue;
-
-                bool canAfford = balance >= tournament.entryFee;
-                label.color = canAfford
-                    ? new Color(0.75f, 0.95f, 0.78f, 0.95f)
-                    : new Color(1f, 0.55f, 0.45f, 0.95f);
+                Transform child = parent.GetChild(i);
+                if (child)
+                    Object.Destroy(child.gameObject);
             }
         }
 
-        private static TournamentDefinition FindTournament(string id)
+        private static TournamentDefinition FindCatalogTournament(string tournamentId)
         {
-            foreach (TournamentDefinition t in TournamentCatalog.All)
+            foreach (TournamentDefinition tournament in TournamentCatalog.All)
             {
-                if (t.id == id) return t;
+                if (tournament != null && tournament.id == tournamentId)
+                    return tournament;
             }
+
             return null;
         }
+
+        private static string StatName(string column, string tournamentId) =>
+            $"Stat_{column}_{tournamentId}";
+
+        private static string FormatPlayers(TournamentDefinition tournament)
+        {
+            if (tournament == null)
+                return "-";
+
+            int current = GetPlayerCount(tournament);
+            return $"{current:N0}/{tournament.maxPlayers:N0}";
+        }
+
+        private static string FormatEntryFee(TournamentDefinition tournament) =>
+            tournament == null ? "-" : tournament.entryFee.ToString("N0");
+
+        private static string FormatPrizePool(TournamentDefinition tournament) =>
+            tournament == null ? "-" : tournament.prizePool.ToString("N0");
+
+        private static string FormatFourthColumn(TournamentDefinition tournament)
+        {
+            if (tournament == null)
+                return "-";
+
+            if (tournament.HasPlatformFee)
+                return tournament.platformFee.ToString("N0");
+
+            return TournamentPrizeTable.GetPrize(tournament.id, 1).ToString("N0");
+        }
+
+        private static int GetPlayerCount(TournamentDefinition tournament)
+        {
+            TournamentRoomSnapshot snap = TournamentRoomRegistry.GetSnapshot(tournament.id);
+            if (snap.hasRoom && snap.currentPlayers > 0)
+                return snap.currentPlayers;
+
+            return SimulateLobbySize(tournament);
+        }
+
+        private static int SimulateLobbySize(TournamentDefinition tournament)
+        {
+            string status = tournament.statusLabel ?? string.Empty;
+            if (status.Equals("FULL", System.StringComparison.OrdinalIgnoreCase))
+                return tournament.maxPlayers;
+
+            if (status.Equals("FILLING", System.StringComparison.OrdinalIgnoreCase))
+                return Mathf.Clamp(Mathf.RoundToInt(tournament.maxPlayers * 0.62f), 1, tournament.maxPlayers);
+
+            if (status.Contains("STARTING"))
+                return Mathf.Clamp(Mathf.RoundToInt(tournament.maxPlayers * 0.88f), 1, tournament.maxPlayers);
+
+            return Mathf.Clamp(Mathf.RoundToInt(tournament.maxPlayers * 0.12f), 1, tournament.maxPlayers);
+        }
+
+        private static bool IsFull(TournamentDefinition tournament) =>
+            tournament != null &&
+            string.Equals(tournament.statusLabel, "FULL", System.StringComparison.OrdinalIgnoreCase);
     }
 }

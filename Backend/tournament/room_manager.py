@@ -1,4 +1,5 @@
 import logging
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -127,12 +128,16 @@ class RoomManager:
             self._release_matchmake_lock(lock_name)
 
     def _acquire_matchmake_lock(self, lock_name: str) -> None:
-        acquired = self.db.execute(
-            text("SELECT GET_LOCK(:lock_name, :timeout)"),
-            {"lock_name": lock_name, "timeout": self.MATCHMAKE_LOCK_SECONDS},
-        ).scalar()
-        if acquired != 1:
-            raise ValueError("Matchmaking busy, try again")
+        for attempt in range(3):
+            acquired = self.db.execute(
+                text("SELECT GET_LOCK(:lock_name, :timeout)"),
+                {"lock_name": lock_name, "timeout": self.MATCHMAKE_LOCK_SECONDS},
+            ).scalar()
+            if acquired == 1:
+                return
+            if attempt < 2:
+                time.sleep(0.15 * (attempt + 1))
+        raise ValueError("Matchmaking busy, try again")
 
     def _release_matchmake_lock(self, lock_name: str) -> None:
         self.db.execute(text("SELECT RELEASE_LOCK(:lock_name)"), {"lock_name": lock_name})
@@ -316,10 +321,19 @@ class RoomManager:
     def _begin_start_countdown(self, room: TournamentRoom) -> None:
         if room.status != "waiting":
             return
+        previous = room.status
         room.status = "starting"
         room.started_at = datetime.utcnow()
         self.db.commit()
-        schedule_countdown(room.id, serialize_room(self.db, room))
+        payload = serialize_room(self.db, room)
+        logger.info(
+            "[TournamentTransition] SERVER status %s -> starting room_id=%s players=%s match_start_at_ms=%s",
+            previous,
+            room.id,
+            payload.get("player_count"),
+            payload.get("match_start_at_ms"),
+        )
+        schedule_countdown(room.id, payload)
 
     def _maybe_activate_after_countdown(self, room: TournamentRoom) -> None:
         if room.status != "starting" or not room.started_at:
@@ -332,12 +346,19 @@ class RoomManager:
     def _activate_room(self, room: TournamentRoom) -> None:
         if room.status not in {"waiting", "starting"}:
             return
+        previous = room.status
         room.status = "active"
         if not room.started_at:
             room.started_at = datetime.utcnow()
         self.db.commit()
         payload = serialize_room(self.db, room)
-        logger.info("room activated room_id=%s players=%s", room.id, payload.get("player_count"))
+        logger.info(
+            "[TournamentTransition] SERVER status %s -> active room_id=%s players=%s match_start_at_ms=%s",
+            previous,
+            room.id,
+            payload.get("player_count"),
+            payload.get("match_start_at_ms"),
+        )
         schedule_match_start(room.id, payload)
 
     def _remove_player_from_waiting_room(self, room: TournamentRoom, player: RoomPlayer) -> None:
@@ -416,7 +437,10 @@ class RoomManager:
             )
             .all()
         )
+        fresh_cutoff = datetime.utcnow() - timedelta(seconds=5)
         for room in rooms:
+            if room.created_at and room.created_at > fresh_cutoff:
+                continue
             count = self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).count()
             if count == 0:
                 self.db.delete(room)
@@ -435,14 +459,24 @@ class RoomManager:
             query = query.with_for_update()
 
         rooms = query.all()
+        tournament = get_tournament(tournament_id)
+        prefer_one_player = tournament is not None and tournament.max_players <= 2
 
+        candidates: list[tuple[TournamentRoom, int]] = []
         for room in rooms:
             count = self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room.id).count()
-            # Include count==0: a committed room row may exist briefly before its first player is visible
-            # to a concurrent matcher unless the matchmake lock serializes joins.
             if count < room.max_players:
-                return room
-        return None
+                candidates.append((room, count))
+
+        if not candidates:
+            return None
+
+        if prefer_one_player:
+            for room, count in candidates:
+                if count >= 1:
+                    return room
+
+        return candidates[0][0]
 
     def _create_room(self, tournament_id: str, tournament: TournamentDefinition) -> TournamentRoom:
         room_id = f"{tournament_id}_{uuid.uuid4().hex[:12]}"
@@ -458,7 +492,7 @@ class RoomManager:
             max_players=tournament.max_players,
         )
         self.db.add(room)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(room)
         return room
 

@@ -10,16 +10,25 @@ from config import get_settings
 _client: redis.Redis | None = None
 
 
+def _reset_client() -> None:
+    global _client
+    _client = None
+
+
 def get_redis() -> redis.Redis | None:
     global _client
     if _client is not None:
-        return _client
+        try:
+            _client.ping()
+            return _client
+        except Exception:
+            _reset_client()
     try:
         _client = redis.from_url(get_settings().redis_url, decode_responses=True)
         _client.ping()
         return _client
     except Exception:
-        _client = None
+        _reset_client()
         return None
 
 
@@ -27,7 +36,11 @@ def cache_get(key: str) -> Any | None:
     client = get_redis()
     if not client:
         return None
-    raw = client.get(key)
+    try:
+        raw = client.get(key)
+    except Exception:
+        _reset_client()
+        return None
     if raw is None:
         return None
     try:
@@ -41,12 +54,14 @@ def cache_set(key: str, value: Any, ttl_seconds: int = 60) -> None:
     if not client:
         return
     payload = value if isinstance(value, str) else json.dumps(value)
-    client.setex(key, ttl_seconds, payload)
+    try:
+        client.setex(key, ttl_seconds, payload)
+    except Exception:
+        _reset_client()
 
 
 def rate_limit_check(key: str, limit: int, window_seconds: int) -> bool:
     """Return True if request is allowed."""
-    global _client
     client = get_redis()
     if not client:
         return True
@@ -57,7 +72,7 @@ def rate_limit_check(key: str, limit: int, window_seconds: int) -> bool:
         count, _ = pipe.execute()
         return int(count) <= limit
     except Exception:
-        _client = None
+        _reset_client()
         return True
 
 
@@ -65,11 +80,18 @@ def set_online_user(user_uuid: str, ttl_seconds: int = 120) -> None:
     client = get_redis()
     if not client:
         return
-    client.setex(f"online:user:{user_uuid}", ttl_seconds, "1")
+    try:
+        client.setex(f"online:user:{user_uuid}", ttl_seconds, "1")
+    except Exception:
+        _reset_client()
 
 
 def count_online_users() -> int:
     client = get_redis()
     if not client:
         return 0
-    return len(client.keys("online:user:*"))
+    try:
+        return len(client.keys("online:user:*"))
+    except Exception:
+        _reset_client()
+        return 0
