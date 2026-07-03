@@ -118,3 +118,24 @@ Verify:
 ```bash
 curl -s https://api.matchiq.fun/health
 ```
+
+### matchiq.fun shows 502 Bad Gateway
+
+API (`api.matchiq.fun`) and admin work — only the root website nginx config is broken.
+
+**On server (immediate fix):**
+
+```bash
+cd /var/www/UnityTiles
+git fetch origin feat/realtime-tournament-and-ui-fixes
+git checkout feat/realtime-tournament-and-ui-fixes
+git pull origin feat/realtime-tournament-and-ui-fixes
+
+cp Deployment/nginx/matchiq.fun.conf /etc/nginx/sites-enabled/matchiq.fun.conf
+nginx -t && systemctl reload nginx
+curl -I https://matchiq.fun
+```
+
+If `nginx -t` fails, show the old config first: `cat /etc/nginx/sites-enabled/matchiq.fun.conf`
+
+---
