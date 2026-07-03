@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Match IQ — Real-time Mahjong tournaments. Compete, win prizes, become champion." />
+  <title>Match IQ — Mahjong Tournaments</title>
+  <style>
+    :root {
+      --emerald: #1a2e2c;
+      --emerald-deep: #0f1f1e;
+      --gold: #d4af37;
+      --gold-soft: #e8cc6a;
+      --cream: #f5f0e6;
+      --muted: #b8ad9a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--cream);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212, 175, 55, 0.14), transparent 60%),
+        linear-gradient(180deg, var(--emerald-deep) 0%, var(--emerald) 45%, #243836 100%);
+    }
+
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 56px 24px 40px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold-soft);
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      border-radius: 999px;
+      padding: 6px 14px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2.2rem, 8vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(180deg, #fff8e7 0%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tagline {
+      margin: 0 0 28px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--gold-soft);
+    }
+
+    .card {
+      text-align: left;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(212, 175, 55, 0.22);
+      border-radius: 16px;
+      padding: 24px 22px;
+      margin-bottom: 28px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.98rem;
+    }
+
+    .card p:last-child { margin-bottom: 0; }
+
+    .features {
+      list-style: none;
+      padding: 0;
+      margin: 18px 0 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: var(--cream);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .features li::before {
+      content: "◆";
+      color: var(--gold);
+      font-size: 0.65rem;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .footer {
+      margin-top: 8px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(212, 175, 55, 0.18);
+    }
+
+    .terms-link {
+      display: inline-block;
+      color: var(--gold);
+      font-size: 0.92rem;
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.45);
+      padding-bottom: 2px;
+    }
+
+    .terms-link:hover {
+      color: var(--gold-soft);
+      border-bottom-color: var(--gold-soft);
+    }
+
+    .note {
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: rgba(184, 173, 154, 0.75);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <span class="badge">Mobile Mahjong Game</span>
+    <h1>Match IQ</h1>
+    <p class="tagline">Compete • Win • Become Champion</p>
+
+    <div class="card">
+      <p>
+        Match IQ is a skill-based Mahjong tournament game. Join live rooms, climb the board,
+        and compete for in-game prizes in fast-paced duels and multi-player events.
+      </p>
+      <ul class="features">
+        <li>1 vs 1 duels and large tournament brackets</li>
+        <li>Real-time matchmaking and live leaderboards</li>
+        <li>Entry fees, prize pools, and fair-play match rules</li>
+        <li>Download on Android — play anywhere, anytime</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      <a class="terms-link" href="https://api.matchiq.fun/legal/terms.html">Terms &amp; Conditions</a>
+      <p class="note">© Match IQ. For gameplay support, use the in-app help section.</p>
+    </div>
+  </div>
+</body>
+</html>

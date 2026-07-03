@@ -57,6 +57,20 @@ else
   echo "WARN: missing nginx config at $NGINX_CONF_DST"
 fi
 
+MATCHIQ_SITE_SRC="$APP_ROOT/Deployment/nginx/matchiq.fun.conf"
+MATCHIQ_SITE_DST="/etc/nginx/sites-enabled/matchiq.fun.conf"
+if [[ -f "$MATCHIQ_SITE_SRC" ]]; then
+  cp "$MATCHIQ_SITE_SRC" "$MATCHIQ_SITE_DST"
+  if nginx -t 2>/dev/null; then
+    systemctl reload nginx
+    echo "PASS: matchiq.fun site config reloaded"
+  else
+    echo "WARN: matchiq.fun nginx -t failed — check $MATCHIQ_SITE_DST manually"
+  fi
+else
+  echo "WARN: missing $MATCHIQ_SITE_SRC"
+fi
+
 echo "==> Verify process cwd and imports"
 PID="$(systemctl show -p MainPID --value matchiq-api)"
 if [[ -n "$PID" && "$PID" != "0" ]]; then
