@@ -17,19 +17,27 @@ namespace Mkey.Network
     public class TournamentRoomWebSocket : MonoBehaviour
     {
         private static TournamentRoomWebSocket instance;
+        private static bool nakamaHooked;
 
         private ClientWebSocket socket;
         private CancellationTokenSource cancelSource;
         private readonly ConcurrentQueue<string> incoming = new ConcurrentQueue<string>();
+        private readonly SemaphoreSlim connectLock = new SemaphoreSlim(1, 1);
+        private Task<bool> pendingConnectTask;
+        private string pendingConnectRoomId;
         private string activeRoomId;
         private bool maintainConnection;
         private int reconnectAttempts;
+        private bool isReconnecting;
 
         /// <summary>Last connect failure propagated to callers (e.g. join coordinator catch).</summary>
         public static Exception LastConnectException { get; private set; }
 
         public static bool IsConnected =>
             instance != null && instance.socket != null && instance.socket.State == WebSocketState.Open;
+
+        public static bool IsReconnecting =>
+            instance != null && instance.isReconnecting;
 
         public static string ActiveRoomId => instance != null ? instance.activeRoomId : null;
 
@@ -57,13 +65,30 @@ namespace Mkey.Network
 
         public static void Connect(string roomId)
         {
+            if (ApiConfig.Current.UseNakamaRealtimeNetworking)
+            {
+                HookNakamaMessageBridge();
+                _ = NakamaTournamentRealtimeClient.ConnectAndWaitAsync(roomId, 15000);
+                return;
+            }
+
             Bootstrap();
+            TournamentWebSocketProbe.ConnectRequested(
+                roomId, "Connect()", instance != null && instance.socket?.State == WebSocketState.Open);
             _ = instance.ConnectAndWaitInternalAsync(roomId, 15000);
         }
 
         public static Task<bool> ConnectAndWaitAsync(string roomId, int timeoutMs = 15000)
         {
+            if (ApiConfig.Current.UseNakamaRealtimeNetworking)
+            {
+                HookNakamaMessageBridge();
+                return NakamaTournamentRealtimeClient.ConnectAndWaitAsync(roomId, timeoutMs);
+            }
+
             Bootstrap();
+            TournamentWebSocketProbe.ConnectRequested(
+                roomId, "ConnectAndWaitAsync()", instance != null && instance.socket?.State == WebSocketState.Open);
             return instance.ConnectAndWaitInternalAsync(roomId, timeoutMs);
         }
 
@@ -71,14 +96,33 @@ namespace Mkey.Network
 
         public static void StopMaintainingConnection()
         {
+            if (ApiConfig.Current.UseNakamaRealtimeNetworking)
+            {
+                NakamaTournamentRealtimeClient.StopMaintainingConnection();
+                return;
+            }
+
             if (!instance) return;
             instance.maintainConnection = false;
+            instance.isReconnecting = false;
             string roomId = instance.activeRoomId;
             instance.DisconnectSocket("client_disconnect");
             instance.activeRoomId = null;
             if (!string.IsNullOrEmpty(roomId))
                 TournamentFlowLog.RoomDestroyed(roomId);
         }
+
+        /// <summary>Bridges Nakama adapter events into the same pipeline as FastAPI WebSocket.</summary>
+        public static void EnsureNakamaMessageBridge()
+        {
+            if (nakamaHooked)
+                return;
+
+            nakamaHooked = true;
+            NakamaTournamentRealtimeClient.MessageReceived += json => MessageReceived?.Invoke(json);
+        }
+
+        private static void HookNakamaMessageBridge() => EnsureNakamaMessageBridge();
 
         private async Task<bool> ConnectAndWaitInternalAsync(string roomId, int timeoutMs)
         {
@@ -90,10 +134,44 @@ namespace Mkey.Network
             if (!NetworkManager.HasInstance || !NetworkManager.Instance.IsAuthenticated)
                 throw new InvalidOperationException("[TournamentWS] connect aborted — NetworkManager missing or not authenticated.");
 
-            maintainConnection = true;
-            activeRoomId = roomId;
-            reconnectAttempts = 0;
+            if (IsConnected && activeRoomId == roomId)
+            {
+                maintainConnection = true;
+                return true;
+            }
 
+            if (pendingConnectTask != null && !pendingConnectTask.IsCompleted && pendingConnectRoomId == roomId)
+                return await pendingConnectTask;
+
+            await connectLock.WaitAsync();
+            try
+            {
+                if (IsConnected && activeRoomId == roomId)
+                {
+                    maintainConnection = true;
+                    return true;
+                }
+
+                if (pendingConnectTask != null && !pendingConnectTask.IsCompleted && pendingConnectRoomId == roomId)
+                    return await pendingConnectTask;
+
+                maintainConnection = true;
+                activeRoomId = roomId;
+                reconnectAttempts = 0;
+                pendingConnectRoomId = roomId;
+                pendingConnectTask = ConnectWithTimeoutAsync(roomId, timeoutMs);
+                return await pendingConnectTask;
+            }
+            finally
+            {
+                pendingConnectTask = null;
+                pendingConnectRoomId = null;
+                connectLock.Release();
+            }
+        }
+
+        private async Task<bool> ConnectWithTimeoutAsync(string roomId, int timeoutMs)
+        {
             using var timeoutCts = new CancellationTokenSource(timeoutMs);
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token);
             try
@@ -147,6 +225,9 @@ namespace Mkey.Network
 
         private async Task<bool> TryConnectOnceAsync(string roomId, int attempt)
         {
+            if (IsConnected && activeRoomId == roomId)
+                return true;
+
             DisconnectSocket("reconnect");
 
             if (!NetworkManager.HasInstance || !NetworkManager.Instance.IsAuthenticated)
@@ -188,7 +269,12 @@ namespace Mkey.Network
                 }
 
                 reconnectAttempts = 0;
+                isReconnecting = false;
                 TournamentFlowLog.WebSocketConnected(roomId);
+                TournamentFlowLog.WsConnected($"room={roomId}");
+                if (attempt > 1)
+                    TournamentFlowLog.WsReconnected($"room={roomId} attempt={attempt}");
+                TournamentWebSocketProbe.Connected(roomId, attempt);
                 _ = ReceiveLoop();
                 _ = PingLoop();
                 return true;
@@ -310,6 +396,7 @@ namespace Mkey.Network
             byte[] buffer = new byte[8192];
             StringBuilder builder = new StringBuilder();
             string roomId = activeRoomId;
+            TournamentWebSocketProbe.ReceiveLoopStarted(roomId);
 
             while (socket != null && socket.State == WebSocketState.Open && cancelSource != null)
             {
@@ -322,6 +409,7 @@ namespace Mkey.Network
                         result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), cancelSource.Token);
                         if (result.MessageType == WebSocketMessageType.Close)
                         {
+                            TournamentWebSocketProbe.ReceiveLoopExited(roomId, "server_close_frame");
                             HandleDisconnect(roomId, "server_close");
                             return;
                         }
@@ -331,15 +419,22 @@ namespace Mkey.Network
                     while (!result.EndOfMessage);
 
                     if (builder.Length > 0)
-                        incoming.Enqueue(builder.ToString());
+                    {
+                        string message = builder.ToString();
+                        LogIncomingMessage(roomId, message);
+                        incoming.Enqueue(message);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
+                    TournamentWebSocketProbe.ReceiveLoopExited(roomId, "cancelled");
                     return;
                 }
                 catch (Exception ex)
                 {
                     Debug.LogError($"[TournamentWS] receive error roomId={roomId}");
+                    TournamentWebSocketProbe.ReceiveLoopExited(roomId, ex.Message);
+                    TournamentWebSocketProbe.Disconnect(roomId, "receive_exception", ex);
                     if (ex.InnerException != null)
                     {
                         Debug.LogError(
@@ -352,11 +447,39 @@ namespace Mkey.Network
                     return;
                 }
             }
+
+            TournamentWebSocketProbe.ReceiveLoopExited(roomId, "loop_condition_false");
+        }
+
+        private static void LogIncomingMessage(string roomId, string message)
+        {
+            string eventName = "unknown";
+            if (message.Contains("\"pong\""))
+            {
+                eventName = "pong";
+                TournamentWebSocketProbe.PongReceived(roomId);
+            }
+            else if (message.Contains("\"event\""))
+            {
+                int i = message.IndexOf("\"event\"", StringComparison.Ordinal);
+                if (i >= 0)
+                {
+                    int colon = message.IndexOf(':', i);
+                    int q1 = message.IndexOf('"', colon + 1);
+                    int q2 = message.IndexOf('"', q1 + 1);
+                    if (q1 >= 0 && q2 > q1)
+                        eventName = message.Substring(q1 + 1, q2 - q1 - 1);
+                }
+            }
+
+            TournamentWebSocketProbe.ServerMessage(roomId, eventName, message.Length);
         }
 
         private void HandleDisconnect(string roomId, string reason)
         {
+            TournamentWebSocketProbe.Disconnect(roomId ?? activeRoomId, reason);
             TournamentFlowLog.WebSocketDisconnected(roomId ?? activeRoomId, reason);
+            TournamentFlowLog.WsDisconnected($"room={roomId ?? activeRoomId} reason={reason}");
             DisconnectSocket(reason);
 
             if (!maintainConnection || string.IsNullOrEmpty(activeRoomId) || !TournamentSession.IsActive)
@@ -371,17 +494,16 @@ namespace Mkey.Network
                 return;
 
             reconnectAttempts++;
-            if (reconnectAttempts > 8)
-            {
-                Debug.LogWarning("[TournamentWS] max reconnect attempts reached");
-                return;
-            }
+            isReconnecting = true;
 
             TournamentFlowLog.WebSocketReconnecting(roomId, reconnectAttempts);
             await Task.Delay(Mathf.Min(5000, reconnectAttempts * 500));
 
             if (!maintainConnection || !TournamentSession.IsActive || IsConnected)
+            {
+                isReconnecting = false;
                 return;
+            }
 
             try
             {
@@ -392,28 +514,41 @@ namespace Mkey.Network
                 Debug.LogError($"[TournamentWS] reconnect failed roomId={roomId} attempt={reconnectAttempts}");
                 Debug.LogException(ex);
             }
+
+            if (!IsConnected && maintainConnection && TournamentSession.IsActive)
+                _ = ReconnectAfterDelayAsync(roomId);
+            else
+                isReconnecting = false;
         }
 
         private async Task PingLoop()
         {
+            string roomId = activeRoomId;
+            TournamentWebSocketProbe.PingLoopStarted(roomId);
             while (socket != null && socket.State == WebSocketState.Open && cancelSource != null)
             {
                 try
                 {
                     await Task.Delay(15000, cancelSource.Token);
+                    TournamentWebSocketProbe.PingSent(roomId);
                     await SendJson("{\"event\":\"ping\"}");
                 }
                 catch (OperationCanceledException)
                 {
+                    TournamentWebSocketProbe.PingLoopExited(roomId, "cancelled");
                     return;
                 }
                 catch (Exception ex)
                 {
                     Debug.LogError("[TournamentWS] ping loop error");
+                    TournamentWebSocketProbe.PingLoopExited(roomId, ex.Message);
+                    TournamentWebSocketProbe.Disconnect(roomId, "ping_loop_exception", ex);
                     Debug.LogException(ex);
                     return;
                 }
             }
+
+            TournamentWebSocketProbe.PingLoopExited(roomId, "loop_condition_false");
         }
 
         private async Task SendJson(string json)
@@ -427,6 +562,7 @@ namespace Mkey.Network
 
         private void DisconnectSocket(string reason)
         {
+            TournamentWebSocketProbe.Disconnect(activeRoomId, "DisconnectSocket:" + reason);
             cancelSource?.Cancel();
             cancelSource?.Dispose();
             cancelSource = null;

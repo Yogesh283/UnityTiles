@@ -24,6 +24,7 @@ namespace Mkey.Tournament
         private RectTransform pageRoot;
         private RectTransform scrollContent;
         private RectTransform overlayRoot;
+        private RectTransform statsLayer;
         private TournamentDialog dialog;
         private TournamentWaitingRoomPanel waitingRoom;
         private TournamentWalletPulse walletPulse;
@@ -55,15 +56,22 @@ namespace Mkey.Tournament
 
             TournamentPageLifecycle.OnPageShown(RefreshWallet);
 
+            TournamentApiBridge.RoomUpdated += OnTournamentRoomUpdated;
+
             if (pageBuilt && !ApiConfig.Current.UseLocalSimulation)
                 StartCoroutine(SyncWalletRoutine());
 
             RefreshWallet();
+            if (pageBuilt && statsLayer)
+                TournamentCardOverlays.RefreshAll(statsLayer, overlayRoot);
+
             TournamentJoinFlowGuard.LogState("TournamentPageController.OnEnable");
         }
 
         private void OnDisable()
         {
+            TournamentApiBridge.RoomUpdated -= OnTournamentRoomUpdated;
+
             if (CoinsHolder.Instance)
             {
                 CoinsHolder.Instance.ChangeEvent.RemoveListener(OnCoinsChanged);
@@ -149,6 +157,7 @@ namespace Mkey.Tournament
             TournamentUIFactory.StretchRect(viewport);
             Image maskImg = viewport.gameObject.AddComponent<Image>();
             maskImg.color = new Color(1f, 1f, 1f, 0.01f);
+            maskImg.raycastTarget = false;
             Mask mask = viewport.gameObject.AddComponent<Mask>();
             mask.showMaskGraphic = false;
             scroll.viewport = viewport;
@@ -160,14 +169,21 @@ namespace Mkey.Tournament
             scrollContent.sizeDelta = new Vector2(pageW, pageH + TournamentPngLayout.ScrollBottomPadding);
             scroll.content = scrollContent;
 
-            Image pageImage = scrollContent.gameObject.AddComponent<Image>();
+            RectTransform pageLayer = TournamentUIFactory.CreateRect(scrollContent, "PageLayer");
+            pageLayer.anchorMin = new Vector2(0.5f, 1f);
+            pageLayer.anchorMax = new Vector2(0.5f, 1f);
+            pageLayer.pivot = new Vector2(0.5f, 1f);
+            pageLayer.sizeDelta = new Vector2(pageW, pageH);
+            pageLayer.anchoredPosition = Vector2.zero;
+
+            Image pageImage = pageLayer.gameObject.AddComponent<Image>();
             pageImage.sprite = pageSprite;
             pageImage.color = Color.white;
             pageImage.preserveAspect = false;
             pageImage.raycastTarget = false;
             yield return null;
 
-            RectTransform overlay = TournamentUIFactory.CreateRect(scrollContent, "Overlay");
+            RectTransform overlay = TournamentUIFactory.CreateRect(pageLayer, "Overlay");
             TournamentUIFactory.StretchRect(overlay);
             overlayRoot = overlay;
 
@@ -177,10 +193,11 @@ namespace Mkey.Tournament
 
             RectTransform hitAreas = TournamentUIFactory.CreateRect(overlay, "HitAreas");
             TournamentUIFactory.StretchRect(hitAreas);
-            hitAreas.gameObject.AddComponent<TournamentJoinButtonsSelfTest>();
 
             TournamentUIFactory.CreateInvisibleButton(hitAreas, "BackButton", TournamentPngLayout.Back, OnBackClicked);
             yield return null;
+
+            statsLayer = TournamentPngLayout.CreatePagePixelLayer(pageLayer, "StatsLayer");
 
             int cardIndex = 0;
             foreach (TournamentDefinition tournament in TournamentCatalog.All)
@@ -190,15 +207,21 @@ namespace Mkey.Tournament
                 TournamentUIFactory.StretchRect(cardGo.GetComponent<RectTransform>());
 
                 TournamentCardView cardView = cardGo.GetComponent<TournamentCardView>();
-                cardView.Setup(tournament, OnJoinTournament, 0f, cardIndex, hitAreas);
-                cardView.BindJoinButton(hitAreas, TournamentPngLayout.GetJoinRect(cardIndex), OnJoinTournament);
+                int layoutIndex = TournamentPngLayout.GetCardIndexForTournament(tournament.id);
+                if (layoutIndex < 0)
+                    layoutIndex = cardIndex;
+
+                cardView.Setup(tournament, OnJoinTournament, 0f, layoutIndex, hitAreas);
+                cardView.BindJoinButton(hitAreas, TournamentPngLayout.GetJoinRect(layoutIndex), OnJoinTournament);
                 cardIndex++;
                 yield return null;
             }
 
-            int balance = CoinsHolder.Instance ? CoinsHolder.Count : 0;
-            TournamentCardOverlays.Build(overlay, balance);
             yield return null;
+
+            statsLayer.SetAsLastSibling();
+            yield return null;
+            ApplyCatalogToUi();
 
             walletText = TournamentUIFactory.CreateWalletBalance(overlay);
             walletPulse = walletText.gameObject.AddComponent<TournamentWalletPulse>();
@@ -217,10 +240,16 @@ namespace Mkey.Tournament
 
             RefreshWallet();
 
-            hitAreas.SetAsLastSibling();
+            statsLayer.SetAsLastSibling();
 
             RectTransform depositButton = TournamentUIFactory.CreateDepositButton(overlay, () => OpenDepositPanel(null));
             depositButton.SetAsLastSibling();
+            walletText.rectTransform.SetAsLastSibling();
+
+            TournamentHitAreasBootstrap.EnsureOnTop(hitAreas);
+
+            var joinSelfTest = hitAreas.gameObject.AddComponent<TournamentJoinButtonsSelfTest>();
+            joinSelfTest.Run();
             yield return null;
 
             dialog = TournamentDialog.Create(pageRoot);
@@ -234,19 +263,34 @@ namespace Mkey.Tournament
 
             pageBuilt = true;
             RefreshWallet();
+            StartCoroutine(RefreshStatsAfterLayoutRoutine());
             TournamentJoinFlowGuard.LogState("TournamentPageController.BuildPageRoutine complete");
 
-            if (!ApiConfig.Current.UseLocalSimulation)
+            if (ApiConfig.Current.UseLocalSimulation)
+                StartCoroutine(SyncLocalCatalogRoutine());
+            else
                 StartCoroutine(SyncOnlineDataRoutine());
+        }
+
+        private IEnumerator RefreshStatsAfterLayoutRoutine()
+        {
+            yield return null;
+            yield return null;
+            ApplyCatalogToUi();
+        }
+
+        private IEnumerator SyncLocalCatalogRoutine()
+        {
+            yield return null;
+            TournamentCatalog.ResetToDefaults();
+            ApplyCatalogToUi();
         }
 
         private Canvas CreateCanvas()
         {
             GameObject canvasGo = new GameObject("TournamentCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             Canvas canvas = canvasGo.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceCamera;
-            canvas.worldCamera = Camera.main;
-            canvas.planeDistance = 50f;
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 100;
 
             CanvasScaler scaler = canvasGo.GetComponent<CanvasScaler>();
@@ -340,6 +384,9 @@ namespace Mkey.Tournament
 
             catalogOk = catalogTask.Result;
             SetOnlineStatus(catalogOk);
+            if (!catalogOk)
+                TournamentCatalog.ResetToDefaults();
+            ApplyCatalogToUi(rebuild: true);
 
             yield return EnsureSessionRoutine();
 
@@ -383,12 +430,57 @@ namespace Mkey.Tournament
             while (!catalogTask.IsCompleted)
                 yield return null;
             SetOnlineStatus(catalogTask.Result);
+            if (!catalogTask.Result)
+                TournamentCatalog.ResetToDefaults();
+            ApplyCatalogToUi(rebuild: true);
 
             yield return EnsureSessionRoutine();
             yield return SyncWalletRoutine();
 
             if (!catalogTask.Result)
                 yield return new WaitForSecondsRealtime(2f);
+        }
+
+        private void OnTournamentRoomUpdated()
+        {
+            if (!pageBuilt || !statsLayer)
+                return;
+
+            TournamentCardOverlays.RefreshAll(statsLayer, overlayRoot);
+        }
+
+        private void ApplyCatalogToUi(bool rebuild = false)
+        {
+            if (!statsLayer)
+                return;
+
+            if (rebuild || statsLayer.childCount == 0)
+                TournamentCardOverlays.Rebuild(statsLayer);
+            else
+                TournamentCardOverlays.RefreshAll(statsLayer, overlayRoot);
+
+            TournamentStatsLayerBootstrap.EnsureVisible(statsLayer);
+
+            if (overlayRoot)
+                TournamentCardOverlays.RefreshJoinButtons(overlayRoot);
+
+            LogStatsSample();
+        }
+
+        private static void LogStatsSample()
+        {
+            foreach (TournamentDefinition tournament in TournamentCatalog.All)
+            {
+                if (tournament == null || tournament.id != "mega_clash")
+                    continue;
+
+                Debug.Log(
+                    "[TournamentStats] mega_clash => " +
+                    $"{Mathf.RoundToInt(tournament.maxPlayers * 0.62f)}/{tournament.maxPlayers}, " +
+                    $"{tournament.entryFee:N0}, {tournament.prizePool:N0}, " +
+                    $"{TournamentPrizeTable.GetPrize(tournament.id, 1):N0}");
+                return;
+            }
         }
 
         private static async System.Threading.Tasks.Task<bool> FetchTournamentCatalogWithRetryAsync()
@@ -499,7 +591,6 @@ namespace Mkey.Tournament
             int balance = CoinsHolder.Count;
             walletText.text = balance.ToString("N0");
             walletPulse?.NotifyBalance(balance);
-            TournamentCardOverlays.RefreshAffordability(overlayRoot, balance);
         }
 
         private void OpenDepositPanel(Action onComplete)

@@ -31,11 +31,24 @@ def _resolve_user_id(token: str | None) -> int | None:
         db.close()
 
 
+def _log_room_payload(direction: str, room_id: str, user_id: int, event: str, room_payload: dict | None) -> None:
+    logger.info(
+        "[TournamentWsProbe] %s room=%s user_id=%s event=%s status=%s players=%s match_start_at_ms=%s",
+        direction,
+        room_id,
+        user_id,
+        event,
+        room_payload.get("status") if room_payload else None,
+        room_payload.get("player_count") if room_payload else None,
+        room_payload.get("match_start_at_ms") if room_payload else None,
+    )
+
+
 @router.websocket("/ws/tournament/{room_id}")
 async def tournament_room_ws(websocket: WebSocket, room_id: str, token: str | None = None) -> None:
     user_id = _resolve_user_id(token)
     if not user_id:
-        logger.warning("WebSocket /ws/tournament/%s rejected invalid token", room_id)
+        logger.warning("[TournamentWsProbe] CONNECT rejected invalid token room=%s", room_id)
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
@@ -48,32 +61,66 @@ async def tournament_room_ws(websocket: WebSocket, room_id: str, token: str | No
             .first()
         )
         if not room or not player:
+            logger.warning(
+                "[TournamentWsProbe] CONNECT rejected room=%s user_id=%s room_found=%s player_found=%s",
+                room_id,
+                user_id,
+                bool(room),
+                bool(player),
+            )
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
 
         await manager.connect(room_id, websocket, user_id)
         logger.info("WebSocket /ws/tournament/%s [accepted] user_id=%s", room_id, user_id)
         RoomManager(db).set_player_connected(room_id, user_id, True)
-        await websocket.send_text(json.dumps({"event": "room_updated", "room": serialize_room(db, room)}))
+        initial = serialize_room(db, room)
+        _log_room_payload("Send initial", room_id, user_id, "room_updated", initial)
+        await websocket.send_text(json.dumps({"event": "room_updated", "room": initial}))
 
+        logger.info("[TournamentWsProbe] ReceiveLoop STARTED room=%s user_id=%s", room_id, user_id)
         while True:
             raw = await websocket.receive_text()
             payload = json.loads(raw)
             event = payload.get("event")
 
             if event == "ping":
+                logger.info("[TournamentWsProbe] Ping received (app-level) room=%s user_id=%s", room_id, user_id)
                 await websocket.send_text(json.dumps({"event": "pong"}))
+                logger.info("[TournamentWsProbe] Pong sent (app-level) room=%s user_id=%s", room_id, user_id)
                 continue
 
             if event == "room_state":
                 room = db.query(TournamentRoom).filter(TournamentRoom.id == room_id).first()
                 if room:
+                    snap = serialize_room(db, room)
+                    _log_room_payload("Send room_state reply", room_id, user_id, "room_updated", snap)
                     await websocket.send_text(
-                        json.dumps({"event": "room_updated", "room": serialize_room(db, room)})
+                        json.dumps({"event": "room_updated", "room": snap})
                     )
-    except WebSocketDisconnect:
+            else:
+                logger.info(
+                    "[TournamentWsProbe] Client message room=%s user_id=%s event=%s",
+                    room_id,
+                    user_id,
+                    event,
+                )
+    except WebSocketDisconnect as exc:
+        logger.info(
+            "[TournamentWsProbe] ReceiveLoop EXITED room=%s user_id=%s reason=WebSocketDisconnect code=%s",
+            room_id,
+            user_id,
+            getattr(exc, "code", None),
+        )
         logger.info("WebSocket /ws/tournament/%s [disconnected] user_id=%s", room_id, user_id)
         manager.disconnect(room_id, websocket)
         RoomManager(db).set_player_connected(room_id, user_id, False)
+    except Exception:
+        logger.exception(
+            "[TournamentWsProbe] ReceiveLoop EXITED room=%s user_id=%s reason=exception",
+            room_id,
+            user_id,
+        )
+        raise
     finally:
         db.close()

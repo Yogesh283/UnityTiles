@@ -9,7 +9,7 @@ namespace Mkey.Tournament
     /// </summary>
     public class TournamentGlobalWaitingRoom : MonoBehaviour
     {
-        private const int SortOrder = 9000;
+        private const int SortOrder = 9600;
 
         private static TournamentGlobalWaitingRoom instance;
 
@@ -29,8 +29,18 @@ namespace Mkey.Tournament
             return EnsureInstance().panel;
         }
 
+        public static Transform OverlayRoot => EnsureInstance().transform;
+
         public static void Show(TournamentDefinition tournament, Action onComplete)
         {
+            TournamentGlobalWaitingRoom inst = EnsureInstance();
+            if (!inst.gameObject.activeSelf)
+                inst.gameObject.SetActive(true);
+
+            Canvas canvas = inst.GetComponent<Canvas>();
+            if (canvas != null && !canvas.enabled)
+                canvas.enabled = true;
+
             EnsurePanel().Show(tournament, onComplete);
         }
 
@@ -87,7 +97,15 @@ namespace Mkey.Tournament
             scaler.referenceResolution = new Vector2(1080f, 1920f);
             scaler.matchWidthOrHeight = 0.5f;
 
+            RectTransform rootRt = root.GetComponent<RectTransform>();
+            rootRt.anchorMin = Vector2.zero;
+            rootRt.anchorMax = Vector2.one;
+            rootRt.offsetMin = Vector2.zero;
+            rootRt.offsetMax = Vector2.zero;
+            rootRt.pivot = new Vector2(0.5f, 0.5f);
+
             DontDestroyOnLoad(root);
+
             instance = root.AddComponent<TournamentGlobalWaitingRoom>();
             instance.panel = TournamentWaitingRoomPanel.Create(root.transform);
             return instance;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Threading.Tasks;
 using Mkey;
 using Mkey.Tournament;
@@ -8,9 +9,37 @@ namespace Mkey.Network
 {
     public static class TournamentJoinCoordinator
     {
+        private const float BackgroundRetrySeconds = 2f;
+
         private static bool joinRequestInFlight;
 
-        public static async void ConfirmJoin(
+        public static void NotifyWaitingRoomClosed()
+        {
+            joinRequestInFlight = false;
+            TournamentApiBridge.SetBackgroundJoinActive(false);
+        }
+
+        /// <summary>
+        /// Opens the full-screen waiting overlay immediately — no API calls.
+        /// Safe to call multiple times.
+        /// </summary>
+        public static void OpenWaitingRoomImmediate(TournamentDefinition tournament)
+        {
+            if (tournament == null)
+            {
+                Debug.LogWarning("[WAITING_ROOM_OPEN] skipped — tournament is null");
+                return;
+            }
+
+            TournamentFlowLog.WaitingRoomOpen($"tournament={tournament.id}");
+            TournamentSession.Begin(tournament);
+            TournamentRoomRegistry.JoinOrGetRoom(tournament);
+            TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
+            TournamentFlowLog.WaitingRoomOpened(tournament.id);
+            TournamentFlowLog.Searching("overlay shown before join API");
+        }
+
+        public static void ConfirmJoin(
             TournamentDefinition tournament,
             TournamentDialog dialog,
             TournamentWaitingRoomPanel waitingRoom,
@@ -20,48 +49,81 @@ namespace Mkey.Network
         {
             if (tournament == null) return;
 
+            OpenWaitingRoomImmediate(tournament);
+
             if (ApiConfig.Current.UseLocalSimulation)
             {
                 ConfirmJoinLocal(tournament, dialog, waitingRoom, refreshWallet, retryJoin, onJoinFailed);
                 return;
             }
 
-            if (joinRequestInFlight || TournamentJoinFlowGuard.IsRoomEstablished)
+            StartBackgroundJoin(tournament, dialog, waitingRoom, refreshWallet, retryJoin, onJoinFailed);
+        }
+
+        public static void StartBackgroundJoin(
+            TournamentDefinition tournament,
+            TournamentDialog dialog,
+            TournamentWaitingRoomPanel waitingRoom,
+            Action refreshWallet,
+            Action<TournamentDefinition> retryJoin = null,
+            Action onJoinFailed = null)
+        {
+            if (tournament == null) return;
+
+            if (joinRequestInFlight && TournamentGlobalWaitingRoom.IsVisible)
             {
-                TournamentFlowLog.Join("ignored duplicate ConfirmJoin");
+                TournamentFlowLog.Join("background join already running — waiting room visible");
+                return;
+            }
+
+            if (joinRequestInFlight && !TournamentGlobalWaitingRoom.IsVisible)
+                joinRequestInFlight = false;
+
+            if (TournamentJoinFlowGuard.IsRoomEstablished && TournamentApiBridge.HasMatchedRoom)
+            {
+                TournamentFlowLog.Join("room already established — skip background join");
                 return;
             }
 
             joinRequestInFlight = true;
-            ShowWaitingRoomImmediately(tournament);
+            TournamentFlowLog.JoinRequest($"tournament={tournament.id}");
+            TournamentFlowLog.JoinApiStarted($"tournament={tournament.id}");
+            TournamentApiBridge.SetBackgroundJoinActive(true);
 
-            try
+            NetworkManager.EnsureExists();
+            if (ApiConfig.Current.UseNakamaRealtimeNetworking)
             {
-                await ConfirmJoinOnlineAsync(
-                    tournament, dialog, waitingRoom, refreshWallet, retryJoin, onJoinFailed);
+                NetworkManager.Instance.StartCoroutine(BackgroundJoinNakamaCoroutine(
+                    tournament, dialog, waitingRoom, refreshWallet, retryJoin, onJoinFailed));
             }
-            finally
+            else
             {
-                joinRequestInFlight = false;
+                NetworkManager.Instance.StartCoroutine(BackgroundJoinOnlineCoroutine(
+                    tournament, dialog, waitingRoom, refreshWallet, retryJoin, onJoinFailed));
             }
         }
 
-        private static void ShowWaitingRoomImmediately(TournamentDefinition tournament)
+        private static void AbortWaitingRoomOnFatalJoin(string reason)
         {
-            TournamentSession.Begin(tournament);
-            TournamentRoomRegistry.JoinOrGetRoom(tournament);
-            TournamentGlobalWaitingRoom.Show(tournament, TournamentGameBridge.LaunchGameFromWaitingRoom);
-        }
-
-        private static void AbortWaitingRoomOnJoinFailure()
-        {
+            TournamentFlowLog.RoomClosed(reason);
             TournamentGlobalWaitingRoom.Hide();
             TournamentApiBridge.Clear();
             TournamentSession.Clear();
             TournamentJoinFlowGuard.Reset();
+            TournamentApiBridge.SetBackgroundJoinActive(false);
+            joinRequestInFlight = false;
         }
 
-        private static async Task ConfirmJoinOnlineAsync(
+        private static void ClearBackgroundJoinIfNotEstablished()
+        {
+            if (TournamentJoinFlowGuard.IsRoomEstablished)
+                return;
+
+            TournamentApiBridge.SetBackgroundJoinActive(false);
+            joinRequestInFlight = false;
+        }
+
+        private static IEnumerator BackgroundJoinOnlineCoroutine(
             TournamentDefinition tournament,
             TournamentDialog dialog,
             TournamentWaitingRoomPanel waitingRoom,
@@ -69,142 +131,229 @@ namespace Mkey.Network
             Action<TournamentDefinition> retryJoin,
             Action onJoinFailed)
         {
-            try
+            while (TournamentGlobalWaitingRoom.IsVisible && !TournamentJoinFlowGuard.IsRoomEstablished)
             {
-                TournamentFlowLog.Join($"start tournament={tournament.id}");
-                ApiResult<bool> authResult = await EnsureAuthenticatedAsync();
+                NetworkManager.Instance.StartCoroutine(FireAndForgetWalletSync(refreshWallet));
+
+                Task<ApiResult<bool>> authTask = EnsureAuthenticatedAsync();
+                while (!authTask.IsCompleted)
+                    yield return null;
+
+                ApiResult<bool> authResult = authTask.Result;
                 if (!authResult.Success)
                 {
-                    AbortWaitingRoomOnJoinFailure();
-                    ShowJoinError(
-                        dialog,
-                        tournament,
-                        authResult.ErrorMessage,
-                        authResult.StatusCode,
-                        authResult.IsServerUnavailable,
-                        dialogRef => ConfirmJoin(
-                            tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed),
-                        refreshWallet,
-                        retryJoin,
-                        onJoinFailed);
-                    return;
+                    TournamentFlowLog.JoinApiFailed(
+                        $"auth status={authResult.StatusCode} err={authResult.ErrorMessage}");
+                    TournamentFlowLog.ApiRetry(
+                        $"auth status={authResult.StatusCode} err={authResult.ErrorMessage}");
+                    yield return new WaitForSecondsRealtime(BackgroundRetrySeconds);
+                    continue;
                 }
 
-                var walletResult = await WalletService.SyncToCoinsHolderAsync();
-                refreshWallet?.Invoke();
+                Task<ApiResult<RoomResponseDto>> joinTask = JoinTournamentOnceAsync(tournament.id);
+                while (!joinTask.IsCompleted)
+                    yield return null;
 
-                if (walletResult.Success &&
-                    CoinsHolder.Instance &&
-                    CoinsHolder.Count < tournament.entryFee)
+                ApiResult<RoomResponseDto> joinResult = joinTask.Result;
+                if (joinResult.Success && joinResult.Data != null)
                 {
-                    AbortWaitingRoomOnJoinFailure();
-                    onJoinFailed?.Invoke();
-                    dialog.ShowInsufficientCoins(
-                        tournament.entryFee,
-                        CoinsHolder.Count,
-                        () => OpenDeposit(dialog, refreshWallet, () => retryJoin?.Invoke(tournament)),
-                        onJoinFailed);
-                    return;
+                    ApplyJoinSuccess(tournament, joinResult.Data, refreshWallet);
+                    yield break;
                 }
 
-                var joinResult = await JoinTournamentOnceAsync(tournament.id);
-                if (!joinResult.Success || joinResult.Data == null)
+                if (IsDefinitiveInsufficientBalance(joinResult))
                 {
-                    if (!string.IsNullOrEmpty(joinResult.ErrorMessage) &&
-                        joinResult.ErrorMessage.StartsWith("Response parse error", StringComparison.Ordinal))
-                    {
-                        TournamentFlowLog.Join("RESPONSE PARSE FAILED " + joinResult.ErrorMessage);
-                    }
-
-                    if (joinResult.StatusCode == 401)
-                    {
-                        AuthService.Logout();
-                        authResult = await EnsureAuthenticatedAsync();
-                        if (authResult.Success)
-                            joinResult = await JoinTournamentOnceAsync(tournament.id);
-                    }
-                    else if (joinResult.IsServerUnavailable)
-                    {
-                        await Task.Delay(750);
-                        joinResult = await JoinTournamentOnceAsync(tournament.id);
-                    }
+                    TournamentFlowLog.JoinApiFailed($"insufficient balance status={joinResult.StatusCode}");
+                    HandleInsufficientBalance(
+                        tournament, dialog, refreshWallet, retryJoin, onJoinFailed);
+                    yield break;
                 }
 
-                if (!joinResult.Success || joinResult.Data == null)
-                {
-                    AbortWaitingRoomOnJoinFailure();
-                    ShowJoinError(
-                        dialog,
-                        tournament,
-                        joinResult.ErrorMessage,
-                        joinResult.StatusCode,
-                        joinResult.IsServerUnavailable,
-                        dialogRef => ConfirmJoin(
-                            tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed),
-                        refreshWallet,
-                        retryJoin,
-                        onJoinFailed);
-                    return;
-                }
+                if (joinResult.StatusCode == 401)
+                    AuthService.Logout();
 
-                TournamentFlowLog.JoinResponseParsed(
-                    joinResult.Data.roomId,
-                    joinResult.Data.status,
-                    joinResult.Data.playerCount,
-                    joinResult.Data.matchStartAtMs);
-                TournamentFlowLog.RoomCreated(joinResult.Data.roomId);
-                TournamentFlowLog.RoomId(joinResult.Data.roomId);
-
-                TournamentApiBridge.ApplyJoinResponse(tournament, joinResult.Data);
-                TournamentSession.Begin(tournament);
-
-                TournamentFlowLog.ConnectingWebSocket(joinResult.Data.roomId);
-                bool wsConnected = await TournamentRoomWebSocket.ConnectAndWaitAsync(
-                    joinResult.Data.roomId, timeoutMs: 15000);
-                if (!wsConnected)
-                {
-                    TournamentFlowLog.WebSocketDisconnected(joinResult.Data.roomId, "initial_connect_failed");
-                    AbortWaitingRoomOnJoinFailure();
-                    ShowJoinError(
-                        dialog,
-                        tournament,
-                        "Could not connect to the match server. Check your connection and try again.",
-                        0,
-                        false,
-                        dialogRef => ConfirmJoin(
-                            tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed),
-                        refreshWallet,
-                        retryJoin,
-                        onJoinFailed);
-                    return;
-                }
-
-                TournamentJoinFlowGuard.MarkRoomEstablished();
-
-                ApplyWalletFromJoinResponse(joinResult.Data);
-                refreshWallet?.Invoke();
-                if (!joinResult.Data.walletBalance.HasValue)
-                {
-                    await WalletService.SyncToCoinsHolderAsync();
-                    refreshWallet?.Invoke();
-                }
+                TournamentFlowLog.JoinApiFailed(
+                    $"status={joinResult.StatusCode} err={joinResult.ErrorMessage}");
+                TournamentFlowLog.ApiRetry(
+                    $"join status={joinResult.StatusCode} err={joinResult.ErrorMessage}");
+                yield return new WaitForSecondsRealtime(BackgroundRetrySeconds);
             }
-            catch (Exception ex)
+
+            ClearBackgroundJoinIfNotEstablished();
+        }
+
+        private static IEnumerator BackgroundJoinNakamaCoroutine(
+            TournamentDefinition tournament,
+            TournamentDialog dialog,
+            TournamentWaitingRoomPanel waitingRoom,
+            Action refreshWallet,
+            Action<TournamentDefinition> retryJoin,
+            Action onJoinFailed)
+        {
+            RoomResponseDto apiRoom = null;
+
+            while (TournamentGlobalWaitingRoom.IsVisible && !TournamentJoinFlowGuard.IsRoomEstablished)
             {
-                Debug.LogException(ex);
-                AbortWaitingRoomOnJoinFailure();
-                ShowJoinError(
-                    dialog,
-                    tournament,
-                    ex.Message,
-                    0,
-                    true,
-                    dialogRef => ConfirmJoin(
-                        tournament, dialogRef, waitingRoom, refreshWallet, retryJoin, onJoinFailed),
-                    refreshWallet,
-                    retryJoin,
-                    onJoinFailed);
+                NetworkManager.Instance.StartCoroutine(FireAndForgetWalletSync(refreshWallet));
+
+                Task<ApiResult<bool>> authTask = EnsureAuthenticatedAsync();
+                while (!authTask.IsCompleted)
+                    yield return null;
+
+                ApiResult<bool> authResult = authTask.Result;
+                if (!authResult.Success)
+                {
+                    TournamentFlowLog.JoinApiFailed(
+                        $"auth status={authResult.StatusCode} err={authResult.ErrorMessage}");
+                    yield return new WaitForSecondsRealtime(BackgroundRetrySeconds);
+                    continue;
+                }
+
+                if (apiRoom == null)
+                {
+                    Task<ApiResult<RoomResponseDto>> joinTask = JoinTournamentOnceAsync(tournament.id);
+                    while (!joinTask.IsCompleted)
+                        yield return null;
+
+                    ApiResult<RoomResponseDto> joinResult = joinTask.Result;
+                    if (!joinResult.Success || joinResult.Data == null)
+                    {
+                        if (IsDefinitiveInsufficientBalance(joinResult))
+                        {
+                            TournamentFlowLog.JoinApiFailed($"insufficient balance status={joinResult.StatusCode}");
+                            HandleInsufficientBalance(
+                                tournament, dialog, refreshWallet, retryJoin, onJoinFailed);
+                            yield break;
+                        }
+
+                        if (joinResult.StatusCode == 401)
+                            AuthService.Logout();
+
+                        TournamentFlowLog.JoinApiFailed(
+                            $"status={joinResult.StatusCode} err={joinResult.ErrorMessage}");
+                        yield return new WaitForSecondsRealtime(BackgroundRetrySeconds);
+                        continue;
+                    }
+
+                    apiRoom = joinResult.Data;
+                    TournamentApiBridge.ApplyJoinResponse(tournament, apiRoom);
+                    if (apiRoom.playerCount >= 2)
+                        TournamentFlowLog.PlayerFound($"players={apiRoom.playerCount}/{tournament.maxPlayers}");
+                    NetworkManager.Instance.StartCoroutine(FinishJoinConnectivityCoroutine(apiRoom));
+                }
+
+                Task<ApiResult<RoomResponseDto>> nakamaTask =
+                    NakamaTournamentRealtimeClient.MatchmakeAndJoinAsync(tournament, apiRoom);
+                while (!nakamaTask.IsCompleted)
+                    yield return null;
+
+                ApiResult<RoomResponseDto> nakamaResult = nakamaTask.Result;
+                if (nakamaResult.Success && nakamaResult.Data != null)
+                {
+                    RoomResponseDto mergedRoom = MergeNakamaWithBusinessRoom(apiRoom, nakamaResult.Data);
+                    ApplyJoinSuccess(tournament, mergedRoom, refreshWallet);
+                    yield break;
+                }
+
+                TournamentFlowLog.JoinApiFailed(
+                    $"nakama status={nakamaResult.StatusCode} err={nakamaResult.ErrorMessage}");
+                yield return new WaitForSecondsRealtime(BackgroundRetrySeconds);
             }
+
+            ClearBackgroundJoinIfNotEstablished();
+        }
+
+        private static void ApplyJoinSuccess(
+            TournamentDefinition tournament,
+            RoomResponseDto room,
+            Action refreshWallet)
+        {
+            TournamentFlowLog.JoinApiSuccess(
+                $"room={room.roomId} status={room.status} players={room.playerCount}");
+            TournamentFlowLog.JoinResponseParsed(
+                room.roomId,
+                room.status,
+                room.playerCount,
+                room.matchStartAtMs);
+            TournamentTransitionProbe.Step(1, "Server room status on JOIN",
+                room.status is "starting" or "active" or "waiting",
+                $"status={room.status} players={room.playerCount}/{room.maxPlayers}");
+            TournamentTransitionProbe.Step(2, "match_start_at_ms on JOIN",
+                (room.matchStartAtMs ?? 0) > 0,
+                room.matchStartAtMs?.ToString() ?? "null");
+            TournamentFlowLog.RoomCreated(room.roomId);
+            TournamentFlowLog.RoomId(room.roomId);
+            if (room.playerCount >= 2)
+                TournamentFlowLog.RoomFull($"players={room.playerCount}");
+
+            TournamentApiBridge.ApplyJoinResponse(tournament, room);
+            TournamentFlowLog.JoinSuccess(
+                $"room={room.roomId} status={room.status} players={room.playerCount}");
+
+            ApplyWalletFromJoinResponse(room);
+            refreshWallet?.Invoke();
+            TournamentJoinFlowGuard.MarkRoomEstablished();
+            TournamentApiBridge.SetBackgroundJoinActive(false);
+            joinRequestInFlight = false;
+
+            if (room.walletBalance.HasValue)
+                TournamentFlowLog.WalletSynced(room.walletBalance.Value);
+
+            NetworkManager.Instance.StartCoroutine(FinishJoinConnectivityCoroutine(room));
+
+            if (!room.walletBalance.HasValue)
+                NetworkManager.Instance.StartCoroutine(FireAndForgetWalletSync(refreshWallet));
+        }
+
+        private static IEnumerator FinishJoinConnectivityCoroutine(RoomResponseDto room)
+        {
+            if (room == null || string.IsNullOrEmpty(room.roomId))
+                yield break;
+
+            if (!ApiConfig.Current.UseNakamaRealtimeNetworking)
+            {
+                TournamentFlowLog.WsConnecting($"room={room.roomId}");
+                TournamentFlowLog.ConnectingWebSocket(room.roomId);
+                Task<bool> wsTask = TournamentRoomWebSocket.ConnectAndWaitAsync(room.roomId, timeoutMs: 15000);
+                while (!wsTask.IsCompleted)
+                    yield return null;
+
+                if (wsTask.Result)
+                    TournamentFlowLog.WsConnected($"room={room.roomId}");
+                else
+                    TournamentFlowLog.ApiRetry($"ws connect failed room={room.roomId}");
+            }
+
+            Task<bool> refreshTask = TournamentApiBridge.RefreshActiveRoomAsync();
+            while (!refreshTask.IsCompleted)
+                yield return null;
+        }
+
+        private static IEnumerator FireAndForgetWalletSync(Action refreshWallet)
+        {
+            Task<ApiResult<int>> walletTask = WalletService.SyncToCoinsHolderAsync();
+            while (!walletTask.IsCompleted)
+                yield return null;
+
+            if (walletTask.Result.Success)
+                refreshWallet?.Invoke();
+        }
+
+        private static void HandleInsufficientBalance(
+            TournamentDefinition tournament,
+            TournamentDialog dialog,
+            Action refreshWallet,
+            Action<TournamentDefinition> retryJoin,
+            Action onJoinFailed)
+        {
+            AbortWaitingRoomOnFatalJoin("insufficient balance");
+            onJoinFailed?.Invoke();
+            int balance = CoinsHolder.Instance ? CoinsHolder.Count : 0;
+            dialog.ShowInsufficientCoins(
+                tournament.entryFee,
+                balance,
+                () => OpenDeposit(dialog, refreshWallet, () => retryJoin?.Invoke(tournament)),
+                onJoinFailed);
         }
 
         private static async Task<ApiResult<RoomResponseDto>> JoinTournamentOnceAsync(string tournamentId)
@@ -280,7 +429,6 @@ namespace Mkey.Network
                 return;
             }
 
-            ShowWaitingRoomImmediately(tournament);
             CoinsHolder.Add(-tournament.entryFee);
             refreshWallet?.Invoke();
             TournamentJoinFlowGuard.MarkRoomEstablished();
@@ -301,79 +449,8 @@ namespace Mkey.Network
             });
         }
 
-        private static void ShowJoinError(
-            TournamentDialog dialog,
-            TournamentDefinition tournament,
-            string errorMessage,
-            int statusCode,
-            bool serverUnavailable,
-            Action<TournamentDialog> retry,
-            Action refreshWallet,
-            Action<TournamentDefinition> retryJoin,
-            Action onFailed)
-        {
-            string detail = string.IsNullOrWhiteSpace(errorMessage) ? "Unknown error." : errorMessage;
-
-            if (IsInsufficientBalance(detail))
-            {
-                int balance = CoinsHolder.Instance ? CoinsHolder.Count : 0;
-                dialog.ShowInsufficientCoins(
-                    tournament.entryFee,
-                    balance,
-                    () => OpenDeposit(dialog, refreshWallet, () => retryJoin?.Invoke(tournament)),
-                    onFailed);
-                onFailed?.Invoke();
-                return;
-            }
-
-            string title;
-            string message;
-
-            if (statusCode >= 500)
-            {
-                title = "Server Error";
-                message = "The game server had a problem.\nPlease try again in a moment.";
-            }
-            else if (serverUnavailable)
-            {
-                // Keep join flow non-blocking on transient outages.
-                Debug.LogWarning("[TournamentJoin] Server temporarily unavailable; skipping blocking popup.");
-                onFailed?.Invoke();
-                return;
-            }
-            else if (detail.IndexOf("matchmaking busy", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                Debug.LogWarning("[TournamentJoin] Matchmaking busy — not retrying automatically.");
-                onFailed?.Invoke();
-                return;
-            }
-            else if (statusCode == 0)
-            {
-                title = "Could Not Join";
-                message = detail;
-            }
-            else if (statusCode == 401 || detail.IndexOf("authenticated", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                title = "Sign In Required";
-                message = "Your session expired.\nPlease try again.";
-            }
-            else
-            {
-                title = "Could Not Join";
-                message = detail;
-            }
-
-            Debug.LogWarning($"[TournamentJoin] Failed ({statusCode}): {detail}");
-
-            dialog.Show(
-                title,
-                message,
-                true,
-                () => retry?.Invoke(dialog),
-                onFailed);
-
-            onFailed?.Invoke();
-        }
+        private static bool IsDefinitiveInsufficientBalance<T>(ApiResult<T> result) =>
+            result.StatusCode == 400 && IsInsufficientBalance(result.ErrorMessage);
 
         private static bool IsInsufficientBalance(string message) =>
             !string.IsNullOrEmpty(message) &&
@@ -386,6 +463,30 @@ namespace Mkey.Network
 
             CoinsHolder.Instance.SetCount(room.walletBalance.Value);
             WalletService.CachedBalance = room.walletBalance.Value;
+        }
+
+        private static RoomResponseDto MergeNakamaWithBusinessRoom(RoomResponseDto business, RoomResponseDto nakama)
+        {
+            if (business == null)
+                return nakama;
+
+            if (nakama == null)
+                return business;
+
+            business.status = string.IsNullOrEmpty(nakama.status) ? business.status : nakama.status;
+            business.playerCount = Mathf.Max(business.playerCount, nakama.playerCount);
+            if ((nakama.matchStartAtMs ?? 0) > 0)
+                business.matchStartAtMs = nakama.matchStartAtMs;
+            if (nakama.startCountdownSeconds.HasValue)
+                business.startCountdownSeconds = nakama.startCountdownSeconds;
+            if ((nakama.serverNowMs ?? 0) > 0)
+                business.serverNowMs = nakama.serverNowMs;
+            if (!string.IsNullOrEmpty(nakama.searchStatus))
+                business.searchStatus = nakama.searchStatus;
+            if (nakama.players != null && nakama.players.Count > 0)
+                business.players = nakama.players;
+
+            return business;
         }
     }
 }

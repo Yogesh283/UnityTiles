@@ -19,6 +19,16 @@ namespace Mkey.Tournament
 
         public TournamentDefinition Tournament => tournament;
 
+        public void RefreshTournament(TournamentDefinition definition)
+        {
+            if (definition == null)
+                return;
+
+            tournament = definition;
+            tournamentId = definition.id;
+            tournamentName = definition.displayName;
+        }
+
         public void Bind(TournamentDefinition definition, Action<TournamentDefinition> joinCallback)
         {
             tournament = definition;
@@ -66,6 +76,10 @@ namespace Mkey.Tournament
                 TournamentJoinDebug.LogButtonOnClickExecuted(name);
 
             if (!TournamentJoinFlowGuard.CheckCanStartJoin("TournamentJoinButton.OnButtonClicked"))
+                return;
+
+            if (tournament != null &&
+                string.Equals(tournament.statusLabel, "FULL", StringComparison.OrdinalIgnoreCase))
                 return;
 
             if (tournament == null)

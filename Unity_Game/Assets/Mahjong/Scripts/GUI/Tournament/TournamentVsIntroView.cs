@@ -43,6 +43,7 @@ namespace Mkey.Tournament
             RoomPlayerDto localPlayer,
             RoomPlayerDto opponentPlayer)
         {
+            TournamentTransitionProbe.LogVsRevealStart();
             showing = true;
             gameObject.SetActive(true);
             canvasGroup.alpha = 0f;
@@ -77,11 +78,13 @@ namespace Mkey.Tournament
 
             vsText.transform.localScale = Vector3.one;
             yield return new WaitForSecondsRealtime(0.35f);
+            TournamentTransitionProbe.LogVsRevealComplete();
         }
 
         /// <summary>Server-authoritative countdown using match_start_at_ms.</summary>
         public IEnumerator PlayServerCountdownRoutine()
         {
+            TournamentTransitionProbe.LogCountdownStarted();
             showing = true;
             gameObject.SetActive(true);
             canvasGroup.alpha = 1f;
@@ -96,6 +99,10 @@ namespace Mkey.Tournament
                     countdownText.text = sec.ToString();
                     countdownText.fontSize = 120;
                     lastShown = sec;
+                    if (sec == 3) TournamentFlowLog.Countdown3();
+                    else if (sec == 2) TournamentFlowLog.Countdown2();
+                    else if (sec == 1) TournamentFlowLog.Countdown1();
+                    TournamentFlowLog.CountdownStart($"display={sec} server_ms={TournamentServerClock.ScheduledStartMs}");
                     PlayTickSound();
                 }
 
@@ -105,8 +112,10 @@ namespace Mkey.Tournament
 
             countdownText.text = "START";
             countdownText.fontSize = 88;
+            TournamentFlowLog.CountdownStart("display=START");
             PlayGoSound();
             yield return new WaitForSecondsRealtime(0.35f);
+            TournamentTransitionProbe.LogCountdownFinished();
             Hide();
         }
 

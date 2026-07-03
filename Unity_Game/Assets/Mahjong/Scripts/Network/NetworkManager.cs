@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Mkey.Tournament;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -87,20 +88,35 @@ namespace Mkey.Network
             PlayerPrefs.Save();
         }
 
-        public Task<ApiResult<TResponse>> GetAsync<TResponse>(string relativePath, bool requireAuth = true) =>
-            SendAsync<TResponse>(relativePath, UnityWebRequest.kHttpVerbGET, null, requireAuth);
+        public static bool IsTransientFailure<T>(ApiResult<T> result) =>
+            result != null && (result.IsServerUnavailable || result.StatusCode == 0);
+
+        public Task<ApiResult<TResponse>> GetAsync<TResponse>(
+            string relativePath,
+            bool requireAuth = true,
+            float? timeoutSeconds = null) =>
+            SendAsync<TResponse>(relativePath, UnityWebRequest.kHttpVerbGET, null, requireAuth, timeoutSeconds);
 
         public Task<ApiResult<TResponse>> PostAsync<TRequest, TResponse>(
             string relativePath,
             TRequest body,
-            bool requireAuth = true) =>
-            SendAsync<TResponse>(relativePath, UnityWebRequest.kHttpVerbPOST, body, requireAuth);
+            bool requireAuth = true,
+            float? timeoutSeconds = null) =>
+            SendAsync<TResponse>(relativePath, UnityWebRequest.kHttpVerbPOST, body, requireAuth, timeoutSeconds);
+
+        public Task<ApiResult<TResponse>> SendAsync<TResponse>(
+            string relativePath,
+            string method,
+            object body,
+            bool requireAuth) =>
+            SendAsync<TResponse>(relativePath, method, body, requireAuth, null);
 
         public async Task<ApiResult<TResponse>> SendAsync<TResponse>(
             string relativePath,
             string method,
             object body,
-            bool requireAuth)
+            bool requireAuth,
+            float? timeoutSeconds)
         {
             if (ApiConfig.Current.UseLocalSimulation)
                 return ApiResult<TResponse>.Fail("Development mode enabled.");
@@ -109,7 +125,7 @@ namespace Mkey.Network
                 return ApiResult<TResponse>.Fail("Not authenticated.", 401);
 
             string url = BuildUrl(relativePath);
-            float timeout = Mathf.Max(1f, ApiConfig.Current.requestTimeoutSeconds);
+            float timeout = Mathf.Max(1f, timeoutSeconds ?? ApiConfig.Current.requestTimeoutSeconds);
 
             if (relativePath != null && relativePath.Contains("tournaments/join"))
                 Debug.Log("[TournamentJoin] HTTP REQUEST START " + url);
@@ -143,6 +159,7 @@ namespace Mkey.Network
                     {
                         request.Abort();
                         SetServerAvailable(false);
+                        TournamentFlowLog.ApiTimeout($"path={relativePath} timeout={timeout}s");
                         return ApiResult<TResponse>.Fail(ServerUnavailableMessage, 0, true);
                     }
                     await Task.Yield();

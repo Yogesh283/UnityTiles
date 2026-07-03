@@ -24,7 +24,14 @@ namespace Mkey.Network
 
         public static bool HasActiveApiRoom => HasMatchedRoom;
 
+        public static bool IsBackgroundJoinActive { get; private set; }
+
+        public static bool IsReconnecting =>
+            TournamentRoomWebSocket.IsReconnecting;
+
         public static event Action RoomUpdated;
+
+        public static void SetBackgroundJoinActive(bool active) => IsBackgroundJoinActive = active;
 
         private static bool wsHooked;
 
@@ -34,6 +41,9 @@ namespace Mkey.Network
 
             ApplyRoomDto(tournament, room);
             EnsureWebSocket();
+
+            if (HasMatchedRoom && !ApiConfig.Current.UseNakamaRealtimeNetworking)
+                TournamentRoomWebSocket.Connect(CurrentRoom.roomId);
         }
 
         public static void ApplyRoomDto(TournamentDefinition tournament, RoomResponseDto room)
@@ -43,6 +53,10 @@ namespace Mkey.Network
                 return;
 
             ApplyServerRoomTiming(room);
+            TournamentTransitionProbe.LogRoomSnapshot("ApplyRoomDto", GetApiSnapshot(tournament), tournament.maxPlayers);
+            TournamentTransitionProbe.Step(4, "TournamentServerClock receives match_start_at_ms",
+                (room.matchStartAtMs ?? 0) > 0,
+                $"match_start_at_ms={room.matchStartAtMs?.ToString() ?? "null"} server_now_ms={room.serverNowMs?.ToString() ?? "null"}");
 
             TournamentRoom registryRoom = TournamentRoomRegistry.JoinOrGetRoom(tournament);
             registryRoom?.ApplyApiRoomData(
@@ -54,19 +68,50 @@ namespace Mkey.Network
                 room.waitingSeconds);
             registryRoom?.ApplyOnlinePlayers(room.players);
             TournamentSession.BindRoom(room.roomId, room.levelIndex, room.levelSeed);
+            TournamentFlowLog.RoomUpdated(
+                $"status={room.status} players={room.playerCount} room={room.roomId}");
             RoomUpdated?.Invoke();
         }
 
         public static async Task<bool> RefreshActiveRoomAsync()
         {
-            if (!HasMatchedRoom) return false;
+            if (!HasMatchedRoom || !TournamentSession.IsActive)
+                return false;
 
             var result = await TournamentService.FetchRoomSnapshotAsync(CurrentRoom.roomId);
-            if (!result.Success || result.Data == null) return false;
+            if (!result.Success || result.Data == null)
+            {
+                if (result.StatusCode == 404)
+                {
+                    if (!IsBackgroundJoinActive && !TournamentRoomWebSocket.IsReconnecting)
+                        Clear();
+                }
+                else if (NetworkManager.IsTransientFailure(result))
+                {
+                    TournamentFlowLog.ApiRetry(
+                        $"room refresh status={result.StatusCode} err={result.ErrorMessage}");
+                }
 
-            MergeRoomState(result.Data);
+                return false;
+            }
+
+            if (ApiConfig.Current.UseNakamaRealtimeNetworking)
+                MergeIncomingRoomState(result.Data);
+            else
+                MergeIncomingRoomState(result.Data);
+
             ApplyRoomDto(TournamentSession.Tournament, CurrentRoom);
             return true;
+        }
+
+        public static void MergeAndNotify(RoomResponseDto incoming)
+        {
+            if (incoming == null || TournamentSession.Tournament == null)
+                return;
+
+            MergeIncomingRoomState(incoming);
+            ApplyRoomDto(TournamentSession.Tournament, CurrentRoom);
+            RoomUpdated?.Invoke();
         }
 
         public static void Clear()
@@ -90,7 +135,6 @@ namespace Mkey.Network
             bool starting = CurrentRoom.status == "starting";
             bool active = CurrentRoom.status == "active" || CurrentRoom.status == "locked";
 
-            // Never launch while still searching — only when server begins match countdown.
             bool shouldLaunch = starting || active;
 
             BuildPlayerLabels(CurrentRoom.players, out string localUuid, out string opponentUuid, out string opponentName,
@@ -103,7 +147,9 @@ namespace Mkey.Network
 
             float countdown = starting
                 ? Mathf.Max(0f, CurrentRoom.startCountdownSeconds.GetValueOrDefault())
-                : Mathf.Max(0f, CurrentRoom.waitingSecondsRemaining.GetValueOrDefault());
+                : (active && (CurrentRoom.matchStartAtMs ?? 0) > 0
+                    ? Mathf.Max(0f, (float)TournamentServerClock.SecondsUntilStart())
+                    : Mathf.Max(0f, CurrentRoom.waitingSecondsRemaining.GetValueOrDefault()));
 
             return new TournamentRoomSnapshot
             {
@@ -142,9 +188,12 @@ namespace Mkey.Network
         private static void EnsureWebSocket()
         {
             if (!HasMatchedRoom || wsHooked) return;
+
+            if (ApiConfig.Current.UseNakamaRealtimeNetworking)
+                TournamentRoomWebSocket.EnsureNakamaMessageBridge();
+
             TournamentRoomWebSocket.MessageReceived += OnWebSocketMessage;
             wsHooked = true;
-            TournamentRoomWebSocket.Connect(CurrentRoom.roomId);
         }
 
         private static void OnWebSocketMessage(string json)
@@ -158,7 +207,10 @@ namespace Mkey.Network
                 TournamentFlowLog.Event(eventName, json.Length > 120 ? json.Substring(0, 120) + "..." : json);
 
                 JToken roomToken = payload["room"];
-                if (roomToken == null && eventName != "match_finished") return;
+                RoomResponseDto previewRoom = roomToken?.ToObject<RoomResponseDto>();
+                if (previewRoom != null &&
+                    (eventName == "room_updated" || eventName == "match_start" || eventName == "countdown"))
+                    TournamentTransitionProbe.LogWsEvent(eventName, previewRoom);
 
                 if (eventName == "match_finished")
                 {
@@ -167,31 +219,57 @@ namespace Mkey.Network
                     return;
                 }
 
+                if (roomToken == null)
+                    return;
+
                 if (eventName == "player_joined")
                 {
+                    TournamentFlowLog.RoomJoined($"room={CurrentRoom?.roomId} players={previewRoom?.playerCount}");
                     TournamentFlowLog.PlayerJoined("opponent connected via WebSocket");
+                    if (previewRoom != null && previewRoom.playerCount >= 2)
+                        TournamentFlowLog.PlayerFound($"players={previewRoom.playerCount}");
                 }
                 else if (eventName == "countdown")
                 {
-                    RoomResponseDto countdownRoom = roomToken?.ToObject<RoomResponseDto>();
+                    RoomResponseDto countdownRoom = roomToken.ToObject<RoomResponseDto>();
                     if (countdownRoom != null)
+                    {
+                        TournamentFlowLog.CountdownStart(
+                            $"status={countdownRoom.status} players={countdownRoom.playerCount} " +
+                            $"remaining={countdownRoom.startCountdownSeconds} match_start_at_ms={countdownRoom.matchStartAtMs}");
                         TournamentFlowLog.Countdown(
-                            $"status={countdownRoom.status} players={countdownRoom.playerCount} remaining={countdownRoom.startCountdownSeconds}");
+                            $"status={countdownRoom.status} players={countdownRoom.playerCount} " +
+                            $"remaining={countdownRoom.startCountdownSeconds} match_start_at_ms={countdownRoom.matchStartAtMs}");
+                        TournamentFlowLog.WaitingState("starting", "countdown event from server");
+                    }
                 }
                 else if (eventName == "match_start")
                 {
+                    TournamentFlowLog.GameStart($"WebSocket match_start room={CurrentRoom?.roomId}");
                     TournamentFlowLog.MatchStart("WebSocket match_start");
+                    TournamentFlowLog.WaitingState("active", "match_start event from server");
+                }
+                else if (eventName == "room_updated")
+                {
+                    RoomResponseDto updated = roomToken.ToObject<RoomResponseDto>();
+                    if (updated != null)
+                        TournamentFlowLog.WaitingState(
+                            updated.status ?? "unknown",
+                            $"players={updated.playerCount} room_updated");
                 }
 
                 RoomResponseDto room = roomToken.ToObject<RoomResponseDto>();
                 if (room == null || TournamentSession.Tournament == null) return;
 
-                MergeRoomState(room);
+                MergeIncomingRoomState(room);
                 ApplyRoomDto(TournamentSession.Tournament, CurrentRoom);
                 RoomUpdated?.Invoke();
 
-                if (eventName == "match_start" && (CurrentRoom.matchStartAtMs ?? 0) > 0)
+                if ((eventName == "match_start" || eventName == "countdown" || eventName == "room_updated") &&
+                    (CurrentRoom.matchStartAtMs ?? 0) > 0)
+                {
                     TournamentServerClock.ScheduleServerStart(CurrentRoom.matchStartAtMs.Value);
+                }
             }
             catch (Exception ex)
             {
@@ -199,7 +277,7 @@ namespace Mkey.Network
             }
         }
 
-        private static void MergeRoomState(RoomResponseDto incoming)
+        private static void MergeIncomingRoomState(RoomResponseDto incoming)
         {
             if (CurrentRoom == null)
             {
@@ -208,26 +286,97 @@ namespace Mkey.Network
                 return;
             }
 
+            if (incoming == null)
+                return;
+
+            if (ShouldIgnoreStaleIncoming(incoming))
+                return;
+
             CurrentRoom.roomId = incoming.roomId ?? CurrentRoom.roomId;
             CurrentRoom.tournamentId = incoming.tournamentId ?? CurrentRoom.tournamentId;
             CurrentRoom.tournamentName = incoming.tournamentName ?? CurrentRoom.tournamentName;
             CurrentRoom.levelIndex = incoming.levelIndex;
             CurrentRoom.levelSeed = incoming.levelSeed;
-            CurrentRoom.status = incoming.status ?? CurrentRoom.status;
-            CurrentRoom.playerCount = incoming.playerCount;
             CurrentRoom.maxPlayers = incoming.maxPlayers > 0 ? incoming.maxPlayers : CurrentRoom.maxPlayers;
             CurrentRoom.waitingSeconds = incoming.waitingSeconds;
             CurrentRoom.waitingSecondsRemaining = incoming.waitingSecondsRemaining;
-            CurrentRoom.startCountdownSeconds = incoming.startCountdownSeconds;
-            CurrentRoom.searchStatus = incoming.searchStatus ?? CurrentRoom.searchStatus;
+            if (incoming.walletBalance.HasValue)
+                CurrentRoom.walletBalance = incoming.walletBalance;
+
+            CurrentRoom.playerCount = Mathf.Max(CurrentRoom.playerCount, incoming.playerCount);
+
+            if (incoming.status == "finished" || incoming.status == "locked")
+                CurrentRoom.status = incoming.status;
+            else if (StatusRank(incoming.status) > StatusRank(CurrentRoom.status))
+                CurrentRoom.status = incoming.status ?? CurrentRoom.status;
+
             if ((incoming.matchStartAtMs ?? 0) > 0)
                 CurrentRoom.matchStartAtMs = incoming.matchStartAtMs;
             if ((incoming.serverNowMs ?? 0) > 0)
                 CurrentRoom.serverNowMs = incoming.serverNowMs;
-            if (incoming.players != null)
+            if (!string.IsNullOrEmpty(incoming.searchStatus))
+                CurrentRoom.searchStatus = incoming.searchStatus;
+            if (incoming.startCountdownSeconds.HasValue)
+                CurrentRoom.startCountdownSeconds = incoming.startCountdownSeconds;
+
+            if (incoming.players != null &&
+                (incoming.players.Count > (CurrentRoom.players?.Count ?? 0) ||
+                 incoming.playerCount > CurrentRoom.playerCount ||
+                 incoming.status == "finished" ||
+                 HasRankedPlayers(incoming.players) ||
+                 incoming.playerCount >= CurrentRoom.maxPlayers))
                 CurrentRoom.players = incoming.players;
 
             ApplyServerRoomTiming(CurrentRoom);
+        }
+
+        private static bool ShouldIgnoreStaleIncoming(RoomResponseDto incoming)
+        {
+            if (CurrentRoom == null || incoming == null)
+                return false;
+
+            long incomingNow = incoming.serverNowMs ?? 0;
+            long currentNow = CurrentRoom.serverNowMs ?? 0;
+            if (incomingNow <= 0 || currentNow <= 0)
+                return false;
+
+            if (incomingNow >= currentNow)
+                return false;
+
+            bool staleStatus = StatusRank(incoming.status) < StatusRank(CurrentRoom.status);
+            bool stalePlayers = incoming.playerCount < CurrentRoom.playerCount;
+            return staleStatus && stalePlayers;
+        }
+
+        private static void MergeRoomState(RoomResponseDto incoming) => MergeIncomingRoomState(incoming);
+
+        private static void MergeFastApiBusinessState(RoomResponseDto incoming) => MergeIncomingRoomState(incoming);
+
+        private static bool HasRankedPlayers(List<RoomPlayerDto> players)
+        {
+            if (players == null)
+                return false;
+
+            foreach (RoomPlayerDto player in players)
+            {
+                if (player != null && player.rank > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static int StatusRank(string status)
+        {
+            switch (status)
+            {
+                case "waiting": return 1;
+                case "starting": return 2;
+                case "active": return 3;
+                case "locked": return 4;
+                case "finished": return 5;
+                default: return 0;
+            }
         }
 
         private static void ApplyServerRoomTiming(RoomResponseDto room)

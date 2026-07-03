@@ -1,4 +1,5 @@
 using Mkey;
+using Mkey.Network;
 using UnityEngine;
 
 namespace Mkey.Tournament
@@ -10,8 +11,15 @@ namespace Mkey.Tournament
         /// </summary>
         public static void LaunchGameFromWaitingRoom()
         {
+            TournamentTransitionProbe.LogLaunchGameFromWaitingRoom();
             if (!TournamentSession.IsActive || TournamentSession.Tournament == null)
                 return;
+
+            if (TournamentApiBridge.IsOnlineMode && !TournamentApiBridge.HasMatchedRoom)
+            {
+                Debug.LogWarning("[Tournament] Launch blocked — waiting for server room session.");
+                return;
+            }
 
             try
             {
@@ -50,6 +58,8 @@ namespace Mkey.Tournament
                 Debug.Log(
                     $"[Tournament] Launch level {TournamentSession.MatchLevelIndex + 1} " +
                     $"seed {TournamentSession.RoomSeed} room {TournamentSession.ActiveRoomId}");
+                TournamentFlowLog.LevelLoaded(
+                    $"level={TournamentSession.MatchLevelIndex} seed={TournamentSession.RoomSeed} room={TournamentSession.ActiveRoomId}");
 
                 TournamentGlobalWaitingRoom.Hide();
 

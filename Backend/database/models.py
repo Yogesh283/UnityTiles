@@ -21,26 +21,27 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    user_uuid: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True, index=True)
-    username: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
-    email: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
-    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    google_id: Mapped[str | None] = mapped_column(String(128), unique=True, nullable=True)
-    guest_id: Mapped[str | None] = mapped_column(String(128), unique=True, nullable=True)
+    user_uuid: Mapped[str] = mapped_column(String(36), unique=True, nullable=True, index=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=True)
+    google_id: Mapped[str] = mapped_column(String(128), unique=True, nullable=True)
+    guest_id: Mapped[str] = mapped_column(String(128), unique=True, nullable=True)
     display_name: Mapped[str] = mapped_column(String(128), default="Player")
-    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    avatar_url: Mapped[str] = mapped_column(String(512), nullable=True)
     is_guest: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    last_ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
-    last_device_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    last_ip: Mapped[str] = mapped_column(String(45), nullable=True)
+    last_device_id: Mapped[str] = mapped_column(String(128), nullable=True)
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
-    ban_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ban_reason: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
     wallet: Mapped["Wallet"] = relationship(back_populates="user", uselist=False)
+
 
 class Wallet(Base):
     __tablename__ = "wallet"
@@ -72,15 +73,15 @@ class WalletTransaction(Base):
     __tablename__ = "wallet_transactions"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    transaction_id: Mapped[str | None] = mapped_column(String(36), unique=True, nullable=True)
+    transaction_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=True)
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
     amount: Mapped[int] = mapped_column(Integer)
-    balance_before: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    balance_before: Mapped[int] = mapped_column(Integer, nullable=True)
     balance_after: Mapped[int] = mapped_column(Integer)
     type: Mapped[str] = mapped_column(String(64))
-    reference_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    note: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reference_id: Mapped[str] = mapped_column(String(128), nullable=True)
+    note: Mapped[str] = mapped_column(String(255), nullable=True)
+    reason: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -109,8 +110,8 @@ class TournamentRoom(Base):
     level_seed: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(32), default="waiting")
     max_players: Mapped[int] = mapped_column(Integer)
-    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    ended_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -132,12 +133,12 @@ class RoomPlayer(Base):
     score: Mapped[int] = mapped_column(Integer, default=0)
     moves: Mapped[int] = mapped_column(Integer, default=0)
     elapsed_seconds: Mapped[int] = mapped_column(Integer, default=0)
-    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rank: Mapped[int] = mapped_column(Integer, nullable=True)
     prize: Mapped[int] = mapped_column(Integer, default=0)
     is_connected: Mapped[bool] = mapped_column(Boolean, default=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    submitted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
 
 class TournamentResult(Base):
@@ -171,7 +172,7 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True)
     title: Mapped[str] = mapped_column(String(255))
     body: Mapped[str] = mapped_column(Text)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -195,7 +196,7 @@ class Banner(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(255))
     image_url: Mapped[str] = mapped_column(String(512))
-    link_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    link_url: Mapped[str] = mapped_column(String(512), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -220,7 +221,7 @@ class Log(Base):
     level: Mapped[str] = mapped_column(String(16), default="info")
     source: Mapped[str] = mapped_column(String(64), default="api")
     message: Mapped[str] = mapped_column(Text)
-    context: Mapped[str | None] = mapped_column(Text, nullable=True)
+    context: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -229,7 +230,7 @@ class Level(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     level_index: Mapped[int] = mapped_column(Integer, unique=True)
-    name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
@@ -238,13 +239,13 @@ class LevelReward(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # Legacy columns (kept nullable for backward compatibility with existing DBs)
-    level_index: Mapped[int | None] = mapped_column(Integer, unique=True, nullable=True)
+    level_index: Mapped[int] = mapped_column(Integer, unique=True, nullable=True)
     coin_reward: Mapped[int] = mapped_column(Integer, default=50)
 
     # Permanent claim tracking (one reward per user per level)
-    user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), index=True, nullable=True)
-    user_uuid: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
-    level_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True, nullable=True)
+    user_uuid: Mapped[str] = mapped_column(String(36), index=True, nullable=True)
+    level_number: Mapped[int] = mapped_column(Integer, nullable=True)
     reward_coins: Mapped[int] = mapped_column(Integer, default=50)
     rewarded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
@@ -255,7 +256,7 @@ class DeviceBan(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     device_id: Mapped[str] = mapped_column(String(128), unique=True)
     reason: Mapped[str] = mapped_column(String(255))
-    banned_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    banned_by: Mapped[str] = mapped_column(String(128), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
@@ -266,7 +267,7 @@ class IpBan(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     ip_address: Mapped[str] = mapped_column(String(45), unique=True)
     reason: Mapped[str] = mapped_column(String(255))
-    banned_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    banned_by: Mapped[str] = mapped_column(String(128), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
@@ -275,13 +276,13 @@ class SecurityEvent(Base):
     __tablename__ = "security_events"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True, index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True, index=True)
     event_type: Mapped[str] = mapped_column(String(64), index=True)
     severity: Mapped[str] = mapped_column(String(16), default="warning")
     message: Mapped[str] = mapped_column(Text)
-    context: Mapped[str | None] = mapped_column(Text, nullable=True)
-    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
-    device_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    context: Mapped[str] = mapped_column(Text, nullable=True)
+    ip_address: Mapped[str] = mapped_column(String(45), nullable=True)
+    device_id: Mapped[str] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -290,13 +291,13 @@ class AuditLog(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     actor_type: Mapped[str] = mapped_column(String(32), default="system")
-    actor_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    actor_id: Mapped[str] = mapped_column(String(128), nullable=True)
     action: Mapped[str] = mapped_column(String(64), index=True)
-    target_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    target_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    target_type: Mapped[str] = mapped_column(String(64), nullable=True)
+    target_id: Mapped[str] = mapped_column(String(128), nullable=True)
     message: Mapped[str] = mapped_column(Text)
-    context: Mapped[str | None] = mapped_column(Text, nullable=True)
-    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    context: Mapped[str] = mapped_column(Text, nullable=True)
+    ip_address: Mapped[str] = mapped_column(String(45), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
 
 
@@ -304,10 +305,10 @@ class PlayerReport(Base):
     __tablename__ = "player_reports"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    reporter_user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True)
+    reporter_user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True)
     reported_user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
     reason: Mapped[str] = mapped_column(String(255))
-    details: Mapped[str | None] = mapped_column(Text, nullable=True)
+    details: Mapped[str] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

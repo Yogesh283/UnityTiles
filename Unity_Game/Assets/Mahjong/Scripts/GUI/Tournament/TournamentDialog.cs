@@ -31,6 +31,11 @@ namespace Mkey.Tournament
             EnsureGuiController();
         }
 
+        private static void StylePopup(WarningMessController popup)
+        {
+            TournamentPopupBackdrop.AttachKeeper(popup);
+        }
+
         public void ShowInsufficientCoins(int required, int balance, Action onDeposit, Action onCancel = null)
         {
             int need = Mathf.Max(0, required - balance);
@@ -56,6 +61,7 @@ namespace Mkey.Tournament
 
             SetButtonLabel(popup?.yesButton, "Deposit");
             SetButtonLabel(popup?.cancelButton, "Cancel");
+            StylePopup(popup);
         }
 
         public void ShowDepositMenu(Action onComplete = null)
@@ -126,6 +132,7 @@ namespace Mkey.Tournament
             SetButtonLabel(popup?.yesButton, "Buy");
             SetButtonLabel(popup?.noButton, "Next");
             SetButtonLabel(popup?.cancelButton, "Close");
+            StylePopup(popup);
         }
 
         private void BuyPack(string productId, Action onComplete)
@@ -211,6 +218,7 @@ namespace Mkey.Tournament
 
             SetButtonLabel(popup?.yesButton, "OK");
             SetButtonLabel(popup?.cancelButton, "Cancel");
+            StylePopup(popup);
             TournamentJoinDebug.Log("TournamentDialog opened join confirm (OK/Cancel)");
         }
 
@@ -230,6 +238,7 @@ namespace Mkey.Tournament
                 WarningMessController popup = gui.ShowMessageWithYesNoCloseButton(messagePrefab, title, message, confirm, cancel, null);
                 SetButtonLabel(popup?.yesButton, "OK");
                 SetButtonLabel(popup?.cancelButton, "Cancel");
+                StylePopup(popup);
                 TournamentJoinDebug.Log("TournamentDialog opened via GuiController (Yes/Cancel)");
                 return;
             }
@@ -238,11 +247,13 @@ namespace Mkey.Tournament
             {
                 WarningMessController popup = gui.ShowMessageWithYesNoCloseButton(messagePrefab, title, message, confirm, null, null);
                 SetButtonLabel(popup?.yesButton, "Ok");
+                StylePopup(popup);
                 TournamentJoinDebug.Log("TournamentDialog opened via GuiController (Yes only)");
             }
             else
             {
-                gui.ShowMessageWithYesNoCloseButton(messagePrefab, title, message, () => { }, null, null);
+                WarningMessController popup = gui.ShowMessageWithYesNoCloseButton(messagePrefab, title, message, () => { }, null, null);
+                StylePopup(popup);
                 TournamentJoinDebug.Log("TournamentDialog opened via GuiController (OK/Close)");
             }
         }

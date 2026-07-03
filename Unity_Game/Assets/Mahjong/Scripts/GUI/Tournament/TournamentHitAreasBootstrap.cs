@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Mkey.Tournament
 {
@@ -7,17 +8,36 @@ namespace Mkey.Tournament
     /// </summary>
     public class TournamentHitAreasBootstrap : MonoBehaviour
     {
-        private void Start()
+        private const int HitAreasSortOrder = 120;
+
+        private void Awake() => Apply();
+
+        private void Start() => Apply();
+
+        public static void EnsureOnTop(Transform hitAreas)
         {
+            if (!hitAreas)
+                return;
+
+            TournamentHitAreasBootstrap bootstrap = hitAreas.GetComponent<TournamentHitAreasBootstrap>();
+            if (!bootstrap)
+                bootstrap = hitAreas.gameObject.AddComponent<TournamentHitAreasBootstrap>();
+            bootstrap.Apply();
+        }
+
+        private void Apply()
+        {
+            Canvas canvas = GetComponent<Canvas>();
+            if (!canvas)
+            {
+                canvas = gameObject.AddComponent<Canvas>();
+                gameObject.AddComponent<GraphicRaycaster>();
+            }
+
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = HitAreasSortOrder;
+
             transform.SetAsLastSibling();
-
-            Transform firstJoin = transform.Find("Join_duel_1v1");
-            if (firstJoin)
-                firstJoin.SetAsLastSibling();
-
-            Transform lastJoin = transform.Find("Join_world_cup");
-            if (lastJoin)
-                lastJoin.SetAsLastSibling();
         }
     }
 }

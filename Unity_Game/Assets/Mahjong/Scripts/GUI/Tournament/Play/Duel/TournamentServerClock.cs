@@ -22,12 +22,14 @@ namespace Mkey.Tournament
         {
             if (serverNowMs <= 0) return;
             clockOffsetMs = serverNowMs - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            TournamentTransitionProbe.LogClockState("SyncServerTime");
         }
 
         public static void ScheduleServerStart(long matchStartAtMs)
         {
             if (matchStartAtMs <= 0) return;
             scheduledStartMs = matchStartAtMs;
+            TournamentTransitionProbe.LogClockState("ScheduleServerStart");
         }
 
         public static bool HasScheduledStart => scheduledStartMs > 0;
