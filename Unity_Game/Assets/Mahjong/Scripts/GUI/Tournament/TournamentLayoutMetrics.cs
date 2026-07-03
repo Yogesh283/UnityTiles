@@ -85,12 +85,12 @@ namespace Mkey.Tournament
         /// <summary>Gold + deposit hit area (left of wallet).</summary>
         public static readonly Rect Deposit = new Rect(448f, 8f, 154f, 90f);
 
-        public const float CardStatsRowHeight = 26f;
-        public const float CardStatColumnWidth = 100f;
+        public const float CardStatsRowHeight = 28f;
+        public const float CardStatColumnWidth = 92f;
         /// <summary>Column centers on turnamant1.png — Players, Entry Fee, Prize Pool, Top Win.</summary>
         private static readonly float[] CardStatColumnCenterX = { 221f, 329f, 437f, 545f };
-        /// <summary>Pixels below each card top to the dash value row center (measured on turnamant1.png).</summary>
-        private static readonly float[] CardStatOffsetFromCardTop = { 179f, 164f, 142f, 115f, 96f, 179f };
+        /// <summary>Pixels below each card top to the value row center (measured on turnamant1.png).</summary>
+        private static readonly float[] CardStatOffsetFromCardTop = { 178f, 154f, 132f, 105f, 86f, 70f };
 
         public static Rect GetCardStatRect(int column, int cardIndex)
         {

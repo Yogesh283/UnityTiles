@@ -30,6 +30,7 @@ namespace Mkey
                 null);
 
             SetButtonLabel(popup?.yesButton, "OK");
+            popup?.RefreshButtonLayout();
         }
 
         private static WarningMessController GetMessagePrefab()
@@ -81,6 +82,8 @@ namespace Mkey
             Text text = button.GetComponentInChildren<Text>();
             if (text)
                 text.text = label;
+
+            WarningMessController.RefitButtonLabel(button);
         }
     }
 }

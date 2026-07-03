@@ -62,6 +62,7 @@ namespace Mkey.Tournament
             SetButtonLabel(popup?.yesButton, "Deposit");
             SetButtonLabel(popup?.cancelButton, "Cancel");
             StylePopup(popup);
+            popup?.RefreshButtonLayout();
         }
 
         public void ShowDepositMenu(Action onComplete = null)
@@ -268,6 +269,8 @@ namespace Mkey.Tournament
             Text text = button.GetComponentInChildren<Text>();
             if (text)
                 text.text = label;
+
+            WarningMessController.RefitButtonLabel(button);
         }
 
         private static GuiController EnsureGuiController()

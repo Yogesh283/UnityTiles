@@ -13,6 +13,72 @@ public static class MatchIQPlayStoreBuild
     public const int AndroidVersionCode = 1;
     private const string OutputDir = "Builds/Android";
 
+    [MenuItem("Match IQ/Build Production APK (Live api.matchiq.fun v1.0.0)", false, 49)]
+    public static void BuildProductionApkFromMenu()
+    {
+        BuildProductionApk();
+    }
+
+    /// <summary>Called from Unity batchmode: -executeMethod MatchIQPlayStoreBuild.BuildProductionApk</summary>
+    public static void BuildProductionApk()
+    {
+        ApplyProductionConfig();
+        ApplyVersion();
+        MatchIQDevSetup.WriteBuildInfoFile();
+        AssetDatabase.SaveAssets();
+
+        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+        {
+            if (!EditorUserBuildSettings.SwitchActiveBuildTarget(
+                    BuildTargetGroup.Android,
+                    BuildTarget.Android))
+            {
+                Debug.LogError("[Match IQ] Failed to switch build target to Android.");
+                EditorApplication.Exit(1);
+                return;
+            }
+        }
+
+        EditorUserBuildSettings.buildAppBundle = false;
+        EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+
+        Directory.CreateDirectory(OutputDir);
+        string outputPath = Path.Combine(OutputDir, "MatchIQ-" + AppVersion + ".apk");
+
+        string[] scenes = GetEnabledScenes();
+        if (scenes.Length == 0)
+        {
+            Debug.LogError("[Match IQ] No scenes enabled in Build Settings.");
+            EditorApplication.Exit(1);
+            return;
+        }
+
+        var options = new BuildPlayerOptions
+        {
+            scenes = scenes,
+            locationPathName = outputPath,
+            target = BuildTarget.Android,
+            targetGroup = BuildTargetGroup.Android,
+            options = BuildOptions.CompressWithLz4HC
+        };
+
+        BuildReport report = BuildPipeline.BuildPlayer(options);
+        if (report.summary.result == BuildResult.Succeeded)
+        {
+            string fullPath = Path.GetFullPath(outputPath);
+            Debug.Log(
+                "[Match IQ] Production APK ready.\n" +
+                "• Version: " + AppVersion + " (" + AndroidVersionCode + ")\n" +
+                "• Server: https://api.matchiq.fun\n" +
+                "• File: " + fullPath);
+            EditorApplication.Exit(0);
+            return;
+        }
+
+        Debug.LogError("[Match IQ] APK build failed: " + report.summary.result);
+        EditorApplication.Exit(1);
+    }
+
     [MenuItem("Match IQ/Build Play Store AAB (Production v1.0.0)", false, 50)]
     public static void BuildPlayStoreAabFromMenu()
     {

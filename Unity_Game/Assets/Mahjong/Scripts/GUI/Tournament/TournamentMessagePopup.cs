@@ -54,6 +54,7 @@ namespace Mkey.Tournament
             if (popup?.noButton)
                 popup.noButton.gameObject.SetActive(false);
 
+            popup?.RefreshButtonLayout();
             TournamentPopupBackdrop.AttachKeeper(popup);
 
             if (autoCloseSeconds > 0f && popup)
@@ -68,6 +69,8 @@ namespace Mkey.Tournament
             Text text = button.GetComponentInChildren<Text>();
             if (text)
                 text.text = label;
+
+            WarningMessController.RefitButtonLabel(button);
         }
 
         private static GuiController EnsureGuiController()

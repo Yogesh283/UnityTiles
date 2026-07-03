@@ -24,6 +24,9 @@ namespace Mkey.Tournament
         public static int FinalScore { get; private set; }
         public static bool GameplayRunning { get; private set; }
 
+        /// <summary>Waiting room finished countdown — game scene must not re-freeze for sync.</summary>
+        public static bool LobbyCountdownCompleted { get; private set; }
+
         public static bool IsDuelMode =>
             IsActive && Tournament != null && Tournament.id == "duel_1v1";
 
@@ -40,6 +43,12 @@ namespace Mkey.Tournament
             MoveCount = 0;
             FinalScore = 0;
             GameplayRunning = false;
+            LobbyCountdownCompleted = false;
+        }
+
+        public static void MarkLobbyLaunchReady()
+        {
+            LobbyCountdownCompleted = true;
         }
 
         public static void BindRoom(string roomId, int levelIndex, int roomSeed = 0)
@@ -130,6 +139,7 @@ namespace Mkey.Tournament
             MoveCount = 0;
             FinalScore = 0;
             GameplayRunning = false;
+            LobbyCountdownCompleted = false;
         }
     }
 }
