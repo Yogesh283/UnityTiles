@@ -45,6 +45,7 @@ namespace Mkey.Tournament
             HasActiveRoom &&
             room.IsDuel &&
             TournamentApiBridge.IsOnlineMode &&
+            !TournamentSession.LobbyCountdownCompleted &&
             room.state != TournamentRoomState.Playing &&
             !room.isResolved &&
             !room.isLocked;
@@ -176,7 +177,19 @@ namespace Mkey.Tournament
         public static void BeginSynchronizedMatch()
         {
             if (!HasActiveRoom || room.isResolved) return;
-            if (room.state == TournamentRoomState.Playing) return;
+            if (room.state == TournamentRoomState.Playing)
+            {
+                if (!TournamentSession.GameplayRunning)
+                    TournamentSession.StartGameplayTracking();
+                return;
+            }
+
+            if (!room.levelGenerated)
+            {
+                if (!PrepareMatchFromRoom())
+                    TournamentRoomRegistry.ForcePrepareForLaunch();
+            }
+
             if (!room.levelGenerated) return;
 
             TournamentServerClock.StartRoomClock();

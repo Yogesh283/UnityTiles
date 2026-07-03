@@ -21,6 +21,7 @@ namespace Mkey.Tournament
         private const float ResultDialogWatchdogSeconds = 2f;
         private const float OnlineDuelSyncTimeoutSeconds = 15f;
         private const float OnlineDuelForceStartGraceSeconds = 2f;
+        private const float LobbyLaunchSyncTimeoutSeconds = 1.5f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -145,7 +146,10 @@ namespace Mkey.Tournament
             if (TournamentApiBridge.IsOnlineMode && TournamentSession.Tournament != null &&
                 TournamentSession.Tournament.maxPlayers <= 2)
             {
-                yield return WaitForOnlineDuelGameplayStart();
+                if (TournamentSession.LobbyCountdownCompleted)
+                    yield return WaitForLobbyLaunchedDuelStart();
+                else
+                    yield return WaitForOnlineDuelGameplayStart();
             }
             else if (TournamentApiBridge.IsOnlineMode)
             {
@@ -189,6 +193,27 @@ namespace Mkey.Tournament
 
             if ((room.matchStartAtMs ?? 0) > 0)
                 TournamentServerClock.ScheduleServerStart(room.matchStartAtMs.Value);
+        }
+
+        private static IEnumerator WaitForLobbyLaunchedDuelStart()
+        {
+            TournamentFlowLog.BoardFrozen("brief lobby handoff — no second freeze");
+            ReapplyServerClockFromApi();
+
+            float timeout = LobbyLaunchSyncTimeoutSeconds;
+            while (TournamentSession.IsActive && timeout > 0f)
+            {
+                ReapplyServerClockFromApi();
+                RoomResponseDto apiRoom = TournamentApiBridge.CurrentRoom;
+                if (IsOnlineDuelGameplayReady(apiRoom) || ShouldForceOnlineDuelStart(apiRoom, 0f))
+                    break;
+
+                TournamentMatchManager.EnsureGameplayFrozen();
+                timeout -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            TournamentFlowLog.BoardUnfrozen("lobby countdown already completed — starting duel");
         }
 
         private static IEnumerator WaitForOnlineDuelGameplayStart()
@@ -259,7 +284,10 @@ namespace Mkey.Tournament
                 yield break;
 
             if (!forceStart && !IsOnlineDuelGameplayReady(TournamentApiBridge.CurrentRoom))
-                TournamentGameStartProbe.LogAbort("server never confirmed gameplay-ready state");
+            {
+                TournamentFlowLog.BoardUnfrozen("forcing duel start after sync timeout");
+                TournamentGameStartProbe.LogAbort("server sync timeout — force starting locally");
+            }
         }
 
         private static IEnumerator WaitForOnlineRaceGameplayStart()
@@ -276,6 +304,9 @@ namespace Mkey.Tournament
         {
             if (apiRoom == null || apiRoom.playerCount < 2)
                 return false;
+
+            if (TournamentSession.LobbyCountdownCompleted)
+                return true;
 
             if (!TournamentServerClock.HasScheduledStart)
             {
@@ -297,6 +328,9 @@ namespace Mkey.Tournament
         {
             if (apiRoom == null || apiRoom.playerCount < 2)
                 return false;
+
+            if (TournamentSession.LobbyCountdownCompleted)
+                return true;
 
             if (Time.realtimeSinceStartup - sceneEnterRealtime < OnlineDuelForceStartGraceSeconds)
                 return false;
@@ -324,7 +358,16 @@ namespace Mkey.Tournament
             TournamentGameStartProbe.LogBeforeBeginRound();
             Debug.Log("[TournamentGameStart] Countdown Finish (lobby) — unlocking board");
 
+            if (!TournamentMatchManager.PrepareMatchFromRoom())
+                TournamentRoomRegistry.ForcePrepareForLaunch();
+
             TournamentMatchManager.BeginSynchronizedMatch();
+
+            if (!TournamentSession.GameplayRunning && TournamentSession.LobbyCountdownCompleted)
+            {
+                TournamentFlowLog.BoardUnfrozen("lobby handoff fallback — arming gameplay");
+                TournamentMatchManager.BeginSynchronizedMatch();
+            }
 
             bool gameplayRunning = TournamentSession.GameplayRunning;
             bool waitingForSync = TournamentMatchManager.IsWaitingForOpponentSync;
@@ -334,6 +377,24 @@ namespace Mkey.Tournament
 
             bool boardUnlocked = GameBoard.Instance != null;
             TournamentGameStartProbe.LogAfterBeginRound(!waitingForSync, gameplayRunning, boardUnlocked);
+
+            if (!gameplayRunning && TournamentSession.LobbyCountdownCompleted)
+            {
+                TournamentFlowLog.BoardUnfrozen("final fallback — force synchronized duel start");
+                if (!TournamentMatchManager.PrepareMatchFromRoom())
+                    TournamentRoomRegistry.ForcePrepareForLaunch();
+                TournamentMatchManager.BeginSynchronizedMatch();
+                gameplayRunning = TournamentSession.GameplayRunning;
+            }
+
+            if (!gameplayRunning && TournamentSession.LobbyCountdownCompleted)
+            {
+                TournamentSession.StartGameplayTracking();
+                gameplayRunning = true;
+            }
+
+            if (GameBoard.Instance)
+                GameBoard.Instance.SetControlActivity(true, true);
 
             if (gameplayRunning)
             {

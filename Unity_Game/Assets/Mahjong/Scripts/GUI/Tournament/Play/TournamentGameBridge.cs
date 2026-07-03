@@ -61,6 +61,7 @@ namespace Mkey.Tournament
                 TournamentFlowLog.LevelLoaded(
                     $"level={TournamentSession.MatchLevelIndex} seed={TournamentSession.RoomSeed} room={TournamentSession.ActiveRoomId}");
 
+                TournamentSession.MarkLobbyLaunchReady();
                 TournamentGlobalWaitingRoom.Hide();
 
                 if (SceneLoader.Instance)
