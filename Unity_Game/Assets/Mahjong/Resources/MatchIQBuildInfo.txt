@@ -1,2 +1,2 @@
-527f4b1
-Show duel waiting room instantly on join confirm.
+5a62feb
+Fix tournament card stats alignment and popup button layout.

@@ -15,12 +15,6 @@ namespace Mkey.Tournament
             if (!TournamentSession.IsActive || TournamentSession.Tournament == null)
                 return;
 
-            if (TournamentApiBridge.IsOnlineMode && !TournamentApiBridge.HasMatchedRoom)
-            {
-                Debug.LogWarning("[Tournament] Launch blocked — waiting for server room session.");
-                return;
-            }
-
             try
             {
                 TournamentRoom registryRoom = TournamentRoomRegistry.LocalRoom;
@@ -36,10 +30,25 @@ namespace Mkey.Tournament
 
                 TournamentMatchManager.AttachRoom(registryRoom);
 
+                // Pull the server-authoritative level/seed while the live room is still available.
+                // The registry room retains this data even if the API session briefly drops,
+                // so BOTH duel clients can still enter the board.
+                if (TournamentApiBridge.IsOnlineMode && TournamentApiBridge.HasMatchedRoom)
+                    TournamentMatchManager.SyncLevelFromServerAuthority();
+
                 if (!TournamentMatchManager.PrepareMatchFromRoom())
                     TournamentRoomRegistry.ForcePrepareForLaunch();
 
                 TournamentMatchManager.SyncLevelFromServerAuthority();
+
+                // Last-resort: force a shared level so the second player never gets stuck
+                // on the waiting room when the API room is momentarily unavailable at launch.
+                if (!TournamentMatchManager.HasActiveRoom ||
+                    TournamentMatchManager.MatchLevelIndex < 0)
+                {
+                    TournamentFlowLog.LevelLoaded("forcing shared level — API room unavailable at launch");
+                    TournamentRoomRegistry.ForcePrepareForLaunch();
+                }
 
                 if (!TournamentMatchManager.HasActiveRoom ||
                     TournamentMatchManager.MatchLevelIndex < 0)
