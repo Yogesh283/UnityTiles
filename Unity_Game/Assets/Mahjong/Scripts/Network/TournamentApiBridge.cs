@@ -110,8 +110,9 @@ namespace Mkey.Network
                 return;
 
             MergeIncomingRoomState(incoming);
+            // ApplyRoomDto already fires RoomUpdated exactly once — do NOT invoke it again here or
+            // every subscriber runs twice per merge (duplicate event => double UI refresh + GC).
             ApplyRoomDto(TournamentSession.Tournament, CurrentRoom);
-            RoomUpdated?.Invoke();
         }
 
         public static void Clear()
@@ -262,8 +263,9 @@ namespace Mkey.Network
                 if (room == null || TournamentSession.Tournament == null) return;
 
                 MergeIncomingRoomState(room);
+                // ApplyRoomDto fires RoomUpdated once; a second explicit invoke here made every WS
+                // message trigger duplicate handling (duplicate RoomUpdated event). Removed.
                 ApplyRoomDto(TournamentSession.Tournament, CurrentRoom);
-                RoomUpdated?.Invoke();
 
                 if ((eventName == "match_start" || eventName == "countdown" || eventName == "room_updated") &&
                     (CurrentRoom.matchStartAtMs ?? 0) > 0)

@@ -12,24 +12,9 @@ namespace Mkey.Tournament
 
         public static void Build(Transform statsLayer)
         {
-            if (!statsLayer)
-                return;
-
-            foreach (TournamentDefinition tournament in TournamentCatalog.All)
-            {
-                int cardIndex = TournamentPngLayout.GetCardIndexForTournament(tournament.id);
-                if (cardIndex < 0)
-                    continue;
-
-                CreateStatCell(statsLayer, "Players", StatName("Players", tournament.id),
-                    TournamentPngLayout.GetCardStatRect(0, cardIndex), FormatPlayers(tournament));
-                CreateStatCell(statsLayer, "Entry", StatName("Entry", tournament.id),
-                    TournamentPngLayout.GetCardStatRect(1, cardIndex), FormatEntryFee(tournament));
-                CreateStatCell(statsLayer, "Prize", StatName("Prize", tournament.id),
-                    TournamentPngLayout.GetCardStatRect(2, cardIndex), FormatPrizePool(tournament));
-                CreateStatCell(statsLayer, "Extra", StatName("Extra", tournament.id),
-                    TournamentPngLayout.GetCardStatRect(3, cardIndex), FormatFourthColumn(tournament));
-            }
+            // Stat values are now baked into turnamant1.png, so the code no longer draws its own
+            // Players/Entry/Prize/Top-Win text (that overlapped the baked numbers). Only the JOIN
+            // button state is still driven from code (see RefreshAll -> RefreshJoinButtons).
         }
 
         public static void Rebuild(Transform statsLayer)
@@ -54,17 +39,7 @@ namespace Mkey.Tournament
 
         public static void RefreshAll(Transform statsLayer, Transform hitOverlay = null)
         {
-            if (!statsLayer)
-                return;
-
-            foreach (TournamentDefinition tournament in TournamentCatalog.All)
-            {
-                SetStatText(statsLayer, StatName("Players", tournament.id), FormatPlayers(tournament));
-                SetStatText(statsLayer, StatName("Entry", tournament.id), FormatEntryFee(tournament));
-                SetStatText(statsLayer, StatName("Prize", tournament.id), FormatPrizePool(tournament));
-                SetStatText(statsLayer, StatName("Extra", tournament.id), FormatFourthColumn(tournament));
-            }
-
+            // Stat text is baked into the image now — only refresh the JOIN/FULL button state.
             if (hitOverlay)
                 RefreshJoinButtons(hitOverlay);
         }

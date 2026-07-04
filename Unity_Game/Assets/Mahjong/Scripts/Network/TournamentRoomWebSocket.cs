@@ -485,6 +485,12 @@ namespace Mkey.Network
             if (!maintainConnection || string.IsNullOrEmpty(activeRoomId) || !TournamentSession.IsActive)
                 return;
 
+            // A reconnect chain is already running — never launch a second one, or two chains race
+            // and can leave two live sockets on the same room (duplicate websocket connections).
+            if (isReconnecting)
+                return;
+
+            isReconnecting = true;
             _ = ReconnectAfterDelayAsync(activeRoomId);
         }
 

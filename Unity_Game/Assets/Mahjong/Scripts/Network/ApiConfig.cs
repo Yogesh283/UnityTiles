@@ -24,6 +24,16 @@ namespace Mkey.Network
         [Tooltip("Feature flag: use Nakama for tournament realtime networking only.")]
         public bool useNakamaRealtime;
 
+        [Header("Nakama Realtime (only used when useNakamaRealtime is on)")]
+        [Tooltip("Nakama server scheme: http or https")]
+        public string nakamaScheme = "http";
+        [Tooltip("Nakama server host. 127.0.0.1 only works on the dev machine — set a real host for production.")]
+        public string nakamaHost = "127.0.0.1";
+        [Tooltip("Nakama client port (default 7350)")]
+        public int nakamaPort = 7350;
+        [Tooltip("Nakama server key (must match the Nakama --socket.server_key)")]
+        public string nakamaServerKey = "defaultkey";
+
         [Header("Request")]
         public float requestTimeoutSeconds = 15f;
 

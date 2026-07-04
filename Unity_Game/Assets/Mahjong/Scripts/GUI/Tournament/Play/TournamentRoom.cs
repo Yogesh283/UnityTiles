@@ -204,14 +204,31 @@ namespace Mkey.Tournament
             if (tournament == null)
                 return;
 
+            // Server authority first: online rooms MUST use the server's level_index/level_seed so
+            // BOTH devices generate the identical board.
             if (TryApplyServerLevel())
                 return;
 
             if (levelGenerated)
                 return;
 
+            // Online but the server level has not been applied yet — do NOT invent a per-device
+            // local random level (that is exactly what caused "different levels on each device").
+            // The game scene fetches the server snapshot before starting, which populates the shared
+            // level; if the server is genuinely unreachable the launch aborts instead of desyncing.
+            if (Mkey.Network.TournamentApiBridge.IsOnlineMode)
+            {
+                UnityEngine.Debug.LogWarning(
+                    $"[TournamentRoom] GenerateSharedLevel deferred room={roomId} — awaiting " +
+                    "server-authoritative level (online never uses a local random level).");
+                return;
+            }
+
+            // Offline local simulation only: deterministic pick from the local room seed.
             selectedLevelIndex = TournamentLevelSelector.PickLevelIndex(roomSeed, tournament);
             levelGenerated = true;
+            UnityEngine.Debug.Log(
+                $"[TournamentRoom] Local-sim level picked room={roomId} level={selectedLevelIndex} seed={roomSeed}");
         }
 
         private bool TryApplyServerLevel()
@@ -223,9 +240,14 @@ namespace Mkey.Tournament
             if (apiRoom == null || apiRoom.levelIndex < 0)
                 return false;
 
+            bool changed = selectedLevelIndex != apiRoom.levelIndex || roomSeed != apiRoom.levelSeed;
             roomSeed = apiRoom.levelSeed;
             selectedLevelIndex = apiRoom.levelIndex;
             levelGenerated = true;
+            if (changed)
+                UnityEngine.Debug.Log(
+                    $"[TournamentRoom] Applied server level room={apiRoom.roomId} " +
+                    $"level={selectedLevelIndex} seed={roomSeed} (server authoritative)");
             return true;
         }
 

@@ -190,7 +190,12 @@ namespace Mkey.Tournament
             if (!g)
                 yield break;
 
-            g.blocksRaycasts = false;
+            // Only the alpha is animated — the page stays interactive the whole time. The old code
+            // left blocksRaycasts=false after the fade, which disabled raycasts for everything under
+            // the page root that ISN'T on the HitAreas override-canvas. The back button lives on the
+            // fixed top bar (no override canvas), so it became permanently unclickable. Keeping this
+            // true throughout also means an interrupted fade can never leave the page dead.
+            g.blocksRaycasts = true;
             g.interactable = true;
             g.alpha = 0f;
             for (float t = 0f; t < 0.45f; t += Time.deltaTime)
@@ -200,7 +205,7 @@ namespace Mkey.Tournament
             }
 
             g.alpha = 1f;
-            g.blocksRaycasts = false;
+            g.blocksRaycasts = true;
         }
     }
 }

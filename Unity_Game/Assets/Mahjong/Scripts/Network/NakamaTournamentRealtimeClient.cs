@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,6 +20,7 @@ namespace Mkey.Network
         private const int OpRoomState = 10;
         private const int OpMatchStart = 11;
         private const int OpMatchFinished = 12;
+        private const int OpReportFinish = 13;
         private const int MatchmakerMinPlayersDefault = 2;
 
         private static NakamaTournamentRealtimeClient instance;
@@ -31,6 +33,10 @@ namespace Mkey.Network
         private RoomResponseDto businessRoom;
         private string lastKnownStatus = "waiting";
         private readonly Dictionary<string, RoomPlayerDto> playersByNakamaUserId = new Dictionary<string, RoomPlayerDto>();
+
+        // Nakama socket callbacks fire on a background thread. Room events are queued here and
+        // drained in Update() so all downstream consumers touch Unity APIs on the main thread only.
+        private readonly ConcurrentQueue<string> mainThreadEvents = new ConcurrentQueue<string>();
 
         public static event Action<string> MessageReceived;
 
@@ -50,6 +56,13 @@ namespace Mkey.Network
             GameObject host = new GameObject(nameof(NakamaTournamentRealtimeClient));
             instance = host.AddComponent<NakamaTournamentRealtimeClient>();
             DontDestroyOnLoad(host);
+        }
+
+        private void Update()
+        {
+            // Drain background-thread Nakama events on the Unity main thread.
+            while (mainThreadEvents.TryDequeue(out string json))
+                MessageReceived?.Invoke(json);
         }
 
         public static async Task<ApiResult<RoomResponseDto>> MatchmakeAndJoinAsync(
@@ -146,6 +159,43 @@ namespace Mkey.Network
             _ = instance.StopInternalAsync();
         }
 
+        /// <summary>
+        /// Relays the server-decided result to the Nakama match (opcode 13). The runtime broadcasts
+        /// MATCH_FINISHED once every player has reported, so the opponent ends instantly. Safe no-op
+        /// when Nakama realtime is disabled or the socket is not connected.
+        /// </summary>
+        public static void ReportFinish(int rank, int score, int prize, int? walletBalance)
+        {
+            if (instance == null) return;
+            _ = instance.ReportFinishAsync(rank, score, prize, walletBalance);
+        }
+
+        private async Task ReportFinishAsync(int rank, int score, int prize, int? walletBalance)
+        {
+            try
+            {
+                if (socket == null || !socket.IsConnected || currentMatch == null)
+                    return;
+
+                var payload = new Dictionary<string, object>
+                {
+                    { "rank", rank },
+                    { "score", score },
+                    { "prize", prize },
+                };
+                if (walletBalance.HasValue)
+                    payload["wallet_balance"] = walletBalance.Value;
+
+                string json = JsonConvert.SerializeObject(payload);
+                await socket.SendMatchStateAsync(currentMatch.Id, OpReportFinish, Encoding.UTF8.GetBytes(json));
+                Debug.Log($"[NakamaTournament] Reported finish rank={rank} score={score} prize={prize}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[NakamaTournament] ReportFinish failed: " + ex.Message);
+            }
+        }
+
         private bool IsAlreadyInRequestedRoom(string roomId)
         {
             if (string.IsNullOrEmpty(roomId) || currentMatch == null)
@@ -193,11 +243,16 @@ namespace Mkey.Network
 
             if (client == null)
             {
+                // Config-driven so Nakama can point at a real hosted server in production instead of
+                // a hardcoded localhost (which only works on the dev machine).
+                ApiConfig cfg = ApiConfig.Current;
                 client = new Client(
-                    "http",
-                    "127.0.0.1",
-                    7350,
-                    "defaultkey");
+                    cfg.nakamaScheme,
+                    cfg.nakamaHost,
+                    cfg.nakamaPort,
+                    cfg.nakamaServerKey);
+                Debug.Log(
+                    $"[NakamaTournament] Client -> {cfg.nakamaScheme}://{cfg.nakamaHost}:{cfg.nakamaPort}");
             }
 
             string deviceId = BuildDeviceId();
@@ -485,7 +540,9 @@ namespace Mkey.Network
                 payload["results"] = JsonConvert.DeserializeObject(rawResults);
 
             string json = JsonConvert.SerializeObject(payload);
-            MessageReceived?.Invoke(json);
+            // Marshal to the Unity main thread (drained in Update) — Nakama raises socket
+            // callbacks on a background thread and consumers call Unity APIs.
+            mainThreadEvents.Enqueue(json);
         }
 
         private static async Task<T> WithTimeout<T>(Task<T> task, int timeoutMs)

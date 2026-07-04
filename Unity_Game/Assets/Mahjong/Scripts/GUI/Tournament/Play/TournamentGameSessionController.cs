@@ -21,7 +21,10 @@ namespace Mkey.Tournament
         private const float ResultDialogWatchdogSeconds = 2f;
         private const float OnlineDuelSyncTimeoutSeconds = 15f;
         private const float OnlineDuelForceStartGraceSeconds = 2f;
-        private const float LobbyLaunchSyncTimeoutSeconds = 1.5f;
+        // Anti-freeze cap for the lobby-launched duel start gate. Both clients hold the frozen board
+        // until the shared server gameplay-start timestamp; if the server timing never arrives we
+        // force-start after this many seconds so a client can never get stuck on a frozen board.
+        private const float MaxLobbyStartSyncSeconds = 8f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -197,23 +200,57 @@ namespace Mkey.Tournament
 
         private static IEnumerator WaitForLobbyLaunchedDuelStart()
         {
-            TournamentFlowLog.BoardFrozen("brief lobby handoff — no second freeze");
+            // Server-authoritative synchronized start: BOTH duel clients keep the board frozen until
+            // the SAME server timestamp (match_start_at_ms + buffer), then unfreeze together. This is
+            // what makes two Android devices start the match at the same moment instead of "whenever
+            // my scene finished loading". Bounded by MaxLobbyStartSyncSeconds so it can never hang.
             ReapplyServerClockFromApi();
+            Debug.Log(
+                "[TournamentGameStart] Lobby handoff — freezing board until shared server start " +
+                $"(match_start_at_ms={TournamentServerClock.ScheduledStartMs} " +
+                $"gameplay_start_ms={TournamentServerClock.GameplayStartMs})");
+            TournamentFlowLog.BoardFrozen("lobby handoff — waiting for shared server gameplay-start time");
 
-            float timeout = LobbyLaunchSyncTimeoutSeconds;
-            while (TournamentSession.IsActive && timeout > 0f)
+            float maxWait = MaxLobbyStartSyncSeconds;
+            float refreshTimer = 0f;
+
+            while (TournamentSession.IsActive && maxWait > 0f)
             {
                 ReapplyServerClockFromApi();
-                RoomResponseDto apiRoom = TournamentApiBridge.CurrentRoom;
-                if (IsOnlineDuelGameplayReady(apiRoom) || ShouldForceOnlineDuelStart(apiRoom, 0f))
-                    break;
+
+                if (TournamentServerClock.IsGameplayStartTimeReached())
+                {
+                    Debug.Log(
+                        "[TournamentGameStart] Shared server start time reached " +
+                        $"(server_now>={TournamentServerClock.GameplayStartMs}) — unfreezing both clients");
+                    TournamentFlowLog.BoardUnfrozen("shared server gameplay-start time reached");
+                    yield break;
+                }
 
                 TournamentMatchManager.EnsureGameplayFrozen();
-                timeout -= Time.unscaledDeltaTime;
+
+                // Periodically refresh so a client that missed the WebSocket push still learns
+                // match_start_at_ms and stays aligned to the shared start timestamp.
+                refreshTimer += Time.unscaledDeltaTime;
+                if (refreshTimer >= 0.5f)
+                {
+                    refreshTimer = 0f;
+                    Task<bool> refresh = TournamentApiBridge.RefreshActiveRoomAsync();
+                    while (!refresh.IsCompleted)
+                        yield return null;
+                }
+
+                maxWait -= Time.unscaledDeltaTime;
                 yield return null;
             }
 
-            TournamentFlowLog.BoardUnfrozen("lobby countdown already completed — starting duel");
+            if (!TournamentServerClock.IsGameplayStartTimeReached())
+            {
+                Debug.LogWarning(
+                    "[TournamentGameStart] Shared start-time gate timed out after " +
+                    $"{MaxLobbyStartSyncSeconds}s — force starting (anti-freeze fallback)");
+                TournamentFlowLog.BoardUnfrozen("start-time gate timeout — force starting (anti-freeze)");
+            }
         }
 
         private static IEnumerator WaitForOnlineDuelGameplayStart()
@@ -412,8 +449,13 @@ namespace Mkey.Tournament
                 yield break;
             }
 
+            // Idempotent subscribe: remove first so replays / fallback re-entry can never
+            // double-count moves (duplicate listener => corrupted move/score sync).
+            GameEvents.MatchSpritesEvent -= OnMatchMade;
             GameEvents.MatchSpritesEvent += OnMatchMade;
-            timerHud = TournamentTimerHud.Create();
+
+            if (!timerHud)
+                timerHud = TournamentTimerHud.Create();
             TournamentGameStartProbe.LogGameStarted(timerHud != null);
         }
 

@@ -1,2 +1,2 @@
-5a62feb
-Fix tournament card stats alignment and popup button layout.
+a17e478
+Fix duel second-player stuck on match start and tournament back button.
