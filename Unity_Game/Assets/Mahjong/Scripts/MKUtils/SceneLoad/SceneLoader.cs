@@ -119,7 +119,11 @@ namespace Mkey
             float loadTime = 0.0f;
             loadProgress = 0;
 
-            if (LoadGroupPrefab)
+            // The loader popup needs a GuiController in the current scene. Scenes that build their
+            // own UI at runtime (e.g. the Tournament scene) have none, so MGUI is null — guard it or
+            // MGUI.ShowPopUp throws an NRE that kills this coroutine and the scene never loads
+            // (this was the "tournament back button does nothing" bug).
+            if (LoadGroupPrefab && MGUI)
             {
                 LoadGroup = MGUI.ShowPopUp(LoadGroupPrefab);
                 if (LoadGroup) simpleSlider = LoadGroup.GetComponentInChildren<PSlider>();

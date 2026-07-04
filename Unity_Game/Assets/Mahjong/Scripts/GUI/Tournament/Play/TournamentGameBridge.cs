@@ -64,6 +64,17 @@ namespace Mkey.Tournament
                     TournamentMatchManager.ActiveRoomSeed);
                 TournamentSession.PrepareGameLevel();
 
+                // Log the exact shared sync data both clients must agree on (server authoritative).
+                RoomResponseDto apiRoom = TournamentApiBridge.CurrentRoom;
+                Debug.Log(
+                    "[TournamentSync] Launch handoff — shared state: " +
+                    $"room={TournamentMatchManager.ActiveRoomId} " +
+                    $"level={TournamentMatchManager.MatchLevelIndex} " +
+                    $"seed={TournamentMatchManager.ActiveRoomSeed} " +
+                    $"match_start_at_ms={apiRoom?.matchStartAtMs?.ToString() ?? "null"} " +
+                    $"server_now_ms={apiRoom?.serverNowMs?.ToString() ?? "null"} " +
+                    $"players={apiRoom?.playerCount}");
+
                 Debug.Log(
                     $"[Tournament] Launch level {TournamentSession.MatchLevelIndex + 1} " +
                     $"seed {TournamentSession.RoomSeed} room {TournamentSession.ActiveRoomId}");

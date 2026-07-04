@@ -1,10 +1,10 @@
 import logging
-import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from database.models import LeaderboardEntry, RoomPlayer, Tournament, TournamentResult, TournamentRoom, User
@@ -32,7 +32,12 @@ class MatchmakeResult:
 
 
 class RoomManager:
-    MATCHMAKE_LOCK_SECONDS = 15
+    # Advisory lock is best-effort only; the tournament row FOR UPDATE lock below is the
+    # real serialization. Keep this short so a stuck/contended advisory lock can never pile
+    # up sync worker threads or exhaust the DB pool (which made the whole API unresponsive).
+    MATCHMAKE_LOCK_SECONDS = 3
+    # Bound the FOR UPDATE wait so a genuinely stuck transaction fails fast instead of hanging.
+    MATCHMAKE_ROW_LOCK_WAIT_SECONDS = 6
 
     def __init__(self, db: Session):
         self.db = db
@@ -60,7 +65,7 @@ class RoomManager:
             return MatchmakeResult(room=existing_room)
 
         lock_name = f"matchmake:{tournament_id}"
-        self._acquire_matchmake_lock(lock_name)
+        lock_acquired = self._acquire_matchmake_lock(lock_name)
         try:
             self._lock_tournament_for_matchmake(tournament_id)
 
@@ -125,22 +130,39 @@ class RoomManager:
             schedule_room_updated(room.id, payload)
             return MatchmakeResult(room=room)
         finally:
-            self._release_matchmake_lock(lock_name)
+            self._release_matchmake_lock(lock_name, lock_acquired)
 
-    def _acquire_matchmake_lock(self, lock_name: str) -> None:
-        for attempt in range(3):
+    def _acquire_matchmake_lock(self, lock_name: str) -> bool:
+        """Best-effort advisory lock. Never raises / never hangs the request.
+
+        Correctness is guaranteed by the tournament row FOR UPDATE lock, which auto-releases
+        when the transaction ends (unlike GET_LOCK, which can stay stuck on a pooled connection
+        for up to pool_recycle seconds). So if the advisory lock is stuck or contended we simply
+        proceed instead of blocking every join with "Matchmaking busy".
+        """
+        try:
             acquired = self.db.execute(
                 text("SELECT GET_LOCK(:lock_name, :timeout)"),
                 {"lock_name": lock_name, "timeout": self.MATCHMAKE_LOCK_SECONDS},
             ).scalar()
-            if acquired == 1:
-                return
-            if attempt < 2:
-                time.sleep(0.15 * (attempt + 1))
-        raise ValueError("Matchmaking busy, try again")
+        except Exception:  # noqa: BLE001 - advisory lock is optional, never fail matchmaking on it
+            logger.warning("matchmake advisory lock errored lock=%s — proceeding via row lock", lock_name)
+            return False
+        if acquired == 1:
+            return True
+        logger.warning(
+            "matchmake advisory lock busy lock=%s — proceeding via tournament row lock",
+            lock_name,
+        )
+        return False
 
-    def _release_matchmake_lock(self, lock_name: str) -> None:
-        self.db.execute(text("SELECT RELEASE_LOCK(:lock_name)"), {"lock_name": lock_name})
+    def _release_matchmake_lock(self, lock_name: str, acquired: bool) -> None:
+        if not acquired:
+            return
+        try:
+            self.db.execute(text("SELECT RELEASE_LOCK(:lock_name)"), {"lock_name": lock_name})
+        except Exception:  # noqa: BLE001
+            logger.warning("matchmake advisory lock release failed lock=%s", lock_name)
 
     def _room_player_count(self, room_id: str) -> int:
         return self.db.query(RoomPlayer).filter(RoomPlayer.room_id == room_id).count()
@@ -175,13 +197,32 @@ class RoomManager:
         )
 
     def _lock_tournament_for_matchmake(self, tournament_id: str) -> None:
-        """Serialize matchmaking per tournament — prevents duplicate 1-player duel rooms."""
-        row = (
-            self.db.query(Tournament)
-            .filter(Tournament.id == tournament_id)
-            .with_for_update()
-            .first()
-        )
+        """Serialize matchmaking per tournament — prevents duplicate 1-player duel rooms.
+
+        This row lock is the authoritative serialization and auto-releases on transaction end.
+        We cap the wait so a stuck peer transaction fails fast rather than hanging the worker.
+        """
+        try:
+            self.db.execute(
+                text("SET SESSION innodb_lock_wait_timeout = :t"),
+                {"t": self.MATCHMAKE_ROW_LOCK_WAIT_SECONDS},
+            )
+        except Exception:  # noqa: BLE001 - not fatal; fall back to server default timeout
+            pass
+
+        try:
+            row = (
+                self.db.query(Tournament)
+                .filter(Tournament.id == tournament_id)
+                .with_for_update()
+                .first()
+            )
+        except OperationalError as exc:
+            # Lock wait timeout / deadlock on the tournament row — return a fast, retryable error
+            # instead of a 500 so the client can immediately try again.
+            self.db.rollback()
+            logger.warning("matchmake row lock wait timeout tournament_id=%s: %s", tournament_id, exc)
+            raise ValueError("Matchmaking busy, try again") from exc
         if row:
             return
 

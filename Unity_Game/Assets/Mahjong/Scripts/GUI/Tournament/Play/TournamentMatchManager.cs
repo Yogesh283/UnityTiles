@@ -27,7 +27,10 @@ namespace Mkey.Tournament
         private bool onlineRoomPollInFlight;
 
         private const float OnlineRoomPollIntervalSeconds = 2.5f;
-        private const float DuelOnlinePollIntervalSeconds = 0.1f;
+        // 0.1s (10 req/s/client) hammered the API and contributed to matchmaking-lock contention.
+        // WebSocket push + submit response are the primary finish signals; this poll is only a
+        // backstop, so 0.5s is plenty responsive while cutting duel-match server load ~5x.
+        private const float DuelOnlinePollIntervalSeconds = 0.5f;
 
         private static bool duelServerScoreSubmitted;
         private static bool apiRoomUpdateHooked;
@@ -196,6 +199,12 @@ namespace Mkey.Tournament
             room.synchronizedStartServerMs = TournamentServerClock.NowMs;
             room.state = TournamentRoomState.Playing;
             room.MarkMatchPlaying();
+
+            Debug.Log(
+                $"[TournamentMatchManager] BeginSynchronizedMatch room={room.roomId} " +
+                $"level={room.selectedLevelIndex} seed={room.roomSeed} " +
+                $"match_start_at_ms={TournamentServerClock.ScheduledStartMs} " +
+                $"synchronizedStartServerMs={room.synchronizedStartServerMs}");
 
             if (room.IsDuel)
             {
@@ -617,9 +626,24 @@ namespace Mkey.Tournament
 
             if (!submitTask.Result.Success || submitTask.Result.Data == null)
             {
+                int statusCode = submitTask.Result?.StatusCode ?? 0;
                 string err = submitTask.Result?.ErrorMessage ?? "Unknown submit error";
                 TournamentFlowLog.SubmitScoreError(
-                    $"room={room.roomId} status={submitTask.Result?.StatusCode} detail={err}");
+                    $"room={room.roomId} status={statusCode} detail={err}");
+
+                // 409 / "already ended" / "locked"/"finished" = the OPPONENT finished first and the
+                // server already finalized the match. This is a normal duel loss, NOT an error —
+                // resolve cleanly from the server snapshot instead of a scary "submit failed" popup.
+                if (IsMatchAlreadyEndedResponse(statusCode, err))
+                {
+                    Debug.Log(
+                        $"[TournamentMatchManager] Submit 409/ended room={room.roomId} — opponent " +
+                        "finished first; resolving as server-authoritative loss");
+                    duelServerScoreSubmitted = true;
+                    yield return ResolveFromServerSnapshotRoutine(duelMode);
+                    yield break;
+                }
+
                 TournamentMessagePopup.Show(
                     "Score Submit Failed",
                     err + "\n\nYour result could not be saved. Please try again.",
@@ -663,6 +687,49 @@ namespace Mkey.Tournament
             yield break;
         }
 
+        private static bool IsMatchAlreadyEndedResponse(int statusCode, string message)
+        {
+            if (statusCode == 409)
+                return true;
+            if (string.IsNullOrEmpty(message))
+                return false;
+            string m = message.ToLowerInvariant();
+            return m.Contains("already ended") || m.Contains("match ended") ||
+                   m.Contains("locked") || m.Contains("finished") || m.Contains("not active");
+        }
+
+        /// <summary>
+        /// Fetches the authoritative room snapshot and applies the server-decided rank/prize.
+        /// Used when the local submit was rejected because the opponent already finalized the match,
+        /// so the loser sees a clean result popup instead of an error.
+        /// </summary>
+        private static IEnumerator ResolveFromServerSnapshotRoutine(bool duelMode)
+        {
+            if (!HasActiveRoom || room.isResolved)
+                yield break;
+
+            var fetchTask = TournamentService.FetchRoomSnapshotAsync(room.roomId);
+            while (!fetchTask.IsCompleted)
+                yield return null;
+
+            if (fetchTask.Result.Success && fetchTask.Result.Data != null)
+            {
+                if (TournamentSession.Tournament != null)
+                    TournamentApiBridge.MergeAndNotify(fetchTask.Result.Data);
+                ApplyServerRankFromSnapshot(fetchTask.Result.Data);
+            }
+
+            // Snapshot missing the local rank (rare) — fall back to a deterministic duel loss so the
+            // player is never left stuck on a frozen board.
+            if (!room.isResolved)
+            {
+                Debug.LogWarning(
+                    $"[TournamentMatchManager] No server rank in snapshot room={room.roomId} — " +
+                    "applying fallback loss");
+                ApplyServerFinish(duelMode ? 2 : Mathf.Max(2, room.maxPlayerCount), 0, duelWin: false);
+            }
+        }
+
         private static void ApplyServerFinish(int rank, int prize, bool duelWin)
         {
             if (!HasActiveRoom || room.isResolved) return;
@@ -680,11 +747,24 @@ namespace Mkey.Tournament
                 TournamentFlowLog.Loser($"rank={rank}");
             }
 
+            Debug.Log(
+                $"[TournamentMatchManager] ServerFinish room={room.roomId} rank={rank} prize={prize} " +
+                $"duelWin={duelWin} (server authoritative)");
+
             room.isLocked = true;
             room.state = TournamentRoomState.Locked;
             TournamentSession.StopGameplay();
             FreezeLocalGameplay();
             TournamentGameSessionController.StopTracking();
+
+            // Relay the server-decided result over Nakama realtime when that path is enabled so the
+            // opponent's client ends instantly (no-op on the FastAPI path).
+            if (ApiConfig.Current.UseNakamaRealtimeNetworking)
+            {
+                Mkey.Network.NakamaTournamentRealtimeClient.ReportFinish(
+                    rank, room.localPlayer != null ? room.localPlayer.score : 0, prize, pendingWalletBalance);
+            }
+
             FinalizeResult(rank, prize, duelWin: duelWin);
         }
 

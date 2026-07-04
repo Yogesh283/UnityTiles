@@ -17,4 +17,8 @@ MonoBehaviour:
   useProductionUrl: 1
   developmentMode: 0
   useNakamaRealtime: 0
+  nakamaScheme: http
+  nakamaHost: 127.0.0.1
+  nakamaPort: 7350
+  nakamaServerKey: defaultkey
   requestTimeoutSeconds: 25

@@ -8,8 +8,10 @@ namespace Mkey.Tournament
     /// </summary>
     public static class TournamentLayoutMetrics
     {
-        public const float RefWidth = 862f;
-        public const float RefHeight = 1825f;
+        // Native pixel size of Resources/Tournament/turnamant1.png. All hit-area coordinates below
+        // are measured against these dimensions, so keep them in sync with the actual PNG.
+        public const float RefWidth = 853f;
+        public const float RefHeight = 1844f;
 
         public static float Scale { get; private set; } = 1f;
         public static float WidthScale { get; private set; } = 1f;
@@ -69,14 +71,16 @@ namespace Mkey.Tournament
         };
 
         /// <summary>Measured from turnamant1.png JOIN buttons (top-left origin), with touch padding.</summary>
+        // Green JOIN button rects, measured by pixel-scanning turnamant1.png (854×1842). Each rect is
+        // centered on its baked green button so the JOIN/FULL label sits inside the button.
         private static readonly Rect[] JoinRects =
         {
-            new Rect(635f, 406f, 148f, 53f),   // 1 vs 1 Duel
-            new Rect(635f, 574f, 148f, 51f),   // Quick Cup
-            new Rect(635f, 738f, 148f, 51f),   // Mega Clash
-            new Rect(635f, 901f, 148f, 51f),   // Grand Clash
-            new Rect(635f, 1063f, 148f, 43f),  // Championship
-            new Rect(635f, 1223f, 148f, 50f)   // World Cup
+            new Rect(639f, 486f, 154f, 60f),    // 1 vs 1 Duel
+            new Rect(639f, 679f, 154f, 60f),    // Quick Cup
+            new Rect(639f, 868f, 154f, 60f),    // Mega Clash
+            new Rect(639f, 1054f, 154f, 60f),   // Grand Clash
+            new Rect(639f, 1236f, 154f, 60f),   // Championship
+            new Rect(639f, 1416f, 154f, 60f)    // World Cup
         };
 
         /// <summary>Back arrow circle on turnamant1.png (top-left). Enlarged for a reliable touch target.</summary>

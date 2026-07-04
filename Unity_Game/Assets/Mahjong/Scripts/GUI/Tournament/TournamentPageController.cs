@@ -49,6 +49,10 @@ namespace Mkey.Tournament
 
         private void OnEnable()
         {
+            // Never leave the back button latched: if a previous navigation was cancelled or the page
+            // is re-shown, backTriggered must be clear or the button/hardware-back goes permanently dead.
+            backTriggered = false;
+
             if (CoinsHolder.Instance)
             {
                 CoinsHolder.Instance.ChangeEvent.AddListener(OnCoinsChanged);
@@ -229,17 +233,8 @@ namespace Mkey.Tournament
             walletText = TournamentUIFactory.CreateWalletBalance(overlay);
             walletPulse = walletText.gameObject.AddComponent<TournamentWalletPulse>();
 
-            onlineStatusText = TournamentUIFactory.CreateOverlayText(
-                overlay,
-                "OnlineStatus",
-                new Rect(24f, 118f, 320f, 28f),
-                ApiConfig.Current.UseLocalSimulation ? "● Offline Practice" : "● Live Server",
-                TournamentPngLayout.OverlayFont(14f),
-                FontStyle.Bold,
-                ApiConfig.Current.UseLocalSimulation
-                    ? TournamentPremiumTheme.TextMuted
-                    : new Color(0.45f, 1f, 0.62f),
-                TextAnchor.MiddleLeft);
+            // "● Live Server" / "● Offline Practice" status text removed per design — SetOnlineStatus
+            // becomes a no-op (it null-checks onlineStatusText).
 
             RefreshWallet();
 
