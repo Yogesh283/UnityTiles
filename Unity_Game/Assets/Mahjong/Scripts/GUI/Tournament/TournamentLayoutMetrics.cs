@@ -79,7 +79,8 @@ namespace Mkey.Tournament
             new Rect(635f, 1223f, 148f, 50f)   // World Cup
         };
 
-        public static readonly Rect Back = new Rect(13f, 15f, 69f, 84f);
+        /// <summary>Back arrow circle on turnamant1.png (top-left). Enlarged for a reliable touch target.</summary>
+        public static readonly Rect Back = new Rect(20f, 22f, 140f, 140f);
         /// <summary>Black balance interior on turnamant1.png (right header).</summary>
         public static readonly Rect Wallet = new Rect(602f, 72f, 258f, 26f);
         /// <summary>Gold + deposit hit area (left of wallet).</summary>

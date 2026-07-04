@@ -30,6 +30,7 @@ namespace Mkey.Tournament
         private TournamentWalletPulse walletPulse;
         private Text onlineStatusText;
         private bool pageBuilt;
+        private bool backTriggered;
 
         private void Awake()
         {
@@ -194,7 +195,9 @@ namespace Mkey.Tournament
             RectTransform hitAreas = TournamentUIFactory.CreateRect(overlay, "HitAreas");
             TournamentUIFactory.StretchRect(hitAreas);
 
-            TournamentUIFactory.CreateInvisibleButton(hitAreas, "BackButton", TournamentPngLayout.Back, OnBackClicked);
+            // Back button lives on a FIXED layer (child of the viewport, not the scrolling
+            // content) so it stays pinned to the top-left and can't scroll out of reach.
+            CreateFixedBackButton(viewport);
             yield return null;
 
             statsLayer = TournamentPngLayout.CreatePagePixelLayer(pageLayer, "StatsLayer");
@@ -566,8 +569,48 @@ namespace Mkey.Tournament
             }
         }
 
+        /// <summary>
+        /// Fixed top-left back button on a non-scrolling 862×1825 layer pinned to the viewport top,
+        /// so it stays aligned with the PNG arrow and never scrolls away.
+        /// </summary>
+        private void CreateFixedBackButton(RectTransform viewport)
+        {
+            if (!viewport)
+                return;
+
+            RectTransform fixedBar = TournamentPngLayout.CreatePagePixelLayer(viewport, "FixedTopBar");
+            TournamentUIFactory.CreateInvisibleButton(fixedBar, "BackButton", TournamentPngLayout.Back, OnBackClicked);
+            fixedBar.SetAsLastSibling();
+        }
+
+        private void Update()
+        {
+            // Android hardware / gesture back should behave like the on-screen back button.
+            if (backTriggered)
+                return;
+
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (waitingRoom != null && waitingRoom.IsShowing)
+                {
+                    waitingRoom.CancelMatchmaking();
+                    return;
+                }
+
+                OnBackClicked();
+            }
+        }
+
         private void OnBackClicked()
         {
+            if (backTriggered)
+                return;
+            backTriggered = true;
+
+            // Leave any half-finished matchmaking cleanly so returning to the page works next time.
+            if (waitingRoom != null && waitingRoom.IsShowing)
+                waitingRoom.CancelMatchmaking();
+
             if (SceneLoader.Instance)
                 SceneLoader.Instance.LoadScene(backSceneIndex);
             else
