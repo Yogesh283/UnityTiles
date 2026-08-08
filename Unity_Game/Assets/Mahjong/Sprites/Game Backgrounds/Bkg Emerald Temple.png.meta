@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 689a42702ee84168ad80ec7b1f7ae2d9
+guid: c983aae40f1a98045b154a674296781d
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -152,3 +152,10 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307235
+  packageName: "MK Mahjong Solitaire Kit \u2022 Tile Match Game Template"
+  packageVersion: 1.1.1
+  assetPath: Assets/Mahjong/Sprites/Game Backgrounds/Bkg Green.png
+  uploadId: 886820

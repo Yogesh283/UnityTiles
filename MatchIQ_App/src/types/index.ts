@@ -183,6 +183,8 @@ export type UnityLaunchPayload = {
   matchId: string;
   tournamentId?: string;
   levelId?: string;
+  /** Per-room board seed from the server so both players build the identical board. */
+  seed?: string;
   mode: 'tournament' | 'campaign' | 'practice';
   token: string;
 };

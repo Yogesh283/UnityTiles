@@ -1,6 +1,17 @@
 /* WXO auth — one account for every game (server: FastAPI + MySQL) */
 (function (global) {
-  const API_BASE = 'https://rmsurveyai.com/api/v1';
+  // Auto-detect API base: localhost/LAN → local FastAPI (:8000), else live server.
+  // Production (rmsurveyai.com) is unaffected; only local/LAN hosts switch to :8000.
+  const API_BASE = (function () {
+    try {
+      if (global.WXO_API_BASE) return global.WXO_API_BASE;
+      const h = location.hostname;
+      if (h === 'localhost' || h === '127.0.0.1' || /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h)) {
+        return location.protocol + '//' + h + ':8000/api/v1';
+      }
+    } catch (e) {}
+    return 'https://rmsurveyai.com/api/v1';
+  })();
   const TOKEN_KEY = 'wxo_token';
   const USER_KEY = 'wxo_user_v1';
   const DEVICE_KEY = 'wxo_device_id';

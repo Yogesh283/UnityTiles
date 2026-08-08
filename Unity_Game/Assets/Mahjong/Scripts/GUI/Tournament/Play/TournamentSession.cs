@@ -61,6 +61,17 @@ namespace Mkey.Tournament
         }
 
         /// <summary>
+        /// Sets only the shared tile-RNG seed, without switching on the full Unity-native tournament
+        /// session. The embedded React Native flow drives the match through MatchIQShellBridge (its own
+        /// timer + result path), yet both room players must still build the identical board from the
+        /// server's per-room seed — so <see cref="CreateTileRandom"/> needs the seed even here.
+        /// </summary>
+        public static void SetTileSeed(int seed)
+        {
+            RoomSeed = seed;
+        }
+
+        /// <summary>
         /// Shared RNG for tile faces + placement — both duel clients must use the same room seed.
         /// </summary>
         public static System.Random CreateTileRandom()

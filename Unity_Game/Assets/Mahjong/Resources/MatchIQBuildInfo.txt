@@ -1,2 +1,2 @@
-e30f5f5
-Fix tournament back button, multiplayer sync, and swap tournament page image.
+88dfea8
+Add Emerald Temple Unity background, matchmaking shell flow, and WXO lobby/auth updates

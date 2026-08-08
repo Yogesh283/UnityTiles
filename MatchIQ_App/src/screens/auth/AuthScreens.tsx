@@ -105,8 +105,12 @@ export function LoginScreen({ navigation }: Props) {
         style={{ marginTop: spacing.sm }}
       />
 
-      <Pressable onPress={() => navigation.navigate(ROUTES.Register)} style={{ marginTop: spacing.lg }}>
-        <Text style={[typography.label, { textAlign: 'center' }]}>नया अकाउंट बनाएं · Register</Text>
+      <Text style={styles.registerPrompt}>Naya user? Account nahi hai?</Text>
+      <Pressable
+        onPress={() => navigation.navigate(ROUTES.Register)}
+        style={({ pressed }) => [styles.registerCta, pressed && styles.registerCtaPressed]}
+      >
+        <Text style={styles.registerCtaText}>+ नया अकाउंट बनाएं · Create Account</Text>
       </Pressable>
     </Screen>
   );
@@ -191,5 +195,37 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
+  },
+  registerPrompt: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+  },
+  registerCta: {
+    alignSelf: 'center',
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.xl,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.primaryGold,
+    backgroundColor: colors.glowGold,
+    shadowColor: colors.primaryGold,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  registerCtaPressed: {
+    opacity: 0.85,
+    backgroundColor: 'rgba(245, 183, 0, 0.22)',
+  },
+  registerCtaText: {
+    ...typography.label,
+    color: colors.goldLight,
+    fontWeight: '800',
+    textAlign: 'center',
+    letterSpacing: 0.3,
   },
 });

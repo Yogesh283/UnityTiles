@@ -53,6 +53,8 @@ export function UnityGameplayScreen({ navigation, route }: Props) {
   const roomId = route.params?.roomId as string | undefined;
   const tournamentId = route.params?.tournamentId as string | undefined;
   const levelIndex = route.params?.levelIndex as number | undefined;
+  // Server picks a per-room seed so both players build the identical board; forward it to Unity.
+  const levelSeed = route.params?.levelSeed as number | undefined;
   const mode = (route.params?.mode as 'tournament' | 'campaign' | 'practice') || 'tournament';
   const gameName = (route.params?.game as string) || 'IQ Match';
   const entryFee = Number(route.params?.entry) || 0;
@@ -92,10 +94,11 @@ export function UnityGameplayScreen({ navigation, route }: Props) {
       roomId,
       tournamentId,
       levelId: levelIndex != null ? String(levelIndex) : undefined,
+      seed: levelSeed != null ? String(levelSeed) : undefined,
       mode,
       token,
     }),
-    [levelIndex, mode, roomId, token, tournamentId],
+    [levelIndex, levelSeed, mode, roomId, token, tournamentId],
   );
 
   const finishWithResult = useCallback(

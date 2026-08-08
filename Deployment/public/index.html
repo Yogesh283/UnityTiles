@@ -903,7 +903,7 @@
     }
 
     window.WXO = {
-      apiBase: 'https://rmsurveyai.com/api/v1',
+      apiBase: (window.WXOAuth && window.WXOAuth.API_BASE) || 'https://rmsurveyai.com/api/v1',
       apk: null,
       playUrl: '/match-lobby.html?game=iq-match',
       referralCode: myCode,

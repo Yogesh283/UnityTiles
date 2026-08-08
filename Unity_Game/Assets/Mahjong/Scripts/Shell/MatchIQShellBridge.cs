@@ -18,9 +18,43 @@ namespace Mkey.Shell
         private const string ResultScheme = "matchiq://match-result";
         private const float LaunchDelaySeconds = 0.35f;
 
+        // React Native drives real matches with a launch payload that arrives within a few hundred
+        // ms. If none arrives within this window (Editor play-test, or a standalone Unity build with
+        // no shell), we start a practice match so the player is never stuck on an unplayable board.
+        private const float StandaloneFallbackSeconds = 2.5f;
+
         private static MatchIQShellBridge instance;
+        private static bool? embeddedInShell;
 
         public static bool IsActive { get; private set; }
+
+        /// <summary>
+        /// True only when Unity is running embedded inside the React Native shell (single APK). The
+        /// shell's Unity view manager class is on the classpath only in that build, so a standalone /
+        /// "local" Unity build and the Editor both report false. Used to decide whether to wait for a
+        /// launch payload (embedded) or drop straight into gameplay with no pre-game page (local).
+        /// </summary>
+        private static bool IsEmbeddedInShell()
+        {
+            if (embeddedInShell.HasValue) return embeddedInShell.Value;
+
+            bool embedded = false;
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using (var jc = new AndroidJavaClass("com.azesmwayreactnativeunity.ReactNativeUnityViewManager"))
+                {
+                    embedded = jc.GetRawClass() != System.IntPtr.Zero;
+                }
+            }
+            catch
+            {
+                embedded = false;
+            }
+#endif
+            embeddedInShell = embedded;
+            return embedded;
+        }
 
         private string matchId;
         private string tournamentId;
@@ -29,12 +63,14 @@ namespace Mkey.Shell
         private string token;
         private string levelId;
         private int pendingLevel = TournamentSession.SharedGameLevelIndex;
+        private int pendingSeed;
         private float playStartedAt = -1f;
         private bool returning;
         private bool launchQueued;
         private bool launched;
         private int moveCount;
         private GameObject bootCurtain;
+        private bool practiceFallbackArmed;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -64,6 +100,69 @@ namespace Mkey.Shell
             // with default settings. Cover it until React Native tells us which match to run.
             ShowBootCurtain();
             TryConsumeUrl(Application.absoluteURL);
+
+            // If Unity booted straight onto the gameplay scene (RN embed, or a standalone build with
+            // no splash), arm the practice fallback so the board is playable even without a launch.
+            // On the splash scene we do nothing here — the Start button drives the transition.
+            if (SceneManager.GetActiveScene().buildIndex == TournamentSession.GameSceneIndex)
+            {
+                StartCoroutine(StripInitialSceneMenus());
+                ArmPracticeFallback();
+            }
+            else if (!IsEmbeddedInShell())
+            {
+                // Local / standalone Unity booted onto a legacy menu scene (splash, map, tournament).
+                // React Native owns all of those screens now, so skip the whole splash → Start →
+                // play-tournament / play-level flow and drop straight onto the gameplay board.
+                SceneManager.LoadScene(TournamentSession.GameSceneIndex);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="SceneManager.sceneLoaded"/> never fires for the scene that is already open when
+        /// the game boots (editor Play, or a device that starts straight on gameplay), so the level
+        /// constructor / map / edit-mode chrome from the "Game Constructor" scene would linger until
+        /// the first reload. Strip it across a few frames here — catching objects that only spawn in
+        /// their own Awake/Start — so the very first frame shows nothing but the tile board + HUD.
+        /// React Native owns every other screen, so the Unity view is gameplay-only by design.
+        /// </summary>
+        private IEnumerator StripInitialSceneMenus()
+        {
+            StripUnityMenus();
+            yield return null;
+            StripUnityMenus();
+            yield return new WaitForSecondsRealtime(0.2f);
+            StripUnityMenus();
+        }
+
+        /// <summary>
+        /// Safety net so the game is playable "from start" even when no React Native launch signal
+        /// arrives (Editor Play, standalone Unity APK, or a shell that failed to send the payload).
+        /// A real RN launch flips <see cref="IsActive"/> before this fires, so it never interferes
+        /// with the embedded flow. Only ever armed while the gameplay scene is active.
+        /// </summary>
+        private void ArmPracticeFallback()
+        {
+            if (practiceFallbackArmed || IsActive) return;
+            practiceFallbackArmed = true;
+            StartCoroutine(PracticeFallbackWhenIdle());
+        }
+
+        private IEnumerator PracticeFallbackWhenIdle()
+        {
+            // Only wait for a React Native launch when actually embedded in the shell. A standalone /
+            // "local" Unity run (or the Editor) has no shell, so start gameplay immediately instead of
+            // sitting on an empty pre-game page.
+            float wait = IsEmbeddedInShell() ? StandaloneFallbackSeconds : 0f;
+            yield return new WaitForSecondsRealtime(wait);
+            practiceFallbackArmed = false;
+
+            if (IsActive || launched || launchQueued) yield break;
+
+            Debug.Log("[MatchIQShell] No React Native launch received — starting standalone practice match.");
+            TryConsumeUrl(
+                "matchiqunity://play?mode=practice&matchId=local-practice&level=" +
+                TournamentSession.SharedGameLevelIndex);
         }
 
         /// <summary>
@@ -73,6 +172,12 @@ namespace Mkey.Shell
         private void ShowBootCurtain()
         {
             if (bootCurtain || launched) return;
+
+            // Only the embedded React Native shell sends a launch signal that lifts this curtain.
+            // In the Editor or a standalone / "local" Unity build there is no shell, so the curtain
+            // would never lift and would just be a black page in front of gameplay — skip it and let
+            // the board show immediately.
+            if (!IsEmbeddedInShell()) return;
 
             bootCurtain = new GameObject("MatchIQBootCurtain");
             DontDestroyOnLoad(bootCurtain);
@@ -110,10 +215,26 @@ namespace Mkey.Shell
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (!IsActive || scene.buildIndex != TournamentSession.GameSceneIndex) return;
+            // Never leave Unity menus / waiting rooms visible while embedded in the APK.
+            StripUnityMenus();
+
+            if (scene.buildIndex != TournamentSession.GameSceneIndex) return;
+
+            // Gameplay scene loaded with nothing driving it (e.g. splash Start went straight here,
+            // or a standalone build). Arm the practice fallback so it becomes playable.
+            if (!IsActive)
+            {
+                ArmPracticeFallback();
+                return;
+            }
 
             // GameLevelHolder.Awake resets CurrentLevel to 0 — re-apply before GameBoard.Start.
             GameLevelHolder.CurrentLevel = pendingLevel;
+            GameBoard.GMode = GameMode.Play;
+
+            // StripUnityMenus() (above) cleared the tournament session, so re-apply the room seed here,
+            // before GameBoard.Start builds the grid, so both players get the identical board.
+            if (pendingSeed != 0) TournamentSession.SetTileSeed(pendingSeed);
             if (playStartedAt < 0f)
             {
                 CampaignLevelTimer.Reset();
@@ -122,7 +243,66 @@ namespace Mkey.Shell
             }
 
             launched = true;
+            StartCoroutine(FinalizeGameplayScene());
+        }
+
+        private IEnumerator FinalizeGameplayScene()
+        {
+            // Let GameBoard.Start rebuild the board, then force the emerald background and hide
+            // any leftover construct / tournament chrome that survived Awake.
+            yield return null;
+            StripUnityMenus();
+            ForceGameplayBackground();
             HideBootCurtain();
+        }
+
+        /// <summary>
+        /// APK shell owns lobby / pay / results — destroy Unity-only UI so splash, map, construct
+        /// and tournament pay/waiting screens never appear on top of gameplay.
+        /// </summary>
+        private static void StripUnityMenus()
+        {
+            if (TournamentSession.IsActive)
+                TournamentSession.Clear();
+
+            TournamentGlobalWaitingRoom.Hide();
+
+            GameBoard.GMode = GameMode.Play;
+
+            foreach (GameConstructor construct in UnityEngine.Object.FindObjectsByType<GameConstructor>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (construct) Destroy(construct.gameObject);
+            }
+
+            string[] hideNames =
+            {
+                "CanvasConstruct",
+                "gConstructor",
+                "ButtonToMap",
+                "Play_Edit_ModeButton",
+                "TournamentPage",
+                "TournamentPremiumWaitingRoom",
+                "WaitingRoom",
+            };
+            foreach (string name in hideNames)
+            {
+                GameObject go = GameObject.Find(name);
+                if (go) Destroy(go);
+            }
+        }
+
+        /// <summary>
+        /// Re-applies GameObjectSet background after the board builds so a stale scene sprite
+        /// cannot leave the old green kit art on screen.
+        /// </summary>
+        private static void ForceGameplayBackground()
+        {
+            GameBoard board = UnityEngine.Object.FindFirstObjectByType<GameBoard>();
+            if (!board || !GameConstructSet.Instance || GameConstructSet.Instance.GOSet == null)
+                return;
+
+            Sprite bg = GameConstructSet.Instance.GOSet.GetBackGround(0);
+            if (bg) board.BackGround = bg;
         }
 
         /// <summary>Counts matched pairs so React Native can post real move counts to the server.</summary>
@@ -158,6 +338,13 @@ namespace Mkey.Shell
             pendingLevel = TournamentSession.SharedGameLevelIndex;
             if (!string.IsNullOrEmpty(levelId) && int.TryParse(levelId, out int parsed))
                 pendingLevel = Mathf.Max(0, parsed);
+
+            // Server-assigned per-room seed so both players build the exact same board. 0 = no seed
+            // (practice / dev) which falls back to the shared default arrangement.
+            pendingSeed = 0;
+            string seedStr = Get(q, "seed", null);
+            if (!string.IsNullOrEmpty(seedStr) && int.TryParse(seedStr, out int parsedSeed))
+                pendingSeed = parsedSeed;
 
             IsActive = true;
             returning = false;

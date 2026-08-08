@@ -1,4 +1,4 @@
-package `fun`.matchiq.app
+package `fun`.wxo.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

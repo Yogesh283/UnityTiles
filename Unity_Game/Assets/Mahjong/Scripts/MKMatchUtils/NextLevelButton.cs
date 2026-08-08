@@ -7,8 +7,6 @@ namespace Mkey
     public class NextLevelButton : MonoBehaviour
     {
         [SerializeField]
-        private int sceneNumber = 1;
-        [SerializeField]
         private Text levelNumber;
         [SerializeField]
         private string prefix = "Level ";
@@ -19,6 +17,7 @@ namespace Mkey
         private LevelConstructSet LCSet { get { return GCSet.GetLevelConstructSet(GameLevelHolder.CurrentLevel); } }
         private GameObjectsSet GOSet { get { return GCSet.GOSet; } }
         private int nextLevel = 0;
+        private bool loading;
         #endregion temp vars
 
         #region regular
@@ -32,12 +31,22 @@ namespace Mkey
 
         public void Click()
         {
+            // Re-entrancy guard: the button was firing every frame and, with a stale scene index,
+            // bouncing off SceneLoader's out-of-range guard in a tight loop.
+            if (loading) return;
+            loading = true;
+
             Tournament.TournamentSession.Clear();
-            GameLevelHolder.CurrentLevel  = nextLevel;
-           // if (LifesHolder.Count <= 0 && !GCSet.UnLimited) { MGui.ShowMessage("Sorry!", "You have no lifes.", 1.5f, () => { MGui.ShowPopUpByDescription("lifeshop"); }); return; }
-            Debug.Log("load scene : " + sceneNumber+ " ;CurrentLevel: " + GameLevelHolder.CurrentLevel);
-            // GameBoard.showMission = true;
-            if (SceneLoader.Instance) SceneLoader.Instance.LoadScene(sceneNumber);
+            GameLevelHolder.CurrentLevel = nextLevel;
+
+            // Menu scenes were dropped from the build — the gameplay scene is the only shipped one.
+            // Advancing a level means reloading it, so always target the real game scene index
+            // instead of the legacy serialized value (which still pointed at the old build index 2).
+            int target = Tournament.TournamentSession.GameSceneIndex;
+            Debug.Log("load scene : " + target + " ;CurrentLevel: " + GameLevelHolder.CurrentLevel);
+
+            if (SceneLoader.Instance) SceneLoader.Instance.LoadScene(target);
+            else loading = false;
         }
     }
 }

@@ -8,7 +8,8 @@ export const WXO_ANDROID_PACKAGE = 'fun.wxo.app';
 export const UNITY_ANDROID_PACKAGE = 'com.matchiq.game';
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? 'https://rmsurveyai.com/api/v1';
-export const WXO_SITE_URL = 'https://rmsurveyai.com/';
+export const WXO_SITE_URL =
+  process.env.EXPO_PUBLIC_SITE_URL ?? 'https://rmsurveyai.com/';
 /** Live match socket lives at the server root, outside the /api/v1 prefix. */
 export const WS_BASE_URL =
   process.env.EXPO_PUBLIC_WS_URL ??

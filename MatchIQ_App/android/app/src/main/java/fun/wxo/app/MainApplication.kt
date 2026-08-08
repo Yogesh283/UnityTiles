@@ -1,4 +1,4 @@
-package `fun`.matchiq.app
+package `fun`.wxo.app
 
 import android.app.Application
 import android.content.res.Configuration

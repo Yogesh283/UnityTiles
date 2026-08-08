@@ -34,9 +34,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="wxo"/>
-        <data android:scheme="matchiq"/>
         <data android:scheme="exp+wxo"/>
-        <data android:scheme="exp+matchiq"/>
       </intent-filter>
       <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>

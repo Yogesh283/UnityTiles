@@ -150,6 +150,10 @@ namespace Mkey
             {
                 Debug.Log("start play mode");
 
+                // Keep the tile board inside the phone screen (between the top HUD and the bottom
+                // boosters) on tall aspect ratios instead of letting it overflow under them.
+                if (!GetComponent<BoardScreenFitter>()) gameObject.AddComponent<BoardScreenFitter>();
+
                 if (gConstructor) DestroyImmediate(gConstructor.gameObject);
 
                 ScoreHolder.Instance.SetAverageScore(scoreController.GetMaxLevelScore(MainGrid.GetTiles().Length / 2));

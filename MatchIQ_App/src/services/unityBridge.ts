@@ -12,6 +12,7 @@ function buildQuery(payload: UnityLaunchPayload): string {
   });
   if (payload.tournamentId) params.set('tournamentId', payload.tournamentId);
   if (payload.levelId) params.set('levelId', payload.levelId);
+  if (payload.seed) params.set('seed', payload.seed);
   return params.toString();
 }
 

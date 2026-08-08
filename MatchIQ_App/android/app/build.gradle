@@ -87,7 +87,10 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'fun.matchiq.app'
+    namespace 'fun.wxo.app'
+    buildFeatures {
+        buildConfig true
+    }
     defaultConfig {
         applicationId 'fun.wxo.app'
         minSdkVersion Math.max(rootProject.ext.minSdkVersion as Integer, 26)
