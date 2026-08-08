@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WXO Wallet — Deposit & Withdraw</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23; --red-dark: #C4161C; --ink: #111; --muted: #6B7280;
+      --line: #ECEEF2; --bg: #FFF; --soft: #F7F8FA;
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif; background: #111; color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    button { border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto; background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5); padding-bottom: 92px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; }
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+      padding: 10px 14px; background: rgba(255,255,255,.96); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; background: var(--soft);
+    }
+    .topbar h1 {
+      text-align: center; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800;
+    }
+
+    .pad { padding: 14px; }
+
+    .bal-card {
+      background: linear-gradient(135deg, #111, #2a0a0c 80%);
+      color: #fff; border-radius: 18px; padding: 18px; margin-bottom: 14px;
+    }
+    .bal-card .label { font-size: 11px; color: rgba(255,255,255,.65); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .bal-card .bal { font-family: Montserrat, sans-serif; font-size: 28px; font-weight: 800; margin: 4px 0 2px; }
+    .bal-card .inr { font-size: 13px; color: #FBBF24; font-weight: 600; }
+
+    .quick {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px;
+    }
+    .quick a {
+      text-align: center; background: var(--soft); border: 1px solid var(--line);
+      border-radius: 14px; padding: 12px 8px; font-size: 11px; font-weight: 700;
+    }
+    .quick a .ico { display: block; font-size: 20px; margin-bottom: 4px; }
+    .quick a.active { background: #FEE2E2; border-color: #FECACA; color: var(--red); }
+
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      background: var(--soft); padding: 4px; border-radius: 14px; margin-bottom: 14px;
+    }
+    .tabs button {
+      padding: 10px; border-radius: 11px; font-weight: 800; font-size: 13px; color: var(--muted);
+    }
+    .tabs button.on { background: #fff; color: var(--red); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+
+    .panel { display: none; }
+    .panel.on { display: block; }
+
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 12px;
+    }
+    .card h2 { font-family: Montserrat, sans-serif; font-size: 14px; font-weight: 800; margin-bottom: 10px; }
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .field input, .field select {
+      width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px;
+      background: var(--soft); outline: none; font-weight: 600;
+    }
+    .field input:focus, .field select:focus { border-color: #FECACA; background: #fff; }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .presets button {
+      padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line);
+      background: #fff; font-size: 12px; font-weight: 700; color: var(--ink);
+    }
+    .presets button:hover { border-color: var(--red); color: var(--red); }
+
+    .btn-red {
+      width: 100%; background: var(--red); color: #fff; border-radius: 12px;
+      padding: 13px; font-weight: 800; font-size: 14px;
+      box-shadow: 0 8px 18px rgba(227,28,35,.3);
+    }
+    .btn-red:disabled { opacity: .55; cursor: not-allowed; }
+    .hint { font-size: 11px; color: var(--muted); line-height: 1.45; margin-top: 10px; }
+    .note {
+      background: #FFF8E7; border: 1px solid #F5E0A8; border-radius: 12px;
+      padding: 10px 12px; font-size: 11px; color: #8B6914; line-height: 1.45; margin-bottom: 12px;
+    }
+    .note strong { color: #111; }
+
+    .tx h3 {
+      font-family: Montserrat, sans-serif; font-size: 13px; font-weight: 800;
+      margin: 8px 0 10px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .tx-item {
+      display: flex; justify-content: space-between; gap: 8px; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12px;
+    }
+    .tx-item:last-child { border-bottom: 0; }
+    .tx-item b { font-weight: 800; }
+    .tx-item .up { color: #16A34A; }
+    .tx-item .down { color: var(--red); }
+    .tx-item span { color: var(--muted); font-size: 11px; }
+
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px;
+    }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0; pointer-events: none;
+      transition: .25s var(--ease);
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="icon-btn" href="/" aria-label="Back">←</a>
+      <h1>Wallet</h1>
+      <a class="icon-btn" href="/swap.html" title="Swap" aria-label="Swap">⇄</a>
+    </header>
+
+    <div class="pad">
+      <section class="bal-card">
+        <p class="label">Available Balance · All games</p>
+        <p class="bal" id="balText">1,250 WXO</p>
+        <p class="inr" id="inrText">≈ ₹1,250.00 · 1 Coin = ₹1</p>
+      </section>
+
+      <div class="quick">
+        <a class="active" href="/wallet.html#deposit"><span class="ico">↓</span>Deposit</a>
+        <a href="/wallet.html#withdraw"><span class="ico">↑</span>Withdraw</a>
+        <a href="/swap.html"><span class="ico">⇄</span>Swap</a>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="on" id="tabDeposit" data-tab="deposit">Deposit</button>
+        <button type="button" id="tabWithdraw" data-tab="withdraw">Withdraw</button>
+      </div>
+
+      <!-- DEPOSIT -->
+      <div class="panel on" id="panel-deposit">
+        <div class="note">Deposit INR to get WXO Coins. <strong>1 WXO = ₹1</strong>. Same coins work in <strong>all games &amp; tournaments</strong>.</div>
+        <div class="card">
+          <h2>Deposit / Buy WXO Coin</h2>
+          <div class="field">
+            <label for="depAmount">Amount (₹)</label>
+            <input id="depAmount" type="number" min="10" step="1" placeholder="Enter amount" value="100" />
+          </div>
+          <div class="presets">
+            <button type="button" data-fill="depAmount" data-val="50">₹50</button>
+            <button type="button" data-fill="depAmount" data-val="100">₹100</button>
+            <button type="button" data-fill="depAmount" data-val="250">₹250</button>
+            <button type="button" data-fill="depAmount" data-val="500">₹500</button>
+            <button type="button" data-fill="depAmount" data-val="1000">₹1,000</button>
+          </div>
+          <div class="field">
+            <label for="depMethod">Payment method</label>
+            <select id="depMethod">
+              <option>UPI</option>
+              <option>Card</option>
+              <option>Net Banking</option>
+              <option>Wallet</option>
+            </select>
+          </div>
+          <p class="hint" id="depPreview">You will receive <strong>100 WXO</strong> coins.</p>
+          <button class="btn-red" type="button" id="btnDeposit" style="margin-top:12px">Deposit Now</button>
+        </div>
+      </div>
+
+      <!-- WITHDRAW -->
+      <div class="panel" id="panel-withdraw">
+        <div class="note">Withdraw eligible earned coins per platform policy. Processing may take time after verification.</div>
+        <div class="card">
+          <h2>Withdraw WXO Coin</h2>
+          <div class="field">
+            <label for="wdAmount">Amount (WXO)</label>
+            <input id="wdAmount" type="number" min="10" step="1" placeholder="Enter coins" value="100" />
+          </div>
+          <div class="presets">
+            <button type="button" data-fill="wdAmount" data-val="50">50</button>
+            <button type="button" data-fill="wdAmount" data-val="100">100</button>
+            <button type="button" data-fill="wdAmount" data-val="250">250</button>
+            <button type="button" data-fill="wdAmount" data-val="500">500</button>
+          </div>
+          <div class="field">
+            <label for="wdMethod">Payout method</label>
+            <select id="wdMethod">
+              <option>UPI</option>
+              <option>Bank Transfer</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="wdDetail">UPI ID / Account</label>
+            <input id="wdDetail" type="text" placeholder="name@upi or account details" />
+          </div>
+          <p class="hint" id="wdPreview">You will receive ≈ <strong>₹100</strong>.</p>
+          <button class="btn-red" type="button" id="btnWithdraw" style="margin-top:12px">Request Withdrawal</button>
+        </div>
+      </div>
+
+      <div class="card tx">
+        <h3>Recent activity</h3>
+        <div id="txList"></div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <a href="/"><span class="ico">🏠</span>Home</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
+      <a href="/match-lobby.html?game=iq-match" aria-label="Play"><span class="play-fab">▶</span></a>
+      <a class="active" href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a href="/swap.html"><span class="ico">⇄</span>Swap</a>
+    </nav>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <script>
+    const RATE = 1;
+    function paintBal() {
+      const b = WXOWallet.getBal();
+      document.getElementById('balText').textContent = b.toLocaleString('en-IN') + ' WXO';
+      document.getElementById('inrText').textContent = '≈ ₹' + (b * RATE).toLocaleString('en-IN', { minimumFractionDigits: 2 }) + ' · 1 Coin = ₹1 · All games';
+    }
+    function paintTx() {
+      const list = document.getElementById('txList');
+      const txs = WXOWallet.getTx();
+      if (!txs.length) {
+        list.innerHTML = '<div class="tx-item"><div><b>No activity yet</b><br /><span>Deposit to play any game</span></div><span>—</span></div>';
+        return;
+      }
+      list.innerHTML = txs.slice(0, 12).map(t => {
+        const cls = t.type === 'in' ? 'up' : 'down';
+        const sign = t.type === 'in' ? '+' : '−';
+        const when = t.at ? new Date(t.at).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) : '';
+        return '<div class="tx-item"><div><b class="' + cls + '">' + sign + t.amount + ' WXO</b><br /><span>' +
+          (t.title || '') + (t.note ? ' · ' + t.note : '') + '</span></div><span>' + when + '</span></div>';
+      }).join('');
+    }
+    paintBal();
+    paintTx();
+    window.addEventListener('wxo:balance', () => { paintBal(); paintTx(); });
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    function showTab(name) {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+      document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-' + name));
+      history.replaceState(null, '', name === 'withdraw' ? '#withdraw' : '#deposit');
+    }
+    function showTabFromHash() {
+      showTab(location.hash === '#withdraw' ? 'withdraw' : 'deposit');
+    }
+    document.getElementById('tabDeposit').onclick = () => showTab('deposit');
+    document.getElementById('tabWithdraw').onclick = () => showTab('withdraw');
+    window.addEventListener('hashchange', showTabFromHash);
+    showTabFromHash();
+
+    document.querySelectorAll('[data-fill]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(btn.dataset.fill).value = btn.dataset.val;
+        updatePreviews();
+      });
+    });
+
+    function updatePreviews() {
+      const dep = Math.max(0, Number(document.getElementById('depAmount').value) || 0);
+      document.getElementById('depPreview').innerHTML =
+        'You will receive <strong>' + dep.toLocaleString('en-IN') + ' WXO</strong> — usable in all games.';
+      const wd = Math.max(0, Number(document.getElementById('wdAmount').value) || 0);
+      document.getElementById('wdPreview').innerHTML =
+        'You will receive ≈ <strong>₹' + (wd * RATE).toLocaleString('en-IN') + '</strong>.';
+    }
+    document.getElementById('depAmount').addEventListener('input', updatePreviews);
+    document.getElementById('wdAmount').addEventListener('input', updatePreviews);
+    updatePreviews();
+
+    /** Money actions belong to a real account, not just this device. */
+    function needsAccount() {
+      if (!window.WXOAuth || WXOAuth.isLoggedIn()) return false;
+      WXOWallet.showPopup({
+        icon: '🔐',
+        title: 'Login required',
+        prize: null,
+        message: 'Create your WXO account to keep coins safe and use them in every game.',
+        okText: 'Login / Register',
+        onOk: () => { location.href = '/login.html?next=' + encodeURIComponent('/wallet.html'); }
+      });
+      return true;
+    }
+
+    document.getElementById('btnDeposit').onclick = () => {
+      if (needsAccount()) return;
+      const amt = Math.floor(Number(document.getElementById('depAmount').value) || 0);
+      const method = document.getElementById('depMethod').value;
+      const res = WXOWallet.deposit(amt, method);
+      if (!res.ok) return toast(res.error);
+      paintBal(); paintTx();
+      WXOWallet.showPopup({
+        icon: '🪙',
+        title: 'Deposit successful',
+        prize: res.amount,
+        message: 'Coins added to your WXO wallet. Use them in IQ Match, Ludo, tournaments — any game on WXO.',
+        okText: 'Play Tournaments',
+        onOk: () => { location.href = '/tournaments.html'; }
+      });
+    };
+
+    document.getElementById('btnWithdraw').onclick = () => {
+      if (needsAccount()) return;
+      const amt = Math.floor(Number(document.getElementById('wdAmount').value) || 0);
+      const detail = document.getElementById('wdDetail').value.trim();
+      if (!detail) return toast('Enter UPI / account details');
+      const method = document.getElementById('wdMethod').value;
+      const res = WXOWallet.withdraw(amt, method);
+      if (!res.ok) return toast(res.error);
+      paintBal(); paintTx();
+      toast('Withdrawal requested · ' + amt + ' WXO');
+    };
+  </script>
+</body>
+</html>

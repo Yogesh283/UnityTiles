@@ -148,22 +148,9 @@ public static class MatchIQAppIconSetup
         Texture2D background,
         Texture2D legacy)
     {
+        _ = legacy;
         var target = NamedBuildTarget.Android;
-        if (!IconsMatch(target, AndroidPlatformIconKind.Adaptive, adaptiveForeground, background))
-            return false;
-
-        return IconsMatchSingle(target, AndroidPlatformIconKind.Legacy, legacy)
-            && IconsMatchSingle(target, AndroidPlatformIconKind.Round, legacy);
-    }
-
-    private static bool IconsMatchSingle(NamedBuildTarget target, PlatformIconKind kind, Texture2D texture)
-    {
-        var icons = PlayerSettings.GetPlatformIcons(target, kind);
-        if (icons == null || icons.Length == 0)
-            return false;
-
-        var textures = icons[0].GetTextures();
-        return textures != null && textures.Length > 0 && TexturesEqual(textures[0], texture);
+        return IconsMatch(target, AndroidPlatformIconKind.Adaptive, adaptiveForeground, background);
     }
 
     private static bool IconsMatch(
@@ -203,8 +190,10 @@ public static class MatchIQAppIconSetup
     {
         var target = NamedBuildTarget.Android;
         SetAllIcons(target, AndroidPlatformIconKind.Adaptive, adaptiveForeground, background);
+#pragma warning disable CS0618 // Legacy/Round still populate older launcher densities in some Unity versions
         SetSingleTextureIcons(target, AndroidPlatformIconKind.Legacy, legacy);
         SetSingleTextureIcons(target, AndroidPlatformIconKind.Round, legacy);
+#pragma warning restore CS0618
     }
 
     internal static void InjectLauncherMipmaps(string unityLibraryGradlePath)
@@ -217,17 +206,49 @@ public static class MatchIQAppIconSetup
             return;
         }
 
-        Texture2D foreground = LoadIconTexture(ForegroundPath);
-        Texture2D background = LoadIconTexture(BackgroundPath);
-        Texture2D legacy = LoadIconTexture(LegacyPath);
+        // Disk load is required for readable pixels in -nographics batchmode.
+        Texture2D foreground = LoadPngFromDisk(ForegroundPath);
+        Texture2D background = LoadPngFromDisk(BackgroundPath);
+        Texture2D legacy = LoadPngFromDisk(LegacyPath);
         if (!foreground || !background || !legacy)
         {
-            Debug.LogError("[Match IQ] Cannot inject launcher mipmaps — icon textures missing.");
+            if (foreground) Object.DestroyImmediate(foreground);
+            if (background) Object.DestroyImmediate(background);
+            if (legacy) Object.DestroyImmediate(legacy);
+            Debug.LogError("[Match IQ] Cannot inject launcher mipmaps — icon PNGs missing on disk.");
             return;
         }
 
-        WriteLauncherMipmaps(launcherRes, foreground, background, legacy);
-        Debug.Log("[Match IQ] Injected launcher mipmap PNGs into " + launcherRes);
+        try
+        {
+            WriteLauncherMipmaps(launcherRes, foreground, background, legacy);
+            Debug.Log(
+                "[Match IQ] Injected launcher mipmap PNGs into " + launcherRes +
+                $" (fg {foreground.width}x{foreground.height}, legacy {legacy.width}x{legacy.height})");
+        }
+        finally
+        {
+            Object.DestroyImmediate(foreground);
+            Object.DestroyImmediate(background);
+            Object.DestroyImmediate(legacy);
+        }
+    }
+
+    private static Texture2D LoadPngFromDisk(string assetPath)
+    {
+        string fullPath = ToAbsoluteAssetPath(assetPath);
+        if (!File.Exists(fullPath))
+            return null;
+
+        byte[] bytes = File.ReadAllBytes(fullPath);
+        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!tex.LoadImage(bytes))
+        {
+            Object.DestroyImmediate(tex);
+            return null;
+        }
+
+        return tex;
     }
 
     private static readonly (string folder, int legacyPx, int adaptivePx)[] DensityBuckets =
@@ -266,17 +287,19 @@ public static class MatchIQAppIconSetup
 
     private static Texture2D ScaleTexture(Texture2D source, int width, int height)
     {
-        var rt = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
-        var previous = RenderTexture.active;
-        Graphics.Blit(source, rt);
-        RenderTexture.active = rt;
-
+        // CPU scale — Graphics.Blit is unreliable / blank in -nographics batchmode builds.
         var result = new Texture2D(width, height, TextureFormat.RGBA32, false);
-        result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-        result.Apply();
+        for (int y = 0; y < height; y++)
+        {
+            float v = height <= 1 ? 0.5f : y / (float)(height - 1);
+            for (int x = 0; x < width; x++)
+            {
+                float u = width <= 1 ? 0.5f : x / (float)(width - 1);
+                result.SetPixel(x, y, source.GetPixelBilinear(u, v));
+            }
+        }
 
-        RenderTexture.active = previous;
-        RenderTexture.ReleaseTemporary(rt);
+        result.Apply();
         return result;
     }
 

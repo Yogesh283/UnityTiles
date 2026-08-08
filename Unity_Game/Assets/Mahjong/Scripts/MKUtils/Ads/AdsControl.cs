@@ -1,4 +1,3 @@
-// #define ADDGADS
 using UnityEngine;
 using System;
 using System.Collections;
@@ -57,7 +56,7 @@ namespace Mkey
         [Header("Banner")]
 #if ADDGADS
         [SerializeField]
-        private bool requestBanner = true;
+        private bool requestBanner = false;
         [SerializeField]
         private AdPosition bannerPosition = AdPosition.Bottom;
 #endif
@@ -72,7 +71,7 @@ namespace Mkey
         private bool requestInterstitial = true;
 #endif
         [SerializeField]
-        private string interstitialAdUnitIdAndroid = "ca-app-pub-3940256099942544/1033173712";
+        private string interstitialAdUnitIdAndroid = "ca-app-pub-3751546762503079/7620996371";
         [SerializeField]
         private string interstitialAdUnitIdIos = "ca-app-pub-3940256099942544/4411468910";
 
@@ -100,6 +99,10 @@ namespace Mkey
         private Action interstitialOpenedCallBack; // MSound.SetSound(false); 
         private Action interstitialClosedCallBack; // MSound.SetSound(true);
         private static string outputMessage = string.Empty;
+        private const int CampaignWinsPerInterstitial = 3;
+        private const float MinimumInterstitialIntervalSeconds = 120f;
+        private int campaignWinsSinceInterstitial;
+        private float lastInterstitialShownAt = float.NegativeInfinity;
         #endregion temp vars
 
         public static AdsControl Instance;
@@ -111,20 +114,53 @@ namespace Mkey
             else
             {
                 Instance = this;
+                DontDestroyOnLoad(gameObject);
             }
+        }
+
+        private void OnEnable()
+        {
+            GameEvents.WinLevelAction += OnCampaignLevelWon;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.WinLevelAction -= OnCampaignLevelWon;
         }
 
         private void Start()
         {
             MobileAds.SetiOSAppPauseOnBackground(true);
+#pragma warning disable CS0618 // Prefer RaiseAdEventsOnUnityMainThread until all callbacks use ExecuteInUpdate
+            MobileAds.RaiseAdEventsOnUnityMainThread = true;
+#pragma warning restore CS0618
+            MobileAds.Initialize(initStatus =>
+            {
+                if (initStatus == null)
+                {
+                    Debug.LogError("[AdMob] SDK initialization failed.");
+                    return;
+                }
 
-            MobileAds.Initialize(initStatus => { }); // new
+                Debug.Log("[AdMob] SDK initialization complete.");
+                if (requestRewardedAds) CreateAndLoadRewardedAd();
+                if (requestInterstitial) RequestInterstitial();
+                if (requestBanner) RequestBanner();
+            });
+        }
 
-            if (requestRewardedAds) CreateAndLoadRewardedAd();
+        private void OnCampaignLevelWon()
+        {
+            if (Tournament.TournamentSession.IsActive) return;
 
-            if (requestInterstitial) RequestInterstitial();
+            campaignWinsSinceInterstitial++;
+            if (campaignWinsSinceInterstitial < CampaignWinsPerInterstitial) return;
+            if (Time.realtimeSinceStartup - lastInterstitialShownAt < MinimumInterstitialIntervalSeconds) return;
 
-            if (requestBanner) RequestBanner();
+            campaignWinsSinceInterstitial = 0;
+            ShowInterstitial(
+                () => SoundMaster.Instance?.ForceStopMusic(),
+                () => SoundMaster.Instance?.PlayCurrentMusic());
         }
 
         private void Update()
@@ -371,6 +407,7 @@ namespace Mkey
                         + ad.GetResponseInfo());
 
               interstitial = ad;
+              RegisterEventHandlers(interstitial);
           });
      
         }
@@ -397,18 +434,28 @@ namespace Mkey
     // Raised when an ad opened full screen content.
     ad.OnAdFullScreenContentOpened += () =>
     {
+        lastInterstitialShownAt = Time.realtimeSinceStartup;
+        interstitialOpenedCallBack?.Invoke();
         Debug.Log("Interstitial ad full screen content opened.");
     };
     // Raised when the ad closed full screen content.
     ad.OnAdFullScreenContentClosed += () =>
     {
+        interstitialClosedCallBack?.Invoke();
         Debug.Log("Interstitial ad full screen content closed.");
+        ad.Destroy();
+        if (interstitial == ad) interstitial = null;
+        RequestInterstitial();
     };
     // Raised when the ad failed to open full screen content.
     ad.OnAdFullScreenContentFailed += (AdError error) =>
     {
         Debug.LogError("Interstitial ad failed to open full screen content " +
                        "with error : " + error);
+        interstitialClosedCallBack?.Invoke();
+        ad.Destroy();
+        if (interstitial == ad) interstitial = null;
+        RequestInterstitial();
     };
 }
 
@@ -432,7 +479,6 @@ namespace Mkey
             {
                 Debug.Log("Showing interstitial ad.");
                 interstitial.Show();
-                StartCoroutine(NewInterstitialRequest());
             }
             else
             {
@@ -522,7 +568,7 @@ namespace Mkey
         [SerializeField]
         private string name = "rewardedad";
         [SerializeField]
-        private string adUnitIdAndroid = "ca-app-pub-3940256099942544/5224354917";  // test
+        private string adUnitIdAndroid = "ca-app-pub-3751546762503079/3842935834";
         [SerializeField]
         private string adUnitIdIOS = "ca-app-pub-3940256099942544/1712485313";      // test
 
@@ -537,7 +583,7 @@ namespace Mkey
         private RewardAd()
         {
             name = "rewardedad";
-            adUnitIdAndroid = "ca-app-pub-3940256099942544/5224354917";
+            adUnitIdAndroid = "ca-app-pub-3751546762503079/3842935834";
             adUnitIdIOS = "ca-app-pub-3940256099942544/5224354917";
         }
 
@@ -596,12 +642,11 @@ namespace Mkey
             if (rewardedAd != null && rewardedAd.CanShowAd())
             {
                 Debug.Log("show loaded video");
-                rewardedAd.Show((rew) => {
+                rewardedAd.Show((reward) => {
+                    rewardCallBack?.Invoke(true, reward.Type, reward.Amount);
 
 #if UNITY_EDITOR
-                    // only for test in unity editor,  prevent double callback
                     Debug.Log("end show loaded test video");
-                    rewardCallBack?.Invoke(true, "test reward receiwed", 1);
 #endif
                 });
             }
@@ -620,7 +665,6 @@ namespace Mkey
                 Debug.Log(String.Format("Rewarded ad paid {0} {1}.",
                     adValue.Value,
                     adValue.CurrencyCode));
-                rewardCallBack?.Invoke(true, adValue.CurrencyCode, adValue.Value);
             };
             // Raised when an impression is recorded for an ad.
             ad.OnAdImpressionRecorded += () =>

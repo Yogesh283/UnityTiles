@@ -4,11 +4,13 @@
       "name": "OpenUPM",
       "url": "https://package.openupm.com",
       "scopes": [
-        "com.heroiclabs"
+        "com.heroiclabs",
+        "com.google"
       ]
     }
   ],
   "dependencies": {
+    "com.google.ads.mobile": "11.2.0",
     "com.heroiclabs.nakama-unity": "3.16.0",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.assistant": "2.13.0-pre.2",

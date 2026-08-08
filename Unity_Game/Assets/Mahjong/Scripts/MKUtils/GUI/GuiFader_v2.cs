@@ -119,8 +119,15 @@ namespace Mkey
 
         private void AlphaFadeIn(float tweenDelay, float tweenTime, EaseAnim ease, Action completeCallBack)
         {
+            if (!EnsureFaderObjects())
+            {
+                completeCallBack?.Invoke();
+                completeCallback_in?.Invoke();
+                return;
+            }
+
             fObjectR.SetAlpha(0f);
-            SimpleTween.Value(gameObject, 0f, 1.0f, tweenTime).SetEase(EaseAnim.EaseInCirc).SetOnUpdate((float val) => { fObjectR.SetAlphaK(val); }).
+            SimpleTween.Value(gameObject, 0f, 1.0f, tweenTime).SetEase(EaseAnim.EaseInCirc).SetOnUpdate((float val) => { fObjectR?.SetAlphaK(val); }).
                 SetDelay(tweenDelay).SetEase(ease).
                 AddCompleteCallBack(() =>
                 {
@@ -131,12 +138,20 @@ namespace Mkey
 
         private void AlphaFadeOut(float tweenDelay, float tweenTime, EaseAnim ease, Action completeCallBack)
         {
+            if (!EnsureFaderObjects())
+            {
+                if (guiMask) guiMask.gameObject.SetActive(false);
+                completeCallBack?.Invoke();
+                completeCallback_out?.Invoke();
+                return;
+            }
+
             fObjectR.SetActive(true);
-            SimpleTween.Value(gameObject, 1.0f, 0.0f, tweenTime).SetEase(EaseAnim.EaseInCirc).SetOnUpdate((float val) => { fObjectR.SetAlphaK(val); }).
+            SimpleTween.Value(gameObject, 1.0f, 0.0f, tweenTime).SetEase(EaseAnim.EaseInCirc).SetOnUpdate((float val) => { fObjectR?.SetAlphaK(val); }).
                 SetDelay(tweenDelay).SetEase(ease).
                 AddCompleteCallBack(() =>
                 {
-                    fObjectR.SetActive(false);
+                    fObjectR?.SetActive(false);
                     if (guiMask) guiMask.gameObject.SetActive(false);
                     completeCallBack?.Invoke();
                     completeCallback_out?.Invoke();
@@ -467,7 +482,7 @@ namespace Mkey
 
         private void SetInitState()
         {
-            if (initialised)
+            if (initialised && fObjectR != null)
             {
                 fObjectR.SetInitState();
             }
@@ -475,6 +490,7 @@ namespace Mkey
 
         private void Initialize()
         {
+            fObjectR = null;
             if (backGround) fObjectR = new FaderObjectsRec(backGround.gameObject);
             if (guiPanel)
             {
@@ -483,7 +499,22 @@ namespace Mkey
                 else
                     fObjectR.Add(new FaderObjectsRec(guiPanel.gameObject));
             }
+            if (fObjectR == null)
+                fObjectR = new FaderObjectsRec(gameObject);
             initialised = true;
+        }
+
+        private bool EnsureFaderObjects()
+        {
+            if (!initialised)
+                Initialize();
+            if (fObjectR == null)
+            {
+                if (guiPanel) fObjectR = new FaderObjectsRec(guiPanel.gameObject);
+                else if (backGround) fObjectR = new FaderObjectsRec(backGround.gameObject);
+                else fObjectR = new FaderObjectsRec(gameObject);
+            }
+            return fObjectR != null;
         }
     }
 

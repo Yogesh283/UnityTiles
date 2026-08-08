@@ -127,6 +127,12 @@ namespace Mkey
             DestroyGrid();
             CreateGameBoard();
             GameLevelHolder.StartLevel();
+            CampaignLevelTimer.Start();
+            if (!Tournament.TournamentSession.IsActive && GMode == GameMode.Play)
+                CampaignTimerHud.Ensure(HandleCampaignTimeUp);
+            else
+                CampaignTimerHud.Hide();
+            if (scoreController) scoreController.ResetCombo();
 
             if (GMode == GameMode.Edit)
             {
@@ -174,6 +180,7 @@ namespace Mkey
                 CollectAction += (s1, s2) =>
                 {
                     ScoreHolder.Add(scoreController.GetMatchScore());
+                    Shell.MatchIQShellBridge.RegisterMove();
                     if (MainGrid.GetTiles().Length == 0) { WinAction?.Invoke(); return; }   // check win 
                     UpdatePossibleMatches();
                     if (possibleMatches.Count == 0) NoMatchesAction?.Invoke();
@@ -209,6 +216,12 @@ namespace Mkey
                         return;
                     }
 
+                    // Launched from Match IQ RN UI — return result via deep link
+                    if (Shell.MatchIQShellBridge.TryHandleCampaignWin())
+                        return;
+
+                    CampaignLevelTimer.Stop();
+                    CampaignTimerHud.Hide();
                     MGui.ShowPopUp(winPrefab);  // show win message
                     MGLevel.PassLevel();        // pass level
                     GameEvents.WinLevelAction?.Invoke();
@@ -643,6 +656,25 @@ namespace Mkey
         public void FailedMatchEventRaise() 
         {
             FailedMatchAction?.Invoke();
+        }
+
+        private void HandleCampaignTimeUp()
+        {
+            if (Tournament.TournamentSession.IsActive) return;
+            if (GMode != GameMode.Play) return;
+
+            SetControlActivity(false, false);
+            CampaignTimerHud.Hide();
+            BreakLevelEventRaise();
+
+            // Launched from the WXO shell — report the loss instead of showing a Unity popup,
+            // the result screen belongs to React Native.
+            if (Shell.MatchIQShellBridge.TryHandleTimeUp())
+                return;
+
+            TimeUpPopup.Show(
+                onHome: () => Shell.MatchIQShellBridge.ReturnToShell(false),
+                onRestart: () => SceneLoader.Instance.ReLoadCurrentScene(true));
         }
     }
 }

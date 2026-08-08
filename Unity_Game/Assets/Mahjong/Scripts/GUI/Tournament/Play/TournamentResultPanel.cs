@@ -160,10 +160,8 @@ namespace Mkey.Tournament
             TournamentSession.Clear();
             gameObject.SetActive(false);
 
-            if (SceneLoader.Instance)
-                SceneLoader.Instance.LoadScene(TournamentSession.TournamentSceneIndex);
-            else
-                SceneManager.LoadScene(TournamentSession.TournamentSceneIndex);
+            // The Unity tournament page is no longer part of the build — exit to the shell.
+            Shell.MatchIQShellBridge.ReturnToShell(false);
         }
     }
 }

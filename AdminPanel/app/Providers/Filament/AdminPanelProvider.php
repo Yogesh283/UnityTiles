@@ -29,7 +29,11 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('Match IQ Admin')
+            ->brandName('WXO Admin')
+            ->brandLogo(asset('images/wxo-logo.png'))
+            ->brandLogoHeight('2.6rem')
+            ->favicon(asset('images/favicon.png'))
+            ->darkMode()
             ->colors([
                 'primary' => Color::Amber,
             ])

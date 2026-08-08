@@ -1,2 +1,2 @@
-a17e478
-Fix duel second-player stuck on match start and tournament back button.
+e30f5f5
+Fix tournament back button, multiplayer sync, and swap tournament page image.

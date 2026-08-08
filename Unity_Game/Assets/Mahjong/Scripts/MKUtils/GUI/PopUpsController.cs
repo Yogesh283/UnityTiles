@@ -147,7 +147,15 @@ namespace Mkey
                 if (closeClip) Sound.PlayClip(0.2f, closeClip);
                 else Sound.SoundPlayCloseWindow(0.2f, null);
             }
-            GetComponent<GuiFader_v2>().FadeOut(0, () =>
+            GuiFader_v2 fader = GetComponent<GuiFader_v2>();
+            if (!fader)
+            {
+                IsVisible = false;
+                CloseEvent?.Invoke(this);
+                return;
+            }
+
+            fader.FadeOut(0, () =>
             {
                 if (this)
                 {

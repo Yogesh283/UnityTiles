@@ -13,9 +13,11 @@ namespace Mkey
         private int maxMatchScore = 40;
 
         private int combo = 0;
+        private int maxCombo = 0;
 
         public int BaseMatchScore { get { return baseMatchScore; } }
-
+        public int CurrentCombo => combo;
+        public int MaxCombo => maxCombo;
 
         private IEnumerator Start()
         {
@@ -23,6 +25,14 @@ namespace Mkey
             while (!GameBoard.Instance) yield return null;
             GameBoard.Instance.CollectAction += CollectMatcEventHandler;
             GameBoard.Instance.FailedMatchAction += FailedMatcEventHandler;
+            GameBoard.Instance.WinAction += OnWin;
+            ResetCombo();
+        }
+
+        public void ResetCombo()
+        {
+            combo = 0;
+            maxCombo = 0;
         }
 
         public int GetMatchScore()
@@ -40,11 +50,17 @@ namespace Mkey
         private void CollectMatcEventHandler(Sprite s1, Sprite s2)
         {
             combo++;
+            if (combo > maxCombo) maxCombo = combo;
         }
 
         private void FailedMatcEventHandler()
         {
             combo = 0;
+        }
+
+        private void OnWin()
+        {
+            // Keep maxCombo for victory UI; current streak can stay.
         }
 
         public int GetMaxLevelScore(int matchesCount)

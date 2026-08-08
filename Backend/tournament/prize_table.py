@@ -31,9 +31,25 @@ def _world_cup_prize(rank: int) -> int:
     return 0
 
 
+def _wxo_room_prize(tournament_id: str, rank: int) -> int | None:
+    """WXO lobby rooms: only rank 1 is paid, and the reward is always 2× the entry fee."""
+    if not tournament_id.startswith("wxo_"):
+        return None
+    if rank != 1:
+        return 0
+    from tournament.catalog import get_tournament
+
+    tournament = get_tournament(tournament_id)
+    return tournament.entry_fee * 2 if tournament else 0
+
+
 def get_prize(tournament_id: str, rank: int) -> int:
     if not tournament_id or rank < 1:
         return 0
+
+    wxo_prize = _wxo_room_prize(tournament_id, rank)
+    if wxo_prize is not None:
+        return wxo_prize
 
     match tournament_id:
         case "duel_1v1":
@@ -75,6 +91,8 @@ def get_prize(tournament_id: str, rank: int) -> int:
 
 
 def get_paid_rank_count(tournament_id: str) -> int:
+    if tournament_id and tournament_id.startswith("wxo_"):
+        return 1
     return {
         "duel_1v1": 1,
         "quick_cup": 3,

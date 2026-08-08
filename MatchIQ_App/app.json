@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "WXO",
+    "slug": "wxo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "wxo",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#111111"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "fun.wxo.app",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["matchiqunity", "matchiq", "wxo"]
+      }
+    },
+    "android": {
+      "package": "fun.wxo.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#111111",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "matchiq",
+              "host": "match-result"
+            },
+            {
+              "scheme": "wxo",
+              "host": "match-result"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-splash-screen",
+      "expo-dev-client",
+      "./plugins/withUnityEmbed.js",
+      "./plugins/withUnityQueries.js"
+    ]
+  }
+}

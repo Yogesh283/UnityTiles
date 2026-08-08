@@ -16,6 +16,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
     display_name: str = "Player"
+    referral_code: str | None = Field(default=None, max_length=16)
 
 
 class LoginRequest(BaseModel):
@@ -26,12 +27,14 @@ class LoginRequest(BaseModel):
 class GuestLoginRequest(BaseModel):
     guest_id: str
     display_name: str = "Guest"
+    referral_code: str | None = Field(default=None, max_length=16)
 
 
 class GoogleLoginRequest(BaseModel):
     google_id: str
     email: EmailStr
     display_name: str
+    referral_code: str | None = Field(default=None, max_length=16)
 
 
 class WalletResponse(BaseModel):

@@ -66,18 +66,29 @@ namespace Mkey
         }
         #endregion regular
 
+        /// <summary>
+        /// Splash, map and tournament scenes were dropped from the build — React Native owns those
+        /// screens. Any request for a scene that no longer ships hands control back to the shell
+        /// instead of throwing at LoadSceneAsync.
+        /// </summary>
+        private static bool IsShippedScene(int scene) =>
+            scene >= 0 && scene < SceneManager.sceneCountInBuildSettings;
+
         public void LoadScene(int scene)
         {
+            if (!IsShippedScene(scene)) { Shell.MatchIQShellBridge.ReturnToShell(false); return; }
             StartCoroutine(AsyncLoadBeaty(scene, null, null));
         }
 
         public void LoadScene(int scene, Action completeCallBack)
         {
+            if (!IsShippedScene(scene)) { Shell.MatchIQShellBridge.ReturnToShell(false); return; }
             StartCoroutine(AsyncLoadBeaty(scene, null, completeCallBack));
         }
 
         public void LoadScene(int scene, Action<float> progresUpdate, Action completeCallBack)
         {
+            if (!IsShippedScene(scene)) { Shell.MatchIQShellBridge.ReturnToShell(false); return; }
             StartCoroutine(AsyncLoadBeaty(scene, progresUpdate, completeCallBack));
         }
 

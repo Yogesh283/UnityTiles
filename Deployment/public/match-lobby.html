@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Match Lobby — WXO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23;
+      --bg: #F7F8FA;
+      --card: #fff;
+      --text: #111;
+      --muted: #6B7280;
+      --line: #ECEEF2;
+      --game: #E31C23;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: 0 0 100px;
+    }
+    .top {
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .back {
+      width: 40px; height: 40px; border-radius: 12px;
+      border: 1px solid var(--line); background: #fff;
+      display: grid; place-items: center; text-decoration: none; color: #111; font-size: 18px;
+    }
+    .top h1 {
+      font-family: Montserrat, sans-serif;
+      font-size: 17px; font-weight: 800; flex: 1;
+    }
+    .bal {
+      font-size: 12px; font-weight: 800; color: #B45309;
+      background: #FFF7ED; padding: 8px 10px; border-radius: 999px;
+    }
+    .hero {
+      margin: 16px;
+      padding: 18px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #111 0%, #2a2a2a 100%);
+      color: #fff;
+    }
+    .hero .tag { font-size: 11px; font-weight: 700; opacity: .7; letter-spacing: .04em; text-transform: uppercase; }
+    .hero h2 { font-family: Montserrat, sans-serif; font-size: 22px; margin: 6px 0 4px; }
+    .hero p { font-size: 13px; opacity: .75; line-height: 1.4; }
+    .rule {
+      margin: 0 16px 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #FFF1F2;
+      border: 1px solid #FECDD3;
+      font-size: 12px;
+      color: #9F1239;
+      line-height: 1.45;
+      font-weight: 600;
+    }
+    .sec {
+      padding: 0 16px 8px;
+      font-family: Montserrat, sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .list { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+    .room {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      align-items: center;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .room:hover, .room.selected {
+      border-color: var(--game);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--game) 18%, transparent);
+    }
+    .room .name { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 15px; }
+    .room .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .room .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .badge {
+      font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 999px;
+      background: #F3F4F6; color: #374151;
+    }
+    .badge.live { background: #FEE2E2; color: #B91C1C; }
+    .badge.free { background: #D1FAE5; color: #047857; }
+    .room .fee { text-align: right; }
+    .room .fee strong {
+      display: block; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800; color: var(--game);
+    }
+    .room .fee span { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .foot {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: #fff; border-top: 1px solid var(--line);
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .foot .sum { font-size: 12px; color: var(--muted); text-align: center; }
+    .foot .sum b { color: #111; }
+    .play {
+      border: 0; border-radius: 14px; padding: 14px;
+      background: var(--game); color: #fff;
+      font-family: Montserrat, sans-serif; font-weight: 800; font-size: 15px;
+      cursor: pointer;
+    }
+    .play:disabled { opacity: .45; cursor: not-allowed; }
+    .soon-note {
+      margin: 16px; padding: 20px; text-align: center; border-radius: 16px;
+      background: #fff; border: 1px dashed var(--line); color: var(--muted);
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="back" href="/" aria-label="Back">←</a>
+    <h1 id="title">Match Lobby</h1>
+    <div class="bal" id="bal">0 WXO</div>
+  </header>
+
+  <section class="hero">
+    <div class="tag" id="engineTag">Tournament lobby</div>
+    <h2 id="gameName">IQ Match</h2>
+    <p id="tagline">Pick players, pay entry, play real Unity. Same wallet for every game.</p>
+  </section>
+
+  <div class="rule">
+    Entry fee is cut from your shared WXO wallet. Winner gets <b>2× entry</b> in WXO coins. Others get 0. One user ID works for all games.
+  </div>
+
+  <div class="sec">Choose room</div>
+  <div class="list" id="rooms"></div>
+  <div class="soon-note" id="soon">This game is coming soon inside the same WXO APK.</div>
+
+  <div class="foot">
+    <div class="sum" id="sum">Select a room to continue</div>
+    <button type="button" class="play" id="playBtn" disabled>Join &amp; Play</button>
+  </div>
+
+  <script src="/assets/wxo-games.js?v=1"></script>
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const gameId = params.get('game') || 'iq-match';
+      const game = WXOGames.getGame(gameId);
+      let selected = null;
+
+      document.documentElement.style.setProperty('--game', game.color || '#E31C23');
+      document.getElementById('title').textContent = game.name + ' Lobby';
+      document.getElementById('gameName').textContent = game.name;
+      document.getElementById('tagline').textContent = game.tagline || '';
+      document.getElementById('engineTag').textContent =
+        game.engine === 'unity' ? 'Real Unity • Same APK' :
+        game.engine === 'soon' ? 'Coming soon' : 'WXO Game';
+
+      function refreshBal() {
+        document.getElementById('bal').textContent =
+          (WXOWallet.getBalance ? WXOWallet.getBalance() : 0).toLocaleString('en-IN') + ' WXO';
+      }
+      refreshBal();
+      window.addEventListener('wxo:balance', refreshBal);
+
+      const list = document.getElementById('rooms');
+      if (game.engine === 'soon') {
+        document.getElementById('soon').style.display = 'block';
+      }
+
+      (game.rooms || []).forEach(function (room) {
+        const prize = WXOGames.winPrize(room.entry);
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'room';
+        el.innerHTML =
+          '<div>' +
+            '<div class="name">' + room.label + '</div>' +
+            '<div class="meta">' + room.players + ' players in room</div>' +
+            '<div class="badges">' +
+              (room.live ? '<span class="badge live">LIVE</span>' : '') +
+              (room.free ? '<span class="badge free">FREE</span>' : '<span class="badge">Paid</span>') +
+            '</div>' +
+          '</div>' +
+          '<div class="fee">' +
+            '<strong>' + (room.free ? 'FREE' : room.entry + ' WXO') + '</strong>' +
+            '<span>Win ' + prize + ' WXO</span>' +
+          '</div>';
+        el.onclick = function () {
+          selected = room;
+          list.querySelectorAll('.room').forEach(function (n) { n.classList.remove('selected'); });
+          el.classList.add('selected');
+          document.getElementById('playBtn').disabled = false;
+          document.getElementById('sum').innerHTML =
+            '<b>' + room.label + '</b> · Entry <b>' + room.entry + '</b> · Win reward <b>' + prize + ' WXO</b>';
+        };
+        list.appendChild(el);
+      });
+
+      document.getElementById('playBtn').onclick = function () {
+        if (!selected) return;
+        if (game.engine === 'soon') {
+          alert(game.name + ' jaldi same WXO APK mein aayega.');
+          return;
+        }
+
+        // Entry fee and rewards need a real account (one ID for all games)
+        if (window.WXOAuth && !WXOAuth.isLoggedIn()) {
+          WXOAuth.requireAuth();
+          return;
+        }
+
+        const entry = selected.entry;
+        const prize = WXOGames.winPrize(entry);
+        const native = !!window.WXO_NATIVE_UNITY;
+
+        // In the app the server charges the entry when it puts you in a room, so the browser
+        // must not touch the balance — otherwise the fee is taken twice.
+        if (entry > 0 && !native) {
+          const spent = WXOWallet.spend(entry, game.name + ' entry', selected.label);
+          if (!spent.ok) {
+            WXOWallet.showPopup({
+              lose: true,
+              icon: '⚠️',
+              title: 'Insufficient WXO',
+              message: spent.error || 'Please deposit first.',
+              okText: 'Open Wallet',
+              onOk: function () { location.href = '/wallet.html'; }
+            });
+            return;
+          }
+          refreshBal();
+        }
+
+        // Browser fallback settles the win locally; the app settles it on the server instead.
+        if (!native) {
+          try {
+            sessionStorage.setItem('wxo_pending_unity', JSON.stringify({
+              matchId: 'm_' + Date.now(),
+              game: game.name,
+              gameId: game.id,
+              entry: entry,
+              prize: prize,
+              players: selected.players,
+              live: !!selected.live,
+              free: !!selected.free,
+              roomId: selected.id,
+              at: Date.now()
+            }));
+          } catch (e) {}
+        }
+
+        // Native WXO APK → server matchmaking + Unity; browser → play.html fallback
+        WXOWallet.openUnityGame({
+          game: game.name,
+          gameId: game.id,
+          roomKey: selected.id,
+          entry: entry,
+          prize: prize,
+          players: selected.players,
+          live: !!selected.live,
+          mode: 'tournament',
+          skipLobby: true
+        });
+      };
+    })();
+  </script>
+</body>
+</html>

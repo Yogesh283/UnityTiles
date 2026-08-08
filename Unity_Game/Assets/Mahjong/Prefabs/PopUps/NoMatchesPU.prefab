@@ -822,7 +822,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: Shuffle
+  m_Text: Continue
 --- !u!1 &5193694494840038463
 GameObject:
   m_ObjectHideFlags: 0
@@ -948,7 +948,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 5900756393566840888}
         m_TargetAssemblyTypeName: Mkey.ShuffleHelper, Assembly-CSharp
-        m_MethodName: Shuffle_click
+        m_MethodName: ContinueWithRewardedAd
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

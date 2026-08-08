@@ -2,163 +2,958 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Match IQ — Real-time Mahjong tournaments. Compete, win prizes, become champion." />
-  <title>Match IQ — Mahjong Tournaments</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WXO — Play. Earn. Win.</title>
+  <meta name="description" content="WXO Tournament Platform — skill games, WXO Coins, live tournaments. 1 WXO Coin = ₹1." />
+  <meta name="theme-color" content="#E31C23" />
+  <meta property="og:title" content="WXO — Play. Earn. Win." />
+  <meta property="og:image" content="https://rmsurveyai.com/assets/wxo-logo.png" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --emerald: #1a2e2c;
-      --emerald-deep: #0f1f1e;
-      --gold: #d4af37;
-      --gold-soft: #e8cc6a;
-      --cream: #f5f0e6;
-      --muted: #b8ad9a;
+      --red: #E31C23;
+      --red-dark: #C4161C;
+      --ink: #111111;
+      --muted: #6B7280;
+      --line: #ECEEF2;
+      --bg: #FFFFFF;
+      --soft: #F7F8FA;
+      --ease: cubic-bezier(.22, 1, .36, 1);
     }
-
-    * { box-sizing: border-box; }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      color: var(--cream);
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212, 175, 55, 0.14), transparent 60%),
-        linear-gradient(180deg, var(--emerald-deep) 0%, var(--emerald) 45%, #243836 100%);
+      font-family: Inter, system-ui, sans-serif;
+      background: #111;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
     }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    button { font: inherit; border: 0; cursor: pointer; background: none; color: inherit; }
 
-    .wrap {
-      max-width: 640px;
+    .app {
+      min-height: 100svh;
+      max-width: 430px;
       margin: 0 auto;
-      padding: 56px 24px 40px;
-      text-align: center;
+      background: var(--bg);
+      position: relative;
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5);
+      padding-bottom: 92px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { max-width: 430px; border-radius: 28px; overflow: hidden; }
     }
 
-    .badge {
-      display: inline-block;
-      font-size: 0.75rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--gold-soft);
-      border: 1px solid rgba(212, 175, 55, 0.45);
-      border-radius: 999px;
-      padding: 6px 14px;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      margin: 0 0 10px;
-      font-size: clamp(2.2rem, 8vw, 3rem);
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      background: linear-gradient(180deg, #fff8e7 0%, var(--gold) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .tagline {
-      margin: 0 0 28px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--gold-soft);
-    }
-
-    .card {
-      text-align: left;
-      background: rgba(0, 0, 0, 0.22);
-      border: 1px solid rgba(212, 175, 55, 0.22);
-      border-radius: 16px;
-      padding: 24px 22px;
-      margin-bottom: 28px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-    }
-
-    .card p {
-      margin: 0 0 14px;
-      color: var(--muted);
-      line-height: 1.65;
-      font-size: 0.98rem;
-    }
-
-    .card p:last-child { margin-bottom: 0; }
-
-    .features {
-      list-style: none;
-      padding: 0;
-      margin: 18px 0 0;
+    /* Header */
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
       display: grid;
-      gap: 10px;
+      grid-template-columns: 40px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: grid; place-items: center; font-size: 18px; color: #222;
+    }
+    .brand {
+      justify-self: center; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 0;
+    }
+    .brand img { width: 36px; height: 36px; object-fit: contain; }
+    .brand .name {
+      font-family: Montserrat, sans-serif; font-weight: 800; font-size: 15px;
+      letter-spacing: .06em; color: var(--red); line-height: 1; margin-top: 1px;
+    }
+    .brand .sub {
+      font-size: 7px; font-weight: 700; letter-spacing: .14em; color: var(--muted);
+      text-transform: uppercase; margin-top: 2px;
+    }
+    .top-actions { display: flex; align-items: center; gap: 6px; }
+    .bell { position: relative; }
+    .bell .dot {
+      position: absolute; top: 6px; right: 7px; width: 7px; height: 7px;
+      background: var(--red); border-radius: 50%; border: 1.5px solid #fff;
+    }
+    .wallet-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #FFF8E7; border: 1px solid #F5E0A8;
+      padding: 4px 4px 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 800; color: #8B6914;
+    }
+    .wallet-chip .plus {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--red);
+      color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 700; line-height: 1;
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #FCA5A5, var(--red));
+      color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 11px;
+      border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      overflow: hidden; flex-shrink: 0;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .pad { padding: 12px 14px 8px; }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      min-height: 210px;
+      background: linear-gradient(115deg, #f8fafc 0%, #eef2f7 40%, #1a1a1c 70%, #2a0a0c 100%);
+      padding: 20px 16px 28px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.08);
+    }
+    .hero img.art {
+      position: absolute; right: -8px; bottom: -12px;
+      width: 55%; max-width: 220px; pointer-events: none;
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,.35));
+    }
+    .hero h1 {
+      position: relative;
+      font-family: Montserrat, sans-serif;
+      font-size: 32px; font-weight: 800; line-height: .95;
+      letter-spacing: -.02em; max-width: 8ch; margin-bottom: 8px;
+    }
+    .hero h1 span { display: block; }
+    .hero h1 .r { color: var(--red); }
+    .hero .sub {
+      position: relative;
+      font-size: 12px; color: #4B5563; max-width: 22ch; line-height: 1.45; margin-bottom: 14px;
+    }
+    .hero-btns { position: relative; display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn-red {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--red); color: #fff; padding: 11px 16px; border-radius: 12px;
+      font-weight: 700; font-size: 13px; box-shadow: 0 8px 18px rgba(227,28,35,.35);
+    }
+    .btn-red:active { background: var(--red-dark); }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff; color: var(--red); border: 1.5px solid var(--red);
+      padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 13px;
+    }
+    .dots {
+      position: absolute; left: 0; right: 0; bottom: 10px;
+      display: flex; justify-content: center; gap: 5px;
+    }
+    .dots i {
+      width: 6px; height: 6px; border-radius: 50%; background: #D1D5DB; display: block;
+    }
+    .dots i.on { background: var(--red); width: 16px; border-radius: 4px; }
+
+    .apk-banner {
+      display: flex; gap: 10px; align-items: center;
+      background: #111; color: #fff; border-radius: 16px; padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+    .apk-banner .txt { flex: 1; min-width: 0; }
+    .apk-banner strong { display: block; font-family: Montserrat, sans-serif; font-size: 13px; font-weight: 800; margin-bottom: 2px; }
+    .apk-banner span { font-size: 11px; color: rgba(255,255,255,.7); line-height: 1.35; }
+    .apk-banner a {
+      flex-shrink: 0; background: var(--red); color: #fff; font-weight: 800; font-size: 12px;
+      padding: 10px 12px; border-radius: 10px; white-space: nowrap;
     }
 
-    .features li {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      color: var(--cream);
-      font-size: 0.95rem;
-      line-height: 1.45;
+    /* Section heads */
+    .sec-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 12px;
+    }
+    .sec-head h2 {
+      font-family: Montserrat, sans-serif; font-size: 14px; font-weight: 800;
+      letter-spacing: .04em; text-transform: uppercase;
+    }
+    .sec-head a { font-size: 12px; font-weight: 700; color: var(--red); }
+
+    /* Top Games — horizontal */
+    .games-scroll {
+      display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
+      margin-bottom: 20px; scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .games-scroll::-webkit-scrollbar { height: 0; }
+    .g-card {
+      flex: 0 0 108px; scroll-snap-align: start;
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.04);
+    }
+    .g-art {
+      height: 88px; background: #111 center/cover no-repeat; position: relative;
+    }
+    .g-art .badge {
+      position: absolute; left: 6px; top: 6px; font-size: 8px; font-weight: 800;
+      padding: 3px 6px; border-radius: 6px; text-transform: uppercase;
+    }
+    .badge.live { background: var(--red); color: #fff; }
+    .badge.soon { background: rgba(0,0,0,.55); color: #fff; }
+    .g-body { padding: 8px; text-align: center; }
+    .g-body h3 {
+      font-family: Montserrat, sans-serif; font-size: 11px; font-weight: 800;
+      margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .g-body .play {
+      display: block; width: 100%; background: var(--red); color: #fff; border-radius: 8px;
+      padding: 6px; font-size: 11px; font-weight: 700; border: 0; cursor: pointer; font: inherit;
+    }
+    .g-body .soon-btn {
+      display: block; background: #F3F4F6; color: #9CA3AF; border-radius: 8px;
+      padding: 6px; font-size: 10px; font-weight: 700;
     }
 
-    .features li::before {
-      content: "◆";
-      color: var(--gold);
-      font-size: 0.65rem;
-      margin-top: 5px;
-      flex-shrink: 0;
+    /* How it works */
+    .how {
+      background: var(--soft); border-radius: 16px; padding: 14px 10px 12px;
+      margin-bottom: 16px; border: 1px solid var(--line);
+    }
+    .how-track {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 2px; overflow-x: auto;
+    }
+    .how-track::-webkit-scrollbar { height: 0; }
+    .how-step {
+      flex: 1; min-width: 58px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      position: relative;
+    }
+    .how-step:not(:last-child)::after {
+      content: "›"; position: absolute; right: -6px; top: 14px;
+      color: #C4C9D4; font-size: 16px; font-weight: 700;
+    }
+    .how-ico {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: #fff; border: 2px solid #FECACA; color: var(--red);
+      display: grid; place-items: center; font-size: 16px;
+      box-shadow: 0 2px 8px rgba(227,28,35,.1);
+    }
+    .how-step span {
+      font-size: 9px; font-weight: 600; color: var(--muted); line-height: 1.25;
     }
 
-    .footer {
-      margin-top: 8px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(212, 175, 55, 0.18);
+    /* Wallet */
+    .wallet {
+      display: flex; align-items: center; gap: 12px;
+      background: #fff; border: 1px solid var(--line); border-radius: 18px;
+      padding: 14px; margin-bottom: 18px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.05);
+    }
+    .wallet .coin {
+      width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+      background: radial-gradient(circle at 35% 30%, #FDE68A, #D4A017 55%, #92400E);
+      display: grid; place-items: center; color: #fff;
+      font-family: Montserrat, sans-serif; font-weight: 800; font-size: 12px;
+      box-shadow: 0 6px 16px rgba(212,160,23,.4); border: 2px solid #FBBF24;
+    }
+    .wallet .info { flex: 1; min-width: 0; }
+    .wallet .label {
+      font-size: 10px; font-weight: 800; letter-spacing: .08em;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .wallet .bal {
+      font-family: Montserrat, sans-serif; font-size: 22px; font-weight: 800; line-height: 1.1;
+    }
+    .wallet .inr { font-size: 12px; color: #B45309; font-weight: 600; }
+    .wallet .acts { display: flex; flex-direction: column; gap: 6px; }
+    .wallet .acts .add {
+      background: var(--red); color: #fff; border-radius: 10px;
+      padding: 8px 12px; font-size: 11px; font-weight: 700; white-space: nowrap; text-align: center;
+    }
+    .wallet .acts .wd {
+      background: #fff; color: var(--ink); border: 1.5px solid var(--line);
+      border-radius: 10px; padding: 7px 12px; font-size: 11px; font-weight: 700;
+      white-space: nowrap; text-align: center;
     }
 
-    .terms-link {
-      display: inline-block;
-      color: var(--gold);
-      font-size: 0.92rem;
-      font-weight: 600;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(212, 175, 55, 0.45);
+    /* Tournaments */
+    .tour-scroll {
+      display: flex; gap: 10px; overflow-x: auto; margin-bottom: 18px;
+      scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
       padding-bottom: 2px;
     }
-
-    .terms-link:hover {
-      color: var(--gold-soft);
-      border-bottom-color: var(--gold-soft);
+    .tour-scroll::-webkit-scrollbar { height: 0; }
+    .t-card {
+      flex: 0 0 168px; scroll-snap-align: start; border-radius: 16px;
+      padding: 12px; color: #fff; min-height: 158px;
+      display: flex; flex-direction: column;
+    }
+    .t-card.daily { background: linear-gradient(160deg, #EF4444, #B91C1C); }
+    .t-card.hourly { background: linear-gradient(160deg, #F59E0B, #C2410C); }
+    .t-card.mega { background: linear-gradient(160deg, #6366F1, #3730A3); }
+    .t-card.vip { background: linear-gradient(160deg, #1F2937, #D4A017); }
+    .t-card .row1 { display: flex; justify-content: space-between; align-items: center; }
+    .t-card .type { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .95; }
+    .t-card .live-tag {
+      font-size: 8px; font-weight: 800; background: rgba(255,255,255,.25);
+      padding: 2px 6px; border-radius: 999px;
+    }
+    .t-card h3 { font-family: Montserrat, sans-serif; font-size: 14px; font-weight: 800; margin: 8px 0 6px; }
+    .t-card .meta { font-size: 10px; opacity: .92; line-height: 1.55; margin-bottom: 8px; }
+    .t-card .join {
+      margin-top: auto; background: #fff; color: #111; text-align: center;
+      border-radius: 10px; padding: 8px; font-weight: 800; font-size: 12px;
     }
 
-    .note {
-      margin-top: 14px;
-      font-size: 0.8rem;
-      color: rgba(184, 173, 154, 0.75);
+    /* Utilities */
+    .util-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px;
     }
+    .util {
+      background: #fff; border: 1px solid var(--line); border-radius: 14px;
+      padding: 12px 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.03);
+    }
+    .util .ico {
+      width: 36px; height: 36px; margin: 0 auto 8px; border-radius: 10px;
+      display: grid; place-items: center; font-size: 16px;
+    }
+    .util.buy .ico { background: #FEE2E2; }
+    .util.earn .ico { background: #DCFCE7; }
+    .util.sell .ico { background: #FEF3C7; }
+    .util h3 { font-size: 11px; font-weight: 800; margin-bottom: 4px; font-family: Montserrat, sans-serif; }
+    .util p { font-size: 9px; color: var(--muted); line-height: 1.35; margin-bottom: 6px; }
+    .util a { font-size: 10px; font-weight: 800; color: var(--red); }
+
+    /* Referral */
+    .referral {
+      display: flex; gap: 12px; align-items: center;
+      background: linear-gradient(135deg, #FFE4E6, #FFF1F2);
+      border: 1px solid #FECDD3; border-radius: 18px; padding: 14px;
+      margin-bottom: 16px;
+    }
+    .referral .illus {
+      width: 64px; height: 64px; border-radius: 16px; flex-shrink: 0;
+      background: linear-gradient(135deg, #FCA5A5, var(--red));
+      display: grid; place-items: center; font-size: 28px;
+    }
+    .referral h3 { font-family: Montserrat, sans-serif; font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+    .referral p { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+    .referral .code-line {
+      font-size: 11px; font-weight: 700; margin-bottom: 8px;
+    }
+    .referral .code-line b {
+      font-family: Montserrat, sans-serif; letter-spacing: .1em; color: var(--red); font-size: 13px;
+    }
+    .ref-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ref-actions button {
+      background: var(--red); color: #fff; border-radius: 10px;
+      padding: 8px 12px; font-size: 11px; font-weight: 700;
+    }
+    .ref-actions button.ghost { background: #111; }
+
+    /* Stats */
+    .stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;
+    }
+    .stat {
+      background: var(--soft); border: 1px solid var(--line); border-radius: 14px;
+      padding: 12px; text-align: center;
+    }
+    .stat .ico { color: var(--red); font-size: 16px; margin-bottom: 4px; }
+    .stat strong {
+      display: block; font-family: Montserrat, sans-serif;
+      font-size: 15px; font-weight: 800; color: var(--ink);
+    }
+    .stat span { font-size: 10px; color: var(--muted); font-weight: 600; }
+
+    /* Extra sections */
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 14px; margin-bottom: 14px;
+    }
+    .card h2 { font-family: Montserrat, sans-serif; font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+    .card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .tags span {
+      font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--soft);
+    }
+    .tags .on { background: #FEE2E2; color: var(--red); font-weight: 700; }
+    .faq details {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px; margin-bottom: 8px;
+    }
+    .faq summary {
+      cursor: pointer; font-weight: 700; font-size: 13px; list-style: none;
+      display: flex; justify-content: space-between;
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; color: var(--red); font-size: 18px; }
+    .faq details[open] summary::after { content: "–"; }
+    .faq p { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+    .site-footer {
+      background: #111; color: #fff; border-radius: 18px; padding: 16px; margin-bottom: 8px;
+    }
+    .site-footer .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .site-footer h4 {
+      font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+      color: #FCA5A5; margin-bottom: 8px;
+    }
+    .site-footer a, .site-footer p {
+      font-size: 12px; color: rgba(255,255,255,.7); display: block; margin-bottom: 5px;
+    }
+    .foot-note {
+      text-align: center; font-size: 10px; color: var(--muted); padding: 8px 0 4px;
+    }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom));
+      z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px;
+    }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; line-height: 1; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px;
+      border: 3px solid #fff;
+    }
+
+    /* Side menu */
+    .menu-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 80;
+      opacity: 0; pointer-events: none; transition: opacity .25s var(--ease);
+    }
+    .menu-overlay.open { opacity: 1; pointer-events: auto; }
+    .side-menu {
+      position: fixed; top: 0; left: 0; bottom: 0; width: min(300px, 86vw); z-index: 90;
+      background: #fff; padding: 16px; transform: translateX(-105%);
+      transition: transform .28s var(--ease); box-shadow: 8px 0 40px rgba(0,0,0,.2);
+      overflow-y: auto;
+    }
+    .side-menu.open { transform: translateX(0); }
+    .side-menu .menu-head {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+    }
+    .side-menu .menu-head strong {
+      font-family: Montserrat, sans-serif; font-weight: 800; color: var(--red);
+    }
+    .side-menu a.m-link {
+      display: block; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px;
+    }
+    .side-menu a.m-link:hover { background: #FEE2E2; color: var(--red); }
+    .menu-ref {
+      margin-top: 14px; padding: 14px; border-radius: 16px;
+      background: linear-gradient(135deg, #FFF1F2, #FEF3C7); border: 1px solid #FECACA;
+    }
+    .menu-ref .label {
+      font-size: 10px; font-weight: 800; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+    }
+    .menu-ref .code {
+      font-family: Montserrat, sans-serif; font-size: 22px; font-weight: 800;
+      letter-spacing: .12em; color: var(--red); margin-bottom: 8px;
+    }
+    .menu-ref .link-box {
+      font-size: 11px; word-break: break-all; background: #fff;
+      border: 1px solid var(--line); border-radius: 10px; padding: 8px; color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .menu-ref .row { display: flex; gap: 6px; }
+    .menu-ref .row button {
+      flex: 1; background: var(--red); color: #fff; border-radius: 10px;
+      padding: 9px; font-weight: 700; font-size: 11px;
+    }
+    .menu-ref .row button.ghost { background: #111; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%) translateY(12px);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0;
+      pointer-events: none; transition: .25s var(--ease); white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <span class="badge">Mobile Mahjong Game</span>
-    <h1>Match IQ</h1>
-    <p class="tagline">Compete • Win • Become Champion</p>
+  <div class="app">
+    <div class="menu-overlay" id="menuOverlay" hidden></div>
+    <aside class="side-menu" id="sideMenu" aria-hidden="true">
+      <div class="menu-head">
+        <strong>WXO Menu</strong>
+        <button class="icon-btn" type="button" id="menuClose" aria-label="Close">✕</button>
+      </div>
+      <a class="m-link" href="#top" data-close-menu>Home</a>
+      <a class="m-link" href="#games" data-close-menu>Games</a>
+      <a class="m-link" href="/tournaments.html" data-close-menu>Tournaments</a>
+      <a class="m-link" href="#referral" data-close-menu>Referral</a>
+      <a class="m-link" href="/wallet.html" data-close-menu>Wallet</a>
+      <a class="m-link" href="/swap.html" data-close-menu>Swap</a>
+      <a class="m-link" href="/profile.html" data-close-menu>Profile</a>
+      <a class="m-link" href="#faq" data-close-menu>FAQ</a>
+      <a class="m-link" href="/login.html" id="menuAuthLink" data-close-menu>Login / Register</a>
+      <div class="menu-ref">
+        <div class="label">Your referral code</div>
+        <div class="code" id="menuRefCode">————</div>
+        <div class="link-box" id="menuRefLink">https://rmsurveyai.com/?ref=</div>
+        <div class="row">
+          <button type="button" data-copy="code">Copy Code</button>
+          <button type="button" class="ghost" data-copy="link">Copy Link</button>
+        </div>
+      </div>
+    </aside>
 
-    <div class="card">
-      <p>
-        Match IQ is a skill-based Mahjong tournament game. Join live rooms, climb the board,
-        and compete for in-game prizes in fast-paced duels and multi-player events.
-      </p>
-      <ul class="features">
-        <li>1 vs 1 duels and large tournament brackets</li>
-        <li>Real-time matchmaking and live leaderboards</li>
-        <li>Entry fees, prize pools, and fair-play match rules</li>
-        <li>Download on Android — play anywhere, anytime</li>
-      </ul>
+    <header class="topbar">
+      <button class="icon-btn" type="button" id="menuOpen" aria-label="Menu">☰</button>
+      <a class="brand" href="#top">
+        <img src="/assets/wxo-logo.png" alt="WXO" />
+        <span class="name">WXO</span>
+        <span class="sub">Tournament Platform</span>
+      </a>
+      <div class="top-actions">
+        <button class="icon-btn bell" type="button" id="btnBell" aria-label="Notifications">🔔<span class="dot"></span></button>
+        <a class="wallet-chip" href="/wallet.html">🪙 <span data-wxo-balance>0</span> <span class="plus">+</span></a>
+        <a class="avatar" id="navAvatar" href="/profile.html" aria-label="My Profile" title="My Profile">WX</a>
+      </div>
+    </header>
+
+    <div class="pad" id="top">
+      <!-- 1. HERO -->
+      <section class="hero">
+        <img class="art" src="/assets/wxo-hero-banner.png" alt="" />
+        <h1><span class="r">PLAY.</span><span>EARN.</span><span>WIN.</span></h1>
+        <p class="sub">Compete in skill-based tournaments, earn WXO Coins and win exciting rewards.</p>
+        <div class="hero-btns">
+          <button type="button" class="btn-red" id="btnPlayUnity">▶ Play Game</button>
+          <a class="btn-outline" href="/wallet.html#deposit">🛒 Buy WXO Coin</a>
+        </div>
+        <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
+      </section>
+
+      <div class="apk-banner" id="apkBanner">
+        <div class="txt">
+          <strong>WXO App (website as APK)</strong>
+          <span>Install once. Wallet, games, tournaments &amp; referral — sab isi APK me chalenge.</span>
+        </div>
+        <a href="/WXO-release.apk" download>Download</a>
+      </div>
+
+      <!-- 2. TOP GAMES -->
+      <section id="games">
+        <div class="sec-head">
+          <h2>Top Games</h2>
+          <a href="/match-lobby.html?game=iq-match">View All</a>
+        </div>
+        <div class="games-scroll">
+          <article class="g-card">
+            <div class="g-art" style="background-image:linear-gradient(135deg,#0f766e,#134e4a),url('/assets/matchiq-logo.png');background-size:cover,42px;background-position:center,right 6px bottom 6px;background-repeat:no-repeat">
+              <span class="badge live">Live</span>
+            </div>
+            <div class="g-body"><h3>IQ Match</h3>
+              <button type="button" class="play" data-unity-real data-game="IQ Match" data-entry="0" data-prize="100">Play</button>
+            </div>
+          </article>
+          <article class="g-card">
+            <div class="g-art" style="background-image:url('/assets/banner-ludo.png')"><span class="badge live">Live</span></div>
+            <div class="g-body"><h3>Ludo</h3><button type="button" class="play" data-play data-game="Ludo" data-entry="10" data-prize="80">Play</button></div>
+          </article>
+          <article class="g-card">
+            <div class="g-art" style="background:linear-gradient(135deg,#1e293b,#334155)"><span class="badge soon">Soon</span></div>
+            <div class="g-body"><h3>Chess</h3><span class="soon-btn">Coming Soon</span></div>
+          </article>
+          <article class="g-card">
+            <div class="g-art" style="background-image:url('/assets/banner-racing.png')"><span class="badge soon">Soon</span></div>
+            <div class="g-body"><h3>Car Racing</h3><span class="soon-btn">Coming Soon</span></div>
+          </article>
+          <article class="g-card">
+            <div class="g-art" style="background-image:url('/assets/banner-carrom.png')"><span class="badge soon">Soon</span></div>
+            <div class="g-body"><h3>Carrom</h3><span class="soon-btn">Coming Soon</span></div>
+          </article>
+          <article class="g-card">
+            <div class="g-art" style="background:linear-gradient(135deg,#7c3aed,#4c1d95)"><span class="badge soon">Soon</span></div>
+            <div class="g-body"><h3>Puzzle Clash</h3><span class="soon-btn">Coming Soon</span></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 3. HOW IT WORKS -->
+      <section id="how">
+        <div class="sec-head">
+          <h2>How It Works</h2>
+          <a href="#faq">View All</a>
+        </div>
+        <div class="how">
+          <div class="how-track">
+            <div class="how-step"><div class="how-ico">👤+</div><span>Create Account</span></div>
+            <div class="how-step"><div class="how-ico">🪙</div><span>Buy / Earn Coins</span></div>
+            <div class="how-step"><div class="how-ico">🎮</div><span>Choose Game</span></div>
+            <div class="how-step"><div class="how-ico">🏆</div><span>Join Tournament</span></div>
+            <div class="how-step"><div class="how-ico">🎁</div><span>Win &amp; Earn</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. WALLET -->
+      <section class="wallet" id="wallet">
+        <div class="coin">WXO</div>
+        <div class="info">
+          <p class="label">WXO Wallet · All games</p>
+          <p class="bal" data-wxo-balance-label>0 WXO</p>
+          <p class="inr">1 Coin = ₹1 · Deposit once, play any game</p>
+        </div>
+        <div class="acts">
+          <a class="add" href="/wallet.html#deposit">+ Add Coins</a>
+          <a class="wd" href="/wallet.html#withdraw">Withdraw</a>
+        </div>
+      </section>
+
+      <!-- 5. LIVE TOURNAMENTS -->
+      <section id="tournaments">
+        <div class="sec-head">
+          <h2>Live Tournaments</h2>
+          <a href="/tournaments.html">View All</a>
+        </div>
+        <div class="tour-scroll">
+          <article class="t-card daily">
+            <div class="row1"><span class="type">Daily</span><span class="live-tag">● LIVE</span></div>
+            <h3>Daily Cup</h3>
+            <p class="meta">Prize 1,000 WXO<br />120 / 256 players<br />⏱ 02:14:08</p>
+            <a class="join" href="/tournaments.html#daily">Join Now</a>
+          </article>
+          <article class="t-card hourly">
+            <div class="row1"><span class="type">Hourly</span><span class="live-tag">● LIVE</span></div>
+            <h3>Speed Round</h3>
+            <p class="meta">Prize 500 WXO<br />48 / 64 players<br />⏱ 00:41:22</p>
+            <a class="join" href="/tournaments.html#hourly">Join Now</a>
+          </article>
+          <article class="t-card mega">
+            <div class="row1"><span class="type">Mega</span></div>
+            <h3>Mega Bracket</h3>
+            <p class="meta">Prize 10,000 WXO<br />200 / 256 players<br />Starts 08:00 PM</p>
+            <a class="join" href="/tournaments.html#mega">Join Now</a>
+          </article>
+          <article class="t-card vip">
+            <div class="row1"><span class="type">VIP</span></div>
+            <h3>VIP Arena</h3>
+            <p class="meta">Prize 25,000 WXO<br />Invite only<br />1 Day Left</p>
+            <a class="join" href="/tournaments.html#vip">Join Now</a>
+          </article>
+        </div>
+      </section>
+
+      <!-- 6. BUY / EARN / SELL -->
+      <section class="util-row" id="utilities">
+        <article class="util buy">
+          <div class="ico">🛒</div>
+          <h3>Buy WXO Coin</h3>
+          <p>Instant wallet credit</p>
+          <a href="/wallet.html#deposit">Buy Now →</a>
+        </article>
+        <article class="util earn">
+          <div class="ico">🎁</div>
+          <h3>Earn WXO Coin</h3>
+          <p>Win &amp; referrals</p>
+          <a href="#referral">Earn Now →</a>
+        </article>
+        <article class="util sell">
+          <div class="ico">⇄</div>
+          <h3>Sell WXO Coin</h3>
+          <p>Fast withdrawal</p>
+          <a href="/wallet.html#withdraw">Sell Now →</a>
+        </article>
+      </section>
+
+      <!-- 7. REFERRAL -->
+      <section class="referral" id="referral">
+        <div class="illus">🤝</div>
+        <div style="flex:1;min-width:0">
+          <h3>Invite Friends &amp; Earn WXO Coins</h3>
+          <p>Refer friends and earn unlimited rewards when they join tournaments.</p>
+          <p class="code-line">Your code: <b id="pageRefCode">————</b></p>
+          <div class="ref-actions">
+            <button type="button" data-copy="code">Copy Code</button>
+            <button type="button" class="ghost" data-copy="link">Copy Link</button>
+            <button type="button" class="ghost" data-copy="share">Invite Now</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. STATS -->
+      <section class="stats" id="rewards">
+        <div class="stat"><div class="ico">👥</div><strong data-count="2568450">0</strong><span>Total Players</span></div>
+        <div class="stat"><div class="ico">🏆</div><strong data-count="7540230">0</strong><span>Tournaments Played</span></div>
+        <div class="stat"><div class="ico">🪙</div><strong data-count="1245600">0</strong><span>WXO Coins Distributed</span></div>
+        <div class="stat"><div class="ico">😊</div><strong data-count="865230">0</strong><span>Happy Winners</span></div>
+      </section>
+
+      <!-- Extra: About + FAQ -->
+      <section class="card" id="about">
+        <h2>About WXO</h2>
+        <p>WXO is a complete tournament gaming ecosystem — not a single game. One wallet, one coin (1 WXO = ₹1), multiple competitive titles.</p>
+        <div class="tags">
+          <span class="on">IQ Match</span><span class="on">Ludo</span>
+          <span>Chess</span><span>Racing</span><span>Carrom</span><span>More…</span>
+        </div>
+      </section>
+
+      <section class="faq" id="faq">
+        <div class="sec-head"><h2>FAQ</h2></div>
+        <details><summary>How to buy WXO Coin?</summary><p>Open Wallet → Add Coins. 1 Coin = ₹1. Coins credit instantly after payment.</p></details>
+        <details><summary>How to earn WXO Coin?</summary><p>Win tournaments, join events, and earn via your referral code when friends play.</p></details>
+        <details><summary>How does referral work?</summary><p>Share your code or link. When invited players join tournaments, you earn WXO Coin rewards.</p></details>
+        <details><summary>How can I sell eligible coins?</summary><p>Eligible earned coins can be withdrawn per platform policy with secure settlement.</p></details>
+      </section>
+
+      <footer class="site-footer" id="footer">
+        <div class="cols">
+          <div>
+            <h4>Company</h4>
+            <a href="#about">About</a>
+            <a href="#games">Games</a>
+            <a href="/tournaments.html">Tournaments</a>
+            <a href="#referral">Referral</a>
+          </div>
+          <div>
+            <h4>Support</h4>
+            <a href="#faq">FAQ</a>
+            <a href="https://api.matchiq.fun/legal/terms.html">Terms</a>
+            <a href="https://api.matchiq.fun/legal/privacy.html">Privacy</a>
+            <a href="mailto:support@rmsurveyai.com">Contact</a>
+          </div>
+        </div>
+      </footer>
+      <p class="foot-note">© WXO · 1 WXO Coin = ₹1 · Play responsibly</p>
     </div>
 
-    <div class="footer">
-      <a class="terms-link" href="https://api.matchiq.fun/legal/terms.html">Terms &amp; Conditions</a>
-      <p class="note">© Match IQ. For gameplay support, use the in-app help section.</p>
-    </div>
+    <nav class="bottom-nav" aria-label="Primary">
+      <a class="active" href="#top"><span class="ico">🏠</span>Home</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
+      <a href="#" id="fabUnity" aria-label="Play Unity"><span class="play-fab">▶</span></a>
+      <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a href="/swap.html"><span class="ico">⇄</span>Swap</a>
+    </nav>
   </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <script>
+    const ORIGIN = location.origin || 'https://rmsurveyai.com';
+    function makeCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let s = 'WXO';
+      for (let i = 0; i < 5; i++) s += chars[Math.floor(Math.random() * chars.length)];
+      return s;
+    }
+    function getMyCode() {
+      let code = localStorage.getItem('wxo_ref_code');
+      if (!code) { code = makeCode(); localStorage.setItem('wxo_ref_code', code); }
+      return code.toUpperCase();
+    }
+    const myCode = getMyCode();
+    const myLink = ORIGIN + '/?ref=' + encodeURIComponent(myCode);
+
+    const incoming = (new URLSearchParams(location.search).get('ref') || '').toUpperCase().trim();
+    if (incoming && incoming !== myCode) localStorage.setItem('wxo_referred_by', incoming);
+
+    function paintReferral() {
+      const codeEl = document.getElementById('pageRefCode');
+      const menuCode = document.getElementById('menuRefCode');
+      const menuLink = document.getElementById('menuRefLink');
+      if (codeEl) codeEl.textContent = myCode;
+      if (menuCode) menuCode.textContent = myCode;
+      if (menuLink) menuLink.textContent = myLink;
+    }
+    paintReferral();
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+    }
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); return true; }
+      catch {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { return document.execCommand('copy'); } catch { return false; }
+        finally { ta.remove(); }
+      }
+    }
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-copy]');
+      if (!btn) return;
+      const kind = btn.getAttribute('data-copy');
+      if (kind === 'code') { if (await copyText(myCode)) toast('Referral code copied'); }
+      else if (kind === 'link') { if (await copyText(myLink)) toast('Referral link copied'); }
+      else if (kind === 'share') {
+        const msg = 'Join WXO with my code ' + myCode + ' — Play. Earn. Win.\n' + myLink;
+        if (navigator.share) {
+          try { await navigator.share({ title: 'WXO Invite', text: msg, url: myLink }); } catch (_) {}
+        } else if (await copyText(msg)) toast('Invite message copied');
+      }
+    });
+
+    const sideMenu = document.getElementById('sideMenu');
+    const overlay = document.getElementById('menuOverlay');
+    function openMenu() {
+      overlay.hidden = false;
+      requestAnimationFrame(() => {
+        sideMenu.classList.add('open');
+        overlay.classList.add('open');
+        sideMenu.setAttribute('aria-hidden', 'false');
+      });
+    }
+    function closeMenu() {
+      sideMenu.classList.remove('open');
+      overlay.classList.remove('open');
+      sideMenu.setAttribute('aria-hidden', 'true');
+      setTimeout(() => { overlay.hidden = true; }, 280);
+    }
+    document.getElementById('menuOpen').addEventListener('click', openMenu);
+    document.getElementById('menuClose').addEventListener('click', closeMenu);
+    overlay.addEventListener('click', closeMenu);
+    document.querySelectorAll('[data-close-menu]').forEach(a => a.addEventListener('click', closeMenu));
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.querySelectorAll('[data-count]').forEach(el => {
+          const target = +el.dataset.count;
+          const start = performance.now();
+          const tick = (now) => {
+            const p = Math.min(1, (now - start) / 1400);
+            el.textContent = Math.floor(target * (1 - Math.pow(1 - p, 3))).toLocaleString('en-IN') + '+';
+            if (p < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        });
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.25 });
+    const rewards = document.getElementById('rewards');
+    if (rewards) io.observe(rewards);
+
+    // Every Play button lands in the shared match lobby (rooms + entry fee)
+    function goToLobby(game) {
+      const name = game || 'IQ Match';
+      if (window.WXOWallet) {
+        WXOWallet.openMatchLobby({ game: name });
+        return;
+      }
+      const id = /ludo/i.test(name) ? 'ludo' : /rac/i.test(name) ? 'racing' : 'iq-match';
+      location.href = '/match-lobby.html?game=' + encodeURIComponent(id);
+    }
+
+    document.addEventListener('click', (e) => {
+      const playBtn = e.target.closest('[data-unity-real], [data-play]');
+      if (!playBtn) return;
+      e.preventDefault();
+      goToLobby(playBtn.dataset.game);
+    });
+
+    const fab = document.getElementById('fabUnity');
+    if (fab) {
+      fab.addEventListener('click', (e) => {
+        e.preventDefault();
+        goToLobby('IQ Match');
+      });
+    }
+
+    const btnPlayUnity = document.getElementById('btnPlayUnity');
+    if (btnPlayUnity) {
+      btnPlayUnity.addEventListener('click', (e) => {
+        e.preventDefault();
+        goToLobby('IQ Match');
+      });
+    }
+
+    const btnBell = document.getElementById('btnBell');
+    if (btnBell) {
+      btnBell.addEventListener('click', () => {
+        const dot = btnBell.querySelector('.dot');
+        if (dot) dot.style.display = 'none';
+        if (window.WXOWallet && WXOWallet.showPopup) {
+          const account = window.WXOAuth ? WXOAuth.getUser() : null;
+          WXOWallet.showPopup({
+            icon: '🔔',
+            title: 'Notifications',
+            prize: null,
+            message: account
+              ? 'No new alerts. Tournament results and wallet updates will show up here.'
+              : 'Login to get tournament results, wallet updates and reward alerts.',
+            okText: account ? 'OK' : 'Login',
+            onOk: () => { if (!account) location.href = '/login.html'; }
+          });
+        } else {
+          toast('No new notifications');
+        }
+      });
+    }
+
+    window.WXO = {
+      apiBase: 'https://rmsurveyai.com/api/v1',
+      apk: null,
+      playUrl: '/match-lobby.html?game=iq-match',
+      referralCode: myCode,
+      referralLink: myLink,
+      referredBy: localStorage.getItem('wxo_referred_by') || null
+    };
+
+    // Top-nav avatar + menu auth link reflect the logged-in WXO account
+    function paintNavProfile() {
+      try {
+        const p = JSON.parse(localStorage.getItem('wxo_profile_v1') || '{}');
+        const account = window.WXOAuth ? WXOAuth.getUser() : null;
+        const name = p.name || (account && account.name) || '';
+        const el = document.getElementById('navAvatar');
+        const authLink = document.getElementById('menuAuthLink');
+
+        if (authLink) {
+          if (account) {
+            authLink.textContent = 'Logout (' + (account.name || 'Player') + ')';
+            authLink.href = '#';
+            authLink.onclick = (e) => {
+              e.preventDefault();
+              WXOAuth.logout('/login.html');
+            };
+          } else {
+            authLink.textContent = 'Login / Register';
+            authLink.href = '/login.html';
+            authLink.onclick = null;
+          }
+        }
+
+        if (!el) return;
+        el.href = account ? '/profile.html' : '/login.html';
+        if (p.photo) {
+          el.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = p.photo;
+          img.alt = name || 'Profile';
+          el.appendChild(img);
+        } else if (name) {
+          const parts = name.trim().split(/\s+/);
+          el.textContent = parts.length > 1
+            ? (parts[0][0] + parts[1][0]).toUpperCase()
+            : parts[0].slice(0, 2).toUpperCase();
+        }
+        if (name) el.title = name;
+      } catch (_) {}
+    }
+    paintNavProfile();
+    window.addEventListener('wxo:auth', paintNavProfile);
+  </script>
 </body>
 </html>

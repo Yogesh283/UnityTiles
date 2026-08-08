@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -12,6 +13,8 @@ public static class MatchIQDevSetup
     private const string ApiConfigPath = "Assets/Mahjong/Resources/Network/ApiConfig.asset";
     private const string BuildInfoPath = "Assets/Mahjong/Resources/MatchIQBuildInfo.txt";
     private const string TournamentScenePath = "Assets/Mahjong/Scenes/3_Tournaments.unity";
+    private const string GameScenePath = "Assets/Mahjong/Scenes/2_Game_Constructor.unity";
+    private const string MapScenePath = "Assets/Mahjong/Scenes/1_Map_Simple.unity";
     private const string SplashLogoPath = "Assets/Mahjong/Resources/Landing/AppLogo.png";
 
     [MenuItem("Match IQ/Local Tournament Testing (PC, no server)", false, 0)]
@@ -102,21 +105,74 @@ public static class MatchIQDevSetup
         EditorApplication.isPlaying = true;
     }
 
+    [MenuItem("Match IQ/Open Game Scene", false, 22)]
+    public static void OpenGameScene()
+    {
+        if (!System.IO.File.Exists(GameScenePath))
+        {
+            Debug.LogError("[Match IQ] Game scene not found: " + GameScenePath);
+            return;
+        }
+
+        if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            EditorSceneManager.OpenScene(GameScenePath);
+    }
+
+    /// <summary>Opens 2_Game_Constructor and starts Play Mode (campaign board).</summary>
+    [MenuItem("Match IQ/Play Game Scene Now", false, 23)]
+    public static void PlayGameScene()
+    {
+        OpenGameScene();
+        EditorApplication.isPlaying = true;
+    }
+
+    [MenuItem("Match IQ/Open Map Scene", false, 24)]
+    public static void OpenMapScene()
+    {
+        if (!System.IO.File.Exists(MapScenePath))
+        {
+            Debug.LogError("[Match IQ] Map scene not found: " + MapScenePath);
+            return;
+        }
+
+        if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            EditorSceneManager.OpenScene(MapScenePath);
+    }
+
+    [MenuItem("Match IQ/Play Map Scene Now", false, 25)]
+    public static void PlayMapScene()
+    {
+        OpenMapScene();
+        EditorApplication.isPlaying = true;
+    }
+
     [MenuItem("Match IQ/Prepare APK Build (production server)", false, 42)]
     public static void PrepareApkBuild()
     {
+        if (!MatchIQPlayStoreBuild.ApplyReleaseSigning())
+        {
+            Debug.LogError("[Match IQ] Release signing not configured — Play Store rejects debug-signed builds.");
+            return;
+        }
+
         ApplyApiConfig(localSimulation: false, useProductionUrl: true);
         ConfigureAndroidHttp(false);
         FixAndroidSplashTexture();
         MatchIQAppIconSetup.ApplyFromMenu();
+        PlayerSettings.SetApplicationIdentifier(
+            NamedBuildTarget.Android,
+            MatchIQPlayStoreBuild.AndroidPackageId);
         string commit = WriteBuildInfoFile();
         Debug.Log(
             "[Match IQ] Ready for Release APK build.\n" +
             "• Development Mode OFF\n" +
             "• Production URL ON\n" +
+            "• Package: " + MatchIQPlayStoreBuild.AndroidPackageId + "\n" +
+            "• Signed: release keystore\n" +
             "• Icons applied\n" +
             "• Build commit embedded: " + commit + "\n" +
-            "• Now File → Build Settings → Build\n" +
+            "• Play Store: use Match IQ → Build Play Store AAB\n" +
+            "• Phone test APK: File → Build Settings → Build\n" +
             "• Verify on phone: adb logcat | findstr \"Match IQ Build\"");
     }
 

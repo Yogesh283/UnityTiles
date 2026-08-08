@@ -8,8 +8,10 @@ namespace Mkey.Tournament
     /// </summary>
     public static class TournamentSession
     {
-        public const int GameSceneIndex = 2;
-        public const int TournamentSceneIndex = 3;
+        // Unity ships gameplay only — splash, map and tournament screens now live in React Native,
+        // so the gameplay scene is the single entry in Build Settings.
+        public const int GameSceneIndex = 0;
+        public const int TournamentSceneIndex = 0;
         /// <summary>Fallback level when no room level is assigned.</summary>
         public const int SharedGameLevelIndex = 14;
 

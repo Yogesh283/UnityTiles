@@ -17,7 +17,6 @@ namespace Mkey.Tournament
         // Canvas reference units (1080×1920) — not screen pixels.
         private const float WaitingPanelWidth = 620f;
         private const float WaitingPanelHeight = 1100f;
-        private const bool PositionDebug = false;
 
         private WarningMessController popup;
         private int lastPlayerCount;
@@ -321,10 +320,12 @@ namespace Mkey.Tournament
             panel.localRotation = Quaternion.identity;
             panel.localScale = Vector3.one;
 
-            if (PositionDebug)
-                LogPositionDebug(root, panel, center);
+#if WAITING_ROOM_POS_DEBUG
+            LogPositionDebug(root, panel, center);
+#endif
         }
 
+#if WAITING_ROOM_POS_DEBUG
         private static void LogPositionDebug(RectTransform root, RectTransform panel, Vector3 targetCenter)
         {
             Vector3[] rootCorners = new Vector3[4];
@@ -343,6 +344,7 @@ namespace Mkey.Tournament
                 $"delta=({delta.x:F1},{delta.y:F1}) " +
                 $"panelAnchored=({panel.anchoredPosition.x:F1},{panel.anchoredPosition.y:F1})");
         }
+#endif
 
         private static void StretchFullScreen(RectTransform rt)
         {

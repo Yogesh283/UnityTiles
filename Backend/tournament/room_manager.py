@@ -8,6 +8,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from database.models import LeaderboardEntry, RoomPlayer, Tournament, TournamentResult, TournamentRoom, User
+from referral.service import ReferralService
 from tournament.broadcast import (
     schedule_countdown,
     schedule_match_finished_broadcast,
@@ -272,6 +273,7 @@ class RoomManager:
 
         if not skip_fee:
             self.wallet.deduct_entry_fee(user_id, tournament.entry_fee, room.id)
+            self._award_referral_points(user_id, tournament, room.id)
 
         player = RoomPlayer(room_id=room.id, user_id=user_id, is_connected=True)
         self.db.add(player)
@@ -280,6 +282,27 @@ class RoomManager:
 
         self._maybe_begin_start_countdown(room, tournament)
         return player
+
+    def _award_referral_points(
+        self,
+        user_id: int,
+        tournament: TournamentDefinition,
+        room_id: str,
+    ) -> None:
+        """WXO 6-level rewards. Never block a join if the payout fails."""
+        try:
+            payer = self.db.query(User).filter(User.id == user_id).first()
+            if not payer:
+                return
+            ReferralService(self.db).award_entry_fee(
+                payer,
+                tournament.entry_fee,
+                room_id,
+                tournament_id=tournament.id,
+            )
+        except Exception:
+            self.db.rollback()
+            logger.exception("Referral payout failed for user %s room %s", user_id, room_id)
 
     def set_player_connected(self, room_id: str, user_id: int, connected: bool) -> None:
         player = (

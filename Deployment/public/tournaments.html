@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WXO Tournaments</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23;
+      --red-dark: #C4161C;
+      --ink: #111111;
+      --muted: #6B7280;
+      --line: #ECEEF2;
+      --bg: #FFFFFF;
+      --soft: #F7F8FA;
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: #111;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto;
+      background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5);
+      padding-bottom: 96px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; }
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+      padding: 10px 14px;
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: grid; place-items: center; font-size: 18px;
+      background: var(--soft); color: #222;
+    }
+    .topbar h1 {
+      text-align: center;
+      font-family: Montserrat, sans-serif;
+      font-size: 16px; font-weight: 800;
+    }
+
+    .pad { padding: 12px 14px; }
+
+    .filters {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filters::-webkit-scrollbar { height: 0; }
+    .filters button {
+      flex: 0 0 auto; padding: 8px 14px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      background: var(--soft); border: 1px solid var(--line);
+    }
+    .filters button.on {
+      background: var(--red); color: #fff; border-color: var(--red);
+      box-shadow: 0 6px 16px rgba(227,28,35,.3);
+    }
+
+    .list { display: flex; flex-direction: column; gap: 12px; }
+
+    .t-card {
+      position: relative; border-radius: 18px; padding: 14px;
+      overflow: hidden; color: #fff;
+      box-shadow: 0 8px 22px rgba(0,0,0,.12);
+      border: 1px solid rgba(255,255,255,.15);
+    }
+    .t-card::after {
+      content: ""; position: absolute; right: -16px; top: 40%;
+      width: 110px; height: 110px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.2), transparent 70%);
+      pointer-events: none;
+    }
+    .t-card.daily { background: linear-gradient(135deg, #EF4444, #B91C1C); }
+    .t-card.hourly { background: linear-gradient(135deg, #F59E0B, #C2410C); }
+    .t-card.weekly { background: linear-gradient(135deg, #0EA5E9, #0369A1); }
+    .t-card.mega { background: linear-gradient(135deg, #8B5CF6, #5B21B6); }
+    .t-card.vip { background: linear-gradient(135deg, #1F2937, #D4A017); }
+    .t-card.special { background: linear-gradient(135deg, #EC4899, #BE185D); }
+
+    .t-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 8px; position: relative; z-index: 1;
+    }
+    .t-type {
+      font-size: 10px; font-weight: 800; letter-spacing: .1em;
+      text-transform: uppercase; opacity: .95;
+    }
+    .live {
+      font-size: 9px; font-weight: 800; letter-spacing: .06em;
+      background: rgba(255,255,255,.22); padding: 4px 8px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .live i {
+      width: 6px; height: 6px; border-radius: 50%; background: #fff;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .35; }
+    }
+
+    .t-card h2 {
+      position: relative; z-index: 1;
+      font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 800;
+      margin: 8px 0 10px;
+    }
+
+    .t-stats {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+    }
+    .t-stats div {
+      background: rgba(255,255,255,.16); border-radius: 12px; padding: 8px 10px;
+    }
+    .t-stats span {
+      display: block; font-size: 9px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; opacity: .85; margin-bottom: 2px;
+    }
+    .t-stats strong { font-family: Montserrat, sans-serif; font-size: 14px; font-weight: 800; }
+
+    .t-meta {
+      position: relative; z-index: 1;
+      display: flex; justify-content: space-between; gap: 8px;
+      font-size: 11px; font-weight: 600; margin-bottom: 12px;
+    }
+    .trophy {
+      position: absolute; right: 12px; top: 42px; font-size: 42px;
+      opacity: .28; z-index: 0;
+    }
+
+    .join {
+      position: relative; z-index: 1; width: 100%;
+      display: block; text-align: center; background: #fff; color: var(--red);
+      border-radius: 12px; padding: 11px; font-weight: 800; font-size: 13px;
+      border: 0; cursor: pointer; font: inherit;
+    }
+    .join:active { background: #FEE2E2; }
+
+    .empty {
+      text-align: center; padding: 40px 16px; color: var(--muted); font-size: 13px;
+      background: var(--soft); border: 1px dashed var(--line); border-radius: 16px;
+    }
+
+    .support {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px;
+    }
+    .support a {
+      background: var(--soft); border: 1px solid var(--line);
+      border-radius: 14px; padding: 12px; text-align: center;
+      font-size: 11px; font-weight: 700; color: var(--ink);
+    }
+    .support .ico { display: block; color: var(--red); font-size: 18px; margin-bottom: 4px; }
+
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px;
+    }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0; pointer-events: none;
+      transition: .25s var(--ease);
+    }
+    .toast.show { opacity: 1; }
+
+    .bal-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #FFF8E7; border: 1px solid #F5E0A8; border-radius: 14px;
+      padding: 10px 12px; margin-bottom: 12px; font-size: 12px; font-weight: 600; color: #8B6914;
+    }
+    .bal-bar b { font-family: Montserrat, sans-serif; color: #111; font-size: 14px; }
+    .bal-bar a { color: var(--red); font-weight: 800; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="icon-btn" href="/" aria-label="Back">←</a>
+      <h1>Tournaments</h1>
+      <button class="icon-btn" type="button" id="btnRefresh" aria-label="Refresh">↻</button>
+    </header>
+
+    <div class="pad">
+      <div class="bal-bar">
+        <span>Wallet · usable in all games</span>
+        <span><b data-wxo-balance-label>0 WXO</b> · <a href="/wallet.html#deposit">Deposit</a></span>
+      </div>
+
+      <div class="filters" id="filters" role="tablist">
+        <button type="button" class="on" data-filter="all">All</button>
+        <button type="button" data-filter="daily">Daily</button>
+        <button type="button" data-filter="hourly">Hourly</button>
+        <button type="button" data-filter="weekly">Weekly</button>
+        <button type="button" data-filter="mega">Mega</button>
+        <button type="button" data-filter="vip">VIP</button>
+      </div>
+
+      <div class="list" id="list">
+        <article class="t-card daily" data-type="daily">
+          <span class="trophy">🏆</span>
+          <div class="t-top">
+            <span class="t-type">Daily Tournament</span>
+            <span class="live"><i></i> LIVE</span>
+          </div>
+          <h2>Daily Cup</h2>
+          <div class="t-stats">
+            <div><span>Prize Pool</span><strong>1,000 WXO</strong></div>
+            <div><span>Entry</span><strong>10 WXO</strong></div>
+          </div>
+          <div class="t-meta">
+            <span>👥 120 / 256</span>
+            <span>⏱ 02:14:08</span>
+          </div>
+          <button type="button" class="join" data-play data-game="Daily Cup" data-entry="10" data-prize="100">Join Now</button>
+        </article>
+
+        <article class="t-card hourly" data-type="hourly">
+          <span class="trophy">🏆</span>
+          <div class="t-top">
+            <span class="t-type">Hourly Tournament</span>
+            <span class="live"><i></i> LIVE</span>
+          </div>
+          <h2>Speed Round</h2>
+          <div class="t-stats">
+            <div><span>Prize Pool</span><strong>500 WXO</strong></div>
+            <div><span>Entry</span><strong>5 WXO</strong></div>
+          </div>
+          <div class="t-meta">
+            <span>👥 80 / 128</span>
+            <span>⏱ 00:41:22</span>
+          </div>
+          <button type="button" class="join" data-play data-game="Speed Round" data-entry="5" data-prize="50">Join Now</button>
+        </article>
+
+        <article class="t-card weekly" data-type="weekly">
+          <span class="trophy">🏆</span>
+          <div class="t-top"><span class="t-type">Weekly Championship</span></div>
+          <h2>Weekend Crown</h2>
+          <div class="t-stats">
+            <div><span>Prize Pool</span><strong>2,500 WXO</strong></div>
+            <div><span>Entry</span><strong>25 WXO</strong></div>
+          </div>
+          <div class="t-meta">
+            <span>👥 96 / 128</span>
+            <span>⏱ 1 Day Left</span>
+          </div>
+          <button type="button" class="join" data-play data-game="Weekend Crown" data-entry="25" data-prize="250">Join Now</button>
+        </article>
+
+        <article class="t-card mega" data-type="mega">
+          <span class="trophy">🏆</span>
+          <div class="t-top"><span class="t-type">Mega Tournament</span></div>
+          <h2>Mega Bracket</h2>
+          <div class="t-stats">
+            <div><span>Prize Pool</span><strong>10,000 WXO</strong></div>
+            <div><span>Entry</span><strong>50 WXO</strong></div>
+          </div>
+          <div class="t-meta">
+            <span>👥 200 / 256</span>
+            <span>Starts 08:00 PM</span>
+          </div>
+          <button type="button" class="join" data-play data-game="Mega Bracket" data-entry="50" data-prize="500">Join Now</button>
+        </article>
+
+        <article class="t-card vip" data-type="vip">
+          <span class="trophy">👑</span>
+          <div class="t-top"><span class="t-type">VIP Tournament</span></div>
+          <h2>VIP Arena</h2>
+          <div class="t-stats">
+            <div><span>Prize Pool</span><strong>25,000 WXO</strong></div>
+            <div><span>Entry</span><strong>100 WXO</strong></div>
+          </div>
+          <div class="t-meta">
+            <span>👥 Invite only</span>
+            <span>⏱ 1 Day Left</span>
+          </div>
+          <button type="button" class="join" data-play data-game="VIP Arena" data-entry="100" data-prize="1000">Join Now</button>
+        </article>
+
+        <article class="t-card special" data-type="mega">
+          <span class="trophy">🎁</span>
+          <div class="t-top">
+            <span class="t-type">Special Event</span>
+            <span class="live"><i></i> LIVE</span>
+          </div>
+          <h2>Festival Rush</h2>
+          <div class="t-stats">
+            <div><span>Prize Pool</span><strong>5,000 WXO</strong></div>
+            <div><span>Entry</span><strong>20 WXO</strong></div>
+          </div>
+          <div class="t-meta">
+            <span>👥 64 / 100</span>
+            <span>⏱ 05:30:00</span>
+          </div>
+          <button type="button" class="join" data-play data-game="Festival Rush" data-entry="20" data-prize="200">Join Now</button>
+        </article>
+      </div>
+
+      <div class="support">
+        <a href="mailto:support@rmsurveyai.com"><span class="ico">🎧</span>24/7 Support</a>
+        <a href="/#faq"><span class="ico">🛡</span>Anti-Cheat</a>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <a href="/"><span class="ico">🏠</span>Home</a>
+      <a class="active" href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
+      <a href="/match-lobby.html?game=iq-match" aria-label="Play"><span class="play-fab">▶</span></a>
+      <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a href="/swap.html"><span class="ico">⇄</span>Swap</a>
+    </nav>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <script>
+    const filters = document.getElementById('filters');
+    const cards = [...document.querySelectorAll('.t-card')];
+
+    function applyFilter(type) {
+      filters.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.filter === type));
+      let shown = 0;
+      cards.forEach(c => {
+        const ok = type === 'all' || c.dataset.type === type;
+        c.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+      });
+      let empty = document.getElementById('empty');
+      if (!shown) {
+        if (!empty) {
+          empty = document.createElement('div');
+          empty.id = 'empty';
+          empty.className = 'empty';
+          empty.textContent = 'No tournaments in this category right now.';
+          document.getElementById('list').appendChild(empty);
+        }
+      } else if (empty) empty.remove();
+    }
+
+    filters.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-filter]');
+      if (!btn) return;
+      applyFilter(btn.dataset.filter);
+    });
+
+    const hash = (location.hash || '').replace('#', '').toLowerCase();
+    if (['daily','hourly','weekly','mega','vip'].includes(hash)) applyFilter(hash);
+
+    document.getElementById('btnRefresh').onclick = () => {
+      const t = document.getElementById('toast');
+      t.textContent = 'Tournaments refreshed';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1500);
+      applyFilter(filters.querySelector('.on')?.dataset.filter || 'all');
+      WXOWallet.paintBalanceElements();
+    };
+
+    // Join = login → entry fee from the shared wallet → straight into the match
+    document.getElementById('list').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-play]');
+      if (!btn) return;
+
+      const game = btn.dataset.game || 'Tournament';
+      const entry = Number(btn.dataset.entry || 0);
+      const prize = Number(btn.dataset.prize || entry * 2);
+
+      if (window.WXOAuth && !WXOAuth.isLoggedIn()) {
+        WXOAuth.requireAuth();
+        return;
+      }
+
+      if (entry > 0) {
+        const spent = WXOWallet.spend(entry, game + ' entry', 'Tournament join');
+        if (!spent.ok) {
+          WXOWallet.showPopup({
+            lose: true,
+            icon: '⚠️',
+            title: 'Insufficient WXO',
+            prize: null,
+            message: spent.error || 'Please deposit first.',
+            okText: 'Open Wallet',
+            onOk: () => { location.href = '/wallet.html#deposit'; }
+          });
+          return;
+        }
+      }
+
+      try {
+        sessionStorage.setItem('wxo_pending_unity', JSON.stringify({
+          matchId: 'trn_' + Date.now(),
+          game: game,
+          gameId: 'iq-match',
+          entry: entry,
+          prize: prize,
+          at: Date.now()
+        }));
+      } catch (_) {}
+
+      WXOWallet.openUnityGame({
+        game: game,
+        gameId: 'iq-match',
+        entry: entry,
+        prize: prize,
+        mode: 'tournament',
+        skipLobby: true
+      });
+    });
+  </script>
+</body>
+</html>

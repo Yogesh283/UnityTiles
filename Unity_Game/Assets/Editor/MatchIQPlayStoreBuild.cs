@@ -1,19 +1,23 @@
 #if UNITY_EDITOR
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
-/// Production Play Store AAB build (api.matchiq.fun, version 1.0.0).
+/// Production Play Store AAB/APK build (api.matchiq.fun, release-signed).
 /// </summary>
 public static class MatchIQPlayStoreBuild
 {
-    public const string AppVersion = "1.0.0";
-    public const int AndroidVersionCode = 1;
+    public const string AppVersion = "1.0.8";
+    public const int AndroidVersionCode = 28;
+    public const string AndroidPackageId = "com.matchiq.game";
+    public const int AndroidTargetSdk = 35;
     private const string OutputDir = "Builds/Android";
+    private const string SigningConfigPath = "Keystore/signing.local.json";
 
-    [MenuItem("Match IQ/Build Production APK (Live api.matchiq.fun v1.0.0)", false, 49)]
+    [MenuItem("Match IQ/Build Production APK (Live api.matchiq.fun v1.0.8)", false, 49)]
     public static void BuildProductionApkFromMenu()
     {
         BuildProductionApk();
@@ -22,6 +26,12 @@ public static class MatchIQPlayStoreBuild
     /// <summary>Called from Unity batchmode: -executeMethod MatchIQPlayStoreBuild.BuildProductionApk</summary>
     public static void BuildProductionApk()
     {
+        if (!ApplyReleaseSigning())
+        {
+            EditorApplication.Exit(1);
+            return;
+        }
+
         ApplyProductionConfig();
         ApplyVersion();
         MatchIQDevSetup.WriteBuildInfoFile();
@@ -69,6 +79,7 @@ public static class MatchIQPlayStoreBuild
             Debug.Log(
                 "[Match IQ] Production APK ready.\n" +
                 "• Version: " + AppVersion + " (" + AndroidVersionCode + ")\n" +
+                "• Signed: release keystore\n" +
                 "• Server: https://api.matchiq.fun\n" +
                 "• File: " + fullPath);
             EditorApplication.Exit(0);
@@ -79,7 +90,7 @@ public static class MatchIQPlayStoreBuild
         EditorApplication.Exit(1);
     }
 
-    [MenuItem("Match IQ/Build Play Store AAB (Production v1.0.0)", false, 50)]
+    [MenuItem("Match IQ/Build Play Store AAB (Production v1.0.8)", false, 50)]
     public static void BuildPlayStoreAabFromMenu()
     {
         BuildPlayStoreAab();
@@ -88,6 +99,12 @@ public static class MatchIQPlayStoreBuild
     /// <summary>Called from Unity batchmode: -executeMethod MatchIQPlayStoreBuild.BuildPlayStoreAab</summary>
     public static void BuildPlayStoreAab()
     {
+        if (!ApplyReleaseSigning())
+        {
+            EditorApplication.Exit(1);
+            return;
+        }
+
         ApplyProductionConfig();
         ApplyVersion();
         MatchIQDevSetup.WriteBuildInfoFile();
@@ -135,6 +152,7 @@ public static class MatchIQPlayStoreBuild
             Debug.Log(
                 "[Match IQ] Play Store AAB ready.\n" +
                 "• Version: " + AppVersion + " (" + AndroidVersionCode + ")\n" +
+                "• Signed: release keystore\n" +
                 "• Server: https://api.matchiq.fun\n" +
                 "• File: " + fullPath);
             EditorApplication.Exit(0);
@@ -143,6 +161,53 @@ public static class MatchIQPlayStoreBuild
 
         Debug.LogError("[Match IQ] AAB build failed: " + report.summary.result);
         EditorApplication.Exit(1);
+    }
+
+    /// <summary>
+    /// Loads Keystore/signing.local.json and configures PlayerSettings for release signing.
+    /// Without this, Unity signs with the debug key and Play Console rejects the upload.
+    /// </summary>
+    public static bool ApplyReleaseSigning()
+    {
+        string configPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", SigningConfigPath));
+        if (!File.Exists(configPath))
+        {
+            Debug.LogError(
+                "[Match IQ] Missing release signing config: " + configPath + "\n" +
+                "See Unity_Game/Keystore/README.md — Play Store rejects debug-signed AABs.");
+            return false;
+        }
+
+        string json = File.ReadAllText(configPath);
+        var cfg = JsonUtility.FromJson<SigningLocalConfig>(json);
+        if (cfg == null
+            || string.IsNullOrWhiteSpace(cfg.keystore)
+            || string.IsNullOrWhiteSpace(cfg.alias)
+            || string.IsNullOrWhiteSpace(cfg.storePassword)
+            || string.IsNullOrWhiteSpace(cfg.keyPassword))
+        {
+            Debug.LogError("[Match IQ] Invalid signing.local.json — need keystore, alias, storePassword, keyPassword.");
+            return false;
+        }
+
+        string keystorePath = cfg.keystore;
+        if (!Path.IsPathRooted(keystorePath))
+            keystorePath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", keystorePath));
+
+        if (!File.Exists(keystorePath))
+        {
+            Debug.LogError("[Match IQ] Keystore file not found: " + keystorePath);
+            return false;
+        }
+
+        PlayerSettings.Android.useCustomKeystore = true;
+        PlayerSettings.Android.keystoreName = keystorePath;
+        PlayerSettings.Android.keystorePass = cfg.storePassword;
+        PlayerSettings.Android.keyaliasName = cfg.alias;
+        PlayerSettings.Android.keyaliasPass = cfg.keyPassword;
+
+        Debug.Log("[Match IQ] Release signing enabled: " + keystorePath + " (alias: " + cfg.alias + ")");
+        return true;
     }
 
     private static void ApplyProductionConfig()
@@ -171,6 +236,8 @@ public static class MatchIQPlayStoreBuild
     {
         PlayerSettings.bundleVersion = AppVersion;
         PlayerSettings.Android.bundleVersionCode = AndroidVersionCode;
+        PlayerSettings.Android.targetSdkVersion = (AndroidSdkVersions)AndroidTargetSdk;
+        PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, AndroidPackageId);
     }
 
     private static string[] GetEnabledScenes()
@@ -218,6 +285,15 @@ public static class MatchIQPlayStoreBuild
             File.WriteAllText(manifestPath, updated);
             AssetDatabase.ImportAsset(manifestPath);
         }
+    }
+
+    [System.Serializable]
+    private class SigningLocalConfig
+    {
+        public string keystore;
+        public string alias;
+        public string storePassword;
+        public string keyPassword;
     }
 }
 #endif

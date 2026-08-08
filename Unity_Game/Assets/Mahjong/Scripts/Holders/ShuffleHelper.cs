@@ -77,5 +77,34 @@ namespace Mkey
 				if (getFreePU) MGui.ShowPopUp(getFreePU);
 			}
 		}
+
+		/// <summary>
+		/// User-initiated rewarded continuation from the No Matches popup.
+		/// The current board is shuffled only after AdMob confirms the reward.
+		/// </summary>
+		public void ContinueWithRewardedAd()
+		{
+			AdsControl ads = AdsControl.Instance;
+			if (!ads)
+			{
+				Debug.LogWarning("[AdMob] Continue ad is unavailable.");
+				return;
+			}
+
+			ads.ShowRewardedAd(
+				"default",
+				() => SoundMaster.Instance?.ForceStopMusic(),
+				() => SoundMaster.Instance?.PlayCurrentMusic(),
+				(rewardEarned, message, amount) =>
+				{
+					if (!rewardEarned) return;
+					if (!GameBoard.Instance) return;
+
+					GameBoard.Instance.ShuffleGrid(null);
+					ApplyShuffleEvent?.Invoke();
+					GameEvents.ApplyShuffleAction?.Invoke();
+					Debug.Log("[AdMob] Continue reward granted; board shuffled.");
+				});
+		}
 	}
 }

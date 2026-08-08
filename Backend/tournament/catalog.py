@@ -91,10 +91,56 @@ TOURNAMENT_CATALOG: list[TournamentDefinition] = [
 ]
 
 
+def _wxo_room(
+    room_id: str,
+    label: str,
+    players: int,
+    entry: int,
+    *,
+    icon: str = "🎯",
+    live: bool = False,
+) -> TournamentDefinition:
+    """
+    WXO shared-wallet room. Winner takes 2× entry, the rest of the pot is platform fee.
+    Room ids mirror the web match lobby so one lobby drives web and app alike.
+    """
+    pool = entry * players
+    winner_take = entry * 2
+    return TournamentDefinition(
+        id=room_id,
+        icon="📺" if live else icon,
+        display_name=label,
+        max_players=players,
+        entry_fee=entry,
+        prize_pool=winner_take,
+        platform_fee=max(0, pool - winner_take),
+        reward_info="Winner takes 2× entry" if entry else "Free practice",
+        waiting_seconds=90 if players > 2 else 300,
+        status_label="OPEN",
+    )
+
+
+# Rooms offered by the WXO match lobby (web + app share these ids)
+WXO_ROOM_CATALOG: list[TournamentDefinition] = [
+    _wxo_room("wxo_free", "Free Practice", 2, 0, icon="🎮"),
+    _wxo_room("wxo_duel2", "2 Players", 2, 25, icon="⚔️"),
+    _wxo_room("wxo_squad5", "5 Players", 5, 50),
+    _wxo_room("wxo_room10", "10 Players", 10, 100),
+    _wxo_room("wxo_room20", "20 Players", 20, 200),
+    _wxo_room("wxo_live5", "Live Stream • 5", 5, 75, live=True),
+    _wxo_room("wxo_live10", "Live Stream • 10", 10, 150, live=True),
+]
+
+TOURNAMENT_CATALOG.extend(WXO_ROOM_CATALOG)
+
+
 def get_tournament(tournament_id: str) -> TournamentDefinition | None:
     return next((t for t in TOURNAMENT_CATALOG if t.id == tournament_id), None)
 
 
 def is_instant_duel(tournament_id: str) -> bool:
-    """1v1 duel: player enters game immediately; match syncs when opponent joins."""
-    return tournament_id == "duel_1v1"
+    """Head-to-head room: player enters game immediately; match syncs when opponent joins."""
+    if tournament_id == "duel_1v1":
+        return True
+    tournament = next((t for t in TOURNAMENT_CATALOG if t.id == tournament_id), None)
+    return bool(tournament and tournament.max_players == 2)

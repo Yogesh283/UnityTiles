@@ -61,26 +61,18 @@ namespace Mkey
             var result = task.Result;
             if (!result.Success || result.Data == null)
             {
-                string error = result.ErrorMessage ?? "Unknown error";
-                Debug.LogWarning("LevelCompletionReward: server reward request failed: " + error);
-                AppMessageDialog.Show(
-                    "Reward failed",
-                    "Could not add tournament coins.\n\n" + error);
+                // Don't block the victory celebration with an error dialog.
+                Debug.LogWarning("LevelCompletionReward: server reward request failed: " +
+                                 (result.ErrorMessage ?? "Unknown error"));
                 yield break;
             }
 
             if (!result.Data.rewardGiven)
             {
-                string server = ApiConfig.Current.ServerRoot;
                 Debug.LogWarning(
                     "LevelCompletionReward: server returned reward_given=false for level " +
                     LevelCompletionRewardService.ToLevelNumber(levelIndex) +
-                    " (API: " + server + ")");
-                AppMessageDialog.Show(
-                    "Reward unavailable",
-                    "Tournament coins were not added.\n\n" +
-                    "API: " + server + "\n\n" +
-                    "Local test: start backend on localhost:8000 and set Use Production Url = OFF in ApiConfig.");
+                    " (API: " + ApiConfig.Current.ServerRoot + ")");
                 yield break;
             }
 
@@ -88,19 +80,7 @@ namespace Mkey
                 CoinsHolder.Instance.SetCount(result.Data.currentWalletBalance);
 
             LevelCoinRewardEffect.Play(result.Data.rewardCoins);
-            ShowRewardPopup(result.Data.currentWalletBalance, result.Data.rewardCoins);
-        }
-
-        private static void ShowRewardPopup(int balance, int rewardCoins)
-        {
-            Tournament.TournamentPremiumOverlay.Show(
-                "LEVEL COMPLETE!",
-                "Campaign Reward",
-                $"+{rewardCoins} COINS",
-                $"Current Tournament Balance: {balance:N0} Coins",
-                footer: string.Empty,
-                onClosed: null,
-                autoReturnSeconds: 3f);
+            // Celebration UI is on WinPU (Intelligent!); skip the old auto overlay.
         }
     }
 }

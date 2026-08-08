@@ -30,11 +30,17 @@ namespace Mkey
         }
 
         /// <summary>
-        /// Load scene by build index
+        /// Load scene by build index. Menu scenes were removed from the build (React Native owns
+        /// them now), so anything outside the shipped range hands control back to the shell.
         /// </summary>
-        /// <param name="scene"></param>
         public void LoadSceneByIndex(int scene)
         {
+            if (scene < 0 || scene >= SceneManager.sceneCountInBuildSettings)
+            {
+                Shell.MatchIQShellBridge.ReturnToShell(false);
+                return;
+            }
+
             if (SL) SL.LoadScene(scene);
         }
 

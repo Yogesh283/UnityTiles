@@ -121,6 +121,27 @@ class WalletService:
             idempotency_key=idempotency_key,
         )
 
+    def credit_referral(
+        self,
+        user_id: int,
+        amount: int,
+        *,
+        room_id: str,
+        level: int,
+        from_user_id: int,
+    ) -> Wallet:
+        # transaction_id column is CHAR(36) — hash the composite key to fit.
+        raw = f"referral:{room_id}:{from_user_id}:{user_id}:{level}"
+        idempotency_key = hashlib.sha256(raw.encode()).hexdigest()[:36]
+        return self._apply(
+            user_id,
+            amount,
+            f"referral_l{level}",
+            room_id,
+            f"WXO Points level {level} from user {from_user_id}",
+            idempotency_key=idempotency_key,
+        )
+
     def admin_adjust(self, user_id: int, amount: int, reason: str) -> Wallet:
         return self._apply(user_id, amount, "admin_adjust", None, reason)
 

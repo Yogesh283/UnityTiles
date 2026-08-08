@@ -256,8 +256,12 @@ namespace Mkey
             label.horizontalOverflow = HorizontalWrapMode.Overflow;
             label.verticalOverflow = VerticalWrapMode.Overflow;
             label.resizeTextForBestFit = false;
-            label.fontSize = 26;
-            label.fontStyle = FontStyle.Bold;
+            // Bitmap fonts (e.g. Nunito-ExtraBold_0) reject size/style overrides.
+            if (label.font != null && label.font.dynamic)
+            {
+                label.fontSize = 26;
+                label.fontStyle = FontStyle.Bold;
+            }
             label.supportRichText = false;
             label.raycastTarget = false;
             label.color = PopupButtonLabelColor;
@@ -298,9 +302,17 @@ namespace Mkey
             text.alignment = alignment;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
-            text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = minSize;
-            text.resizeTextMaxSize = maxSize;
+            if (text.font != null && text.font.dynamic)
+            {
+                text.resizeTextForBestFit = true;
+                text.resizeTextMinSize = minSize;
+                text.resizeTextMaxSize = maxSize;
+            }
+            else
+            {
+                text.resizeTextForBestFit = false;
+                text.fontStyle = FontStyle.Normal;
+            }
 
             RectTransform rt = text.rectTransform;
             rt.anchorMin = new Vector2(0.12f, minY);

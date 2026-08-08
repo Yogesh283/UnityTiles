@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Login — WXO</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23; --ink: #111; --muted: #6B7280;
+      --line: #ECEEF2; --bg: #FFF; --soft: #F7F8FA;
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif; background: #111; color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto; background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5);
+      display: flex; flex-direction: column;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; min-height: calc(100svh - 48px); }
+    }
+
+    .topbar {
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+      padding: 10px 14px; border-bottom: 1px solid var(--line);
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; background: var(--soft);
+    }
+    .topbar h1 {
+      text-align: center; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800;
+    }
+
+    .hero {
+      text-align: center; padding: 26px 20px 18px;
+      background: linear-gradient(180deg, #FFF1F2 0%, #fff 80%);
+      border-bottom: 1px solid var(--line);
+    }
+    .hero img { width: 62px; height: 62px; object-fit: contain; margin-bottom: 10px; }
+    .hero h2 {
+      font-family: Montserrat, sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px;
+    }
+    .hero p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    form { padding: 18px 16px 8px; }
+    .field { margin-bottom: 13px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .field input {
+      width: 100%; padding: 13px 14px; border: 1.5px solid var(--line); border-radius: 12px;
+      background: var(--soft); outline: none; font-weight: 600;
+    }
+    .field input:focus { border-color: #FECACA; background: #fff; }
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 54px; }
+    .pw-toggle {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      font-size: 11px; font-weight: 800; color: var(--red); padding: 8px;
+    }
+
+    .err {
+      display: none; background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C;
+      border-radius: 12px; padding: 11px 13px; font-size: 12.5px; font-weight: 600;
+      line-height: 1.45; margin-bottom: 13px;
+    }
+    .err.show { display: block; }
+
+    .btn-red {
+      width: 100%; background: var(--red); color: #fff; border-radius: 12px;
+      padding: 14px; font-weight: 800; font-size: 15px;
+      box-shadow: 0 8px 18px rgba(227,28,35,.3);
+    }
+    .btn-red:disabled { opacity: .6; box-shadow: none; }
+    .btn-ghost {
+      width: 100%; background: var(--soft); color: var(--ink); border-radius: 12px;
+      padding: 12px; font-weight: 700; font-size: 13px; border: 1px solid var(--line);
+      margin-top: 10px;
+    }
+
+    .sep {
+      display: flex; align-items: center; gap: 10px; margin: 16px 0 4px;
+      color: #9CA3AF; font-size: 11px; font-weight: 700;
+    }
+    .sep::before, .sep::after {
+      content: ''; flex: 1; height: 1px; background: var(--line);
+    }
+
+    .foot {
+      margin-top: auto; padding: 18px 16px calc(20px + env(safe-area-inset-bottom));
+      text-align: center; font-size: 13px; color: var(--muted); font-weight: 600;
+    }
+    .foot a { color: var(--red); font-weight: 800; }
+    .legal {
+      font-size: 11px; color: #9CA3AF; line-height: 1.5; margin-top: 10px; font-weight: 500;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0; pointer-events: none;
+      transition: .25s var(--ease); white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="icon-btn" href="/" aria-label="Back">←</a>
+      <h1>Login</h1>
+      <span class="icon-btn" aria-hidden="true">🔒</span>
+    </header>
+
+    <section class="hero">
+      <img src="/assets/wxo-logo.png" alt="WXO" />
+      <h2>Welcome back</h2>
+      <p>One WXO account for every game. Your wallet, tournaments and rewards stay in sync.</p>
+    </section>
+
+    <form id="loginForm" novalidate>
+      <div class="err" id="err"></div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" inputmode="email" autocomplete="email"
+               placeholder="you@example.com" required />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input id="password" name="password" type="password" autocomplete="current-password"
+                 placeholder="Your password" required />
+          <button class="pw-toggle" type="button" id="pwToggle">SHOW</button>
+        </div>
+      </div>
+
+      <button class="btn-red" type="submit" id="submitBtn">Login</button>
+
+      <div class="sep">OR</div>
+      <button class="btn-ghost" type="button" id="guestBtn">Continue as Guest</button>
+    </form>
+
+    <div class="foot">
+      New to WXO? <a href="/register.html" id="registerLink">Create account</a>
+      <p class="legal">By continuing you agree to our Terms &amp; Privacy Policy.</p>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const next = params.get('next') || '/';
+
+      const form = document.getElementById('loginForm');
+      const emailInput = document.getElementById('email');
+      const pwInput = document.getElementById('password');
+      const submitBtn = document.getElementById('submitBtn');
+      const guestBtn = document.getElementById('guestBtn');
+      const errBox = document.getElementById('err');
+
+      document.getElementById('registerLink').href =
+        '/register.html?next=' + encodeURIComponent(next);
+
+      if (WXOAuth.isLoggedIn()) {
+        location.replace(next);
+        return;
+      }
+
+      function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800);
+      }
+
+      function showError(msg) {
+        errBox.textContent = msg;
+        errBox.classList.add('show');
+      }
+      function clearError() {
+        errBox.classList.remove('show');
+      }
+
+      function busy(on, label) {
+        submitBtn.disabled = on;
+        guestBtn.disabled = on;
+        submitBtn.textContent = on ? (label || 'Please wait…') : 'Login';
+      }
+
+      document.getElementById('pwToggle').onclick = function () {
+        const show = pwInput.type === 'password';
+        pwInput.type = show ? 'text' : 'password';
+        this.textContent = show ? 'HIDE' : 'SHOW';
+      };
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        clearError();
+
+        const email = emailInput.value.trim();
+        const password = pwInput.value;
+
+        if (!email || email.indexOf('@') < 0) return showError('Enter a valid email address.');
+        if (!password) return showError('Enter your password.');
+
+        busy(true, 'Logging in…');
+        try {
+          const data = await WXOAuth.login(email, password);
+          toast('Welcome back, ' + (data.display_name || 'Player'));
+          setTimeout(function () { location.replace(next); }, 500);
+        } catch (err) {
+          showError(err.message || 'Login failed.');
+          busy(false);
+        }
+      });
+
+      guestBtn.addEventListener('click', async function () {
+        clearError();
+        busy(true, 'Starting…');
+        try {
+          await WXOAuth.guestLogin('Guest');
+          location.replace(next);
+        } catch (err) {
+          showError(err.message || 'Guest login failed.');
+          busy(false);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
     func,
@@ -35,6 +36,8 @@ class User(Base):
     last_device_id: Mapped[str] = mapped_column(String(128), nullable=True)
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     ban_reason: Mapped[str] = mapped_column(String(255), nullable=True)
+    referral_code: Mapped[str] = mapped_column(String(16), unique=True, nullable=True)
+    referred_by: Mapped[int] = mapped_column(BigInteger, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
@@ -248,6 +251,24 @@ class LevelReward(Base):
     level_number: Mapped[int] = mapped_column(Integer, nullable=True)
     reward_coins: Mapped[int] = mapped_column(Integer, default=50)
     rewarded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class ReferralEarning(Base):
+    """WXO Points earned from a downline member's tournament entry fee."""
+
+    __tablename__ = "referral_earnings"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
+    from_user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
+    level: Mapped[int] = mapped_column(Integer)
+    percent: Mapped[float] = mapped_column(Numeric(5, 2))
+    entry_fee: Mapped[int] = mapped_column(Integer)
+    points: Mapped[int] = mapped_column(Integer)
+    room_id: Mapped[str] = mapped_column(String(128), nullable=True)
+    tournament_id: Mapped[str] = mapped_column(String(64), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="credited")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class DeviceBan(Base):

@@ -1,4 +1,7 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from auth.jwt import get_current_user
@@ -20,6 +23,8 @@ from models.schemas import (
     RegisterRequest,
     TokenResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -52,7 +57,21 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    user = register_user(db, payload.email, payload.password, payload.display_name)
+    try:
+        user = register_user(
+            db,
+            payload.email,
+            payload.password,
+            payload.display_name,
+            referral_code=payload.referral_code,
+        )
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email already registered")
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception("Register failed for %s", payload.email)
+        raise HTTPException(status_code=500, detail="Could not create account. Please try again.")
     return _token_response(db, user)
 
 
@@ -66,13 +85,24 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/guest", response_model=TokenResponse)
 def guest(payload: GuestLoginRequest, db: Session = Depends(get_db)):
-    user = guest_login(db, payload.guest_id, payload.display_name)
+    user = guest_login(
+        db,
+        payload.guest_id,
+        payload.display_name,
+        referral_code=payload.referral_code,
+    )
     return _token_response(db, user)
 
 
 @router.post("/google", response_model=TokenResponse)
 def google(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
-    user = google_login(db, payload.google_id, payload.email, payload.display_name)
+    user = google_login(
+        db,
+        payload.google_id,
+        payload.email,
+        payload.display_name,
+        referral_code=payload.referral_code,
+    )
     return _token_response(db, user)
 
 
@@ -85,4 +115,5 @@ def me(user: User = Depends(get_current_user)):
         "display_name": user.display_name,
         "is_guest": user.is_guest,
         "avatar_url": user.avatar_url,
+        "referral_code": user.referral_code,
     }

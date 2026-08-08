@@ -35,7 +35,15 @@ namespace Mkey.Tournament
             TournamentMessagePopup.Show(
                 "YOU LOSE",
                 "Better luck next time.",
-                onClosed,
+                () =>
+                {
+                    if (Shell.MatchIQShellBridge.IsActive)
+                    {
+                        Shell.MatchIQShellBridge.ReturnMatchResult(false);
+                        return;
+                    }
+                    onClosed?.Invoke();
+                },
                 autoCloseSeconds: AutoReturnSeconds);
         }
 
@@ -53,12 +61,27 @@ namespace Mkey.Tournament
             TournamentMessagePopup.Show(
                 "YOU LOSE",
                 "Better luck next time.",
-                onClosed,
+                () =>
+                {
+                    if (Shell.MatchIQShellBridge.IsActive)
+                    {
+                        Shell.MatchIQShellBridge.ReturnMatchResult(false);
+                        return;
+                    }
+                    onClosed?.Invoke();
+                },
                 autoCloseSeconds: AutoReturnSeconds);
         }
 
         public static void ReturnToTournamentPage()
         {
+            // If this match was started from the RN shell, hand result back instead of Unity lobby
+            if (Shell.MatchIQShellBridge.IsActive)
+            {
+                Shell.MatchIQShellBridge.ReturnMatchResult(true);
+                return;
+            }
+
             TournamentFlowLog.ReturnToTournament("auto after result popup");
             TournamentRoomWebSocket.StopMaintainingConnection();
             TournamentApiBridge.Clear();
@@ -67,10 +90,8 @@ namespace Mkey.Tournament
             TournamentJoinCoordinator.NotifyWaitingRoomClosed();
             TournamentPageLifecycle.OnReturningFromMatch(RequestWalletRefreshOnReturn);
 
-            if (SceneLoader.Instance)
-                SceneLoader.Instance.LoadScene(TournamentSession.TournamentSceneIndex);
-            else
-                SceneManager.LoadScene(TournamentSession.TournamentSceneIndex);
+            // The Unity tournament page is no longer part of the build — exit to the shell.
+            Shell.MatchIQShellBridge.ReturnToShell(false);
         }
 
         private static void RequestWalletRefreshOnReturn()

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>WXO · IQ Match Play</title>
+  <meta name="theme-color" content="#0B0B0F" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <style>
+    :root {
+      --red: #E31C23;
+      --bg: #0B0B0F;
+      --panel: #16161C;
+      --line: rgba(255,255,255,.1);
+      --ink: #fff;
+      --muted: #9CA3AF;
+      --orange: #F97316;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg); color: var(--ink);
+      min-height: 100svh; -webkit-user-select: none; user-select: none;
+    }
+    .top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-bottom: 1px solid var(--line);
+      background: rgba(11,11,15,.95); position: sticky; top: 0; z-index: 10;
+    }
+    .top a, .top button {
+      width: 40px; height: 40px; border-radius: 12px; border: 0;
+      background: rgba(255,255,255,.08); color: #fff; display: grid; place-items: center;
+      font-size: 18px; text-decoration: none; cursor: pointer;
+    }
+    .top h1 { font-family: Montserrat, sans-serif; font-size: 15px; font-weight: 800; }
+    .hud {
+      display: flex; justify-content: space-between; gap: 8px; padding: 12px 14px;
+    }
+    .chip {
+      flex: 1; background: var(--panel); border: 1px solid var(--line);
+      border-radius: 12px; padding: 10px; text-align: center;
+    }
+    .chip span { display: block; font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .chip b { font-family: Montserrat, sans-serif; font-size: 18px; }
+    .vs {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 14px 10px; font-size: 12px; color: var(--muted); font-weight: 600;
+    }
+    .vs strong { color: #fff; }
+    .board-wrap { padding: 8px 14px 20px; }
+    .board {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+      max-width: 420px; margin: 0 auto;
+    }
+    .cell {
+      aspect-ratio: 1; border-radius: 14px; border: 1.5px solid var(--line);
+      background: var(--panel); color: #fff; font-family: Montserrat, sans-serif;
+      font-size: 20px; font-weight: 800; cursor: pointer;
+      display: grid; place-items: center; transition: .15s;
+    }
+    .cell:active { transform: scale(.96); }
+    .cell.on {
+      background: linear-gradient(145deg, #F97316, #E31C23);
+      border-color: transparent; box-shadow: 0 0 16px rgba(233,28,35,.45);
+    }
+    .cell.done {
+      background: rgba(34,197,94,.25); border-color: #22C55E; color: #86EFAC;
+    }
+    .hint {
+      text-align: center; color: var(--muted); font-size: 12px;
+      padding: 0 16px 16px; line-height: 1.45;
+    }
+    .actions { padding: 0 14px 24px; display: grid; gap: 8px; max-width: 420px; margin: 0 auto; }
+    .btn {
+      border: 0; border-radius: 14px; padding: 14px; font-weight: 800; font-size: 14px;
+      cursor: pointer; font-family: inherit;
+    }
+    .btn.primary { background: var(--red); color: #fff; }
+    .btn.ghost { background: rgba(255,255,255,.08); color: #fff; }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none;
+      align-items: center; justify-content: center; padding: 16px; z-index: 50;
+    }
+    .overlay.show { display: flex; }
+    .modal {
+      width: 100%; max-width: 340px; background: #fff; color: #111;
+      border-radius: 20px; padding: 22px 18px; text-align: center;
+    }
+    .modal .ico { font-size: 48px; margin-bottom: 6px; }
+    .modal h2 { font-family: Montserrat, sans-serif; font-size: 22px; margin-bottom: 6px; }
+    .modal p { font-size: 13px; color: #6B7280; margin-bottom: 12px; }
+    .modal .prize { font-family: Montserrat, sans-serif; font-size: 28px; font-weight: 800; color: var(--red); margin-bottom: 12px; }
+    .modal .btn { width: 100%; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a href="/" aria-label="Back">←</a>
+    <h1>IQ Match · Live</h1>
+    <button type="button" id="btnPause" aria-label="Pause">⏸</button>
+  </header>
+
+  <div class="hud">
+    <div class="chip"><span>Time</span><b id="timer">01:30</b></div>
+    <div class="chip"><span>Score</span><b id="score">0</b></div>
+    <div class="chip"><span>Target</span><b id="target">—</b></div>
+  </div>
+  <div class="vs">
+    <span>You <strong id="youScore">0</strong></span>
+    <span>vs</span>
+    <span><strong id="oppScore">0</strong> Rival</span>
+  </div>
+
+  <p class="hint">Tap numbers in order: find the sequence shown under Target. Clear 3 rounds to win.</p>
+
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" type="button" id="btnNew">New Round</button>
+    <a class="btn ghost" href="/" style="text-align:center;text-decoration:none;display:block">Exit to Home</a>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="ico" id="mIco">🏆</div>
+      <h2 id="mTitle">You Won!</h2>
+      <div class="prize" id="mPrize">+100 WXO</div>
+      <p id="mMsg">Reward credited to your wallet.</p>
+      <button class="btn primary" type="button" id="mOk">Continue</button>
+      <button class="btn ghost" type="button" id="mAgain">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+
+    /** The lobby writes this when it charges the entry — it is the only trusted source. */
+    function pendingMatch() {
+      try { return JSON.parse(sessionStorage.getItem('wxo_pending_unity') || 'null'); }
+      catch (e) { return null; }
+    }
+
+    const MATCH = pendingMatch();
+    const ENTRY = Math.max(0, Number(MATCH ? MATCH.entry : params.get('entry')) || 0);
+    // Winner always gets 2× entry; free rooms pay nothing, so the URL can't inflate a prize
+    const PRIZE = ENTRY * 2;
+    const GAME = (MATCH && MATCH.game) || params.get('game') || 'IQ Match';
+    const LOBBY_URL = '/match-lobby.html?game=' +
+      encodeURIComponent((MATCH && MATCH.gameId) || 'iq-match');
+
+    let timeLeft = 90;
+    let score = 0;
+    let opp = 0;
+    let round = 0;
+    let sequence = [];
+    let progress = 0;
+    let cells = [];
+    let playing = true;
+    let paid = false;
+
+    const board = document.getElementById('board');
+    const timerEl = document.getElementById('timer');
+    const scoreEl = document.getElementById('score');
+    const targetEl = document.getElementById('target');
+    const youEl = document.getElementById('youScore');
+    const oppEl = document.getElementById('oppScore');
+
+    function fmt(s) {
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+    }
+
+    function ensureEntry() {
+      if (paid || ENTRY <= 0 || !window.WXOWallet) { paid = true; return true; }
+      // Lobby already took the fee for this match — don't bill it twice
+      if (MATCH) { paid = true; return true; }
+      const res = WXOWallet.spend(ENTRY, GAME + ' entry', 'In-app play');
+      if (!res.ok) {
+        endGame(false, res.error || 'Deposit coins to play');
+        return false;
+      }
+      paid = true;
+      return true;
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function newRound() {
+      if (!playing) return;
+      if (!ensureEntry()) return;
+      round++;
+      const nums = shuffle([1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,8,9,0,0,1,2,3,4,5]);
+      sequence = [];
+      for (let i = 0; i < 4; i++) sequence.push(1 + Math.floor(Math.random() * 9));
+      progress = 0;
+      targetEl.textContent = sequence.join(' → ');
+      board.innerHTML = '';
+      cells = nums.map((n, idx) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cell';
+        b.textContent = String(n);
+        b.dataset.n = String(n);
+        b.dataset.i = String(idx);
+        b.onclick = () => onTap(b);
+        board.appendChild(b);
+        return b;
+      });
+      // rival slowly gains
+      opp += Math.floor(Math.random() * 8);
+      oppEl.textContent = String(opp);
+    }
+
+    function onTap(btn) {
+      if (!playing || btn.classList.contains('done')) return;
+      const need = sequence[progress];
+      const n = Number(btn.dataset.n);
+      if (n !== need) {
+        btn.style.borderColor = '#EF4444';
+        setTimeout(() => { btn.style.borderColor = ''; }, 200);
+        score = Math.max(0, score - 2);
+        scoreEl.textContent = String(score);
+        youEl.textContent = String(score);
+        return;
+      }
+      btn.classList.add('on');
+      setTimeout(() => { btn.classList.remove('on'); btn.classList.add('done'); }, 120);
+      progress++;
+      score += 10;
+      scoreEl.textContent = String(score);
+      youEl.textContent = String(score);
+      if (progress >= sequence.length) {
+        if (round >= 3) {
+          const won = score >= opp;
+          endGame(won);
+        } else {
+          setTimeout(newRound, 350);
+        }
+      }
+    }
+
+    let settled = false;
+
+    function endGame(won, customMsg) {
+      playing = false;
+      clearInterval(tick);
+      const overlay = document.getElementById('overlay');
+      const prize = won ? PRIZE : 0;
+
+      // Settle through the shared wallet exactly once per match
+      if (!settled && window.WXOWallet && WXOWallet.applyMatchResult) {
+        settled = true;
+        WXOWallet.applyMatchResult({
+          won: !!won,
+          prize: PRIZE,
+          game: GAME,
+          matchId: (MATCH && MATCH.matchId) || 'play_' + Date.now(),
+          silent: true
+        });
+      }
+      document.getElementById('mIco').textContent = won ? '🏆' : '😔';
+      document.getElementById('mTitle').textContent = won ? 'You Won!' : 'Match Over';
+      document.getElementById('mPrize').style.display = won && prize > 0 ? 'block' : 'none';
+      document.getElementById('mPrize').textContent = '+' + prize + ' WXO';
+      document.getElementById('mMsg').textContent = customMsg || (won
+        ? (prize > 0
+          ? 'Reward added to your WXO wallet — usable in all games.'
+          : 'Free practice match — no coins won. Join a paid room to earn 2× entry.')
+        : 'Try again. Same APK — no download needed.');
+      overlay.classList.add('show');
+    }
+
+    document.getElementById('mOk').onclick = () => { location.href = '/'; };
+    // A finished match can only be replayed by paying entry again in the lobby
+    document.getElementById('mAgain').onclick = () => { location.href = LOBBY_URL; };
+    document.getElementById('btnNew').onclick = () => {
+      if (!playing) location.href = LOBBY_URL;
+      else newRound();
+    };
+    document.getElementById('btnPause').onclick = () => {
+      if (!playing) return;
+      playing = false;
+      endGame(score > opp);
+    };
+
+    const tick = setInterval(() => {
+      if (!playing) return;
+      timeLeft--;
+      timerEl.textContent = fmt(Math.max(0, timeLeft));
+      if (timeLeft <= 0) endGame(score > opp);
+      if (timeLeft % 5 === 0) {
+        opp += Math.floor(Math.random() * 5);
+        oppEl.textContent = String(opp);
+      }
+    }, 1000);
+
+    // Mark in-app when opened from WXO APK
+    if (/WXO-App|fun\.wxo\.app/i.test(navigator.userAgent)) window.WXO_IN_APP = true;
+
+    newRound();
+  </script>
+</body>
+</html>
