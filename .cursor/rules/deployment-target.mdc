@@ -1,0 +1,31 @@
+---
+description: Live/production server and deployment target for this project
+alwaysApply: true
+---
+
+# Live Server / Deployment Target
+
+The production server for this project is **https://rmsurveyai.com/**. All backend/website
+code deploys here. Remember this without being told again.
+
+- **Live site:** https://rmsurveyai.com/ (WXO — Play. Earn. Win.)
+- **API base:** https://rmsurveyai.com/api/v1
+- **Repo:** github.com/Yogesh283/UnityTiles · **Deploy branch:** `feat/realtime-tournament-and-ui-fixes`
+- **Server path:** `/var/www/UnityTiles`
+
+## What deploys to the server vs. the APK
+
+- **Server (rmsurveyai.com):** `Backend/` (Python FastAPI API), `AdminPanel/` (PHP/Laravel),
+  and `Deployment/public/` (website). Only these need a server deploy.
+- **APK (NOT the server):** `Unity_Game/` (C#) and `MatchIQ_App/` (React Native app) ship inside
+  the Android APK. Server deploy does not affect them — they need a Unity export + APK rebuild.
+
+## Deploy commands
+
+```bash
+# 1) Local: push code
+git add -A && git commit -m "..." && git push origin feat/realtime-tournament-and-ui-fixes
+
+# 2) Server: run the deploy script (pulls branch, installs deps, restarts matchiq-api)
+ssh root@rmsurveyai.com "bash /var/www/UnityTiles/Deployment/deploy-live.sh"
+```
