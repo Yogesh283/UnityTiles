@@ -272,6 +272,8 @@
     const mode = opts.mode || 'tournament';
     const players = Number(opts.players) || 2;
     const live = !!opts.live;
+    const poolId = opts.poolId != null ? Number(opts.poolId) : null;
+    const levelSeed = opts.levelSeed != null ? Number(opts.levelSeed) : null;
 
     // Default Play buttons → lobby first (fee / room select)
     if (!opts.skipLobby) {
@@ -295,6 +297,8 @@
             mode: mode,
             players: players,
             live: live,
+            poolId: poolId,
+            levelSeed: levelSeed,
             // The app joins the server room as this account, so hand over the web session.
             token: global.WXOAuth ? global.WXOAuth.getToken() : null,
             user: global.WXOAuth ? global.WXOAuth.getUser() : null

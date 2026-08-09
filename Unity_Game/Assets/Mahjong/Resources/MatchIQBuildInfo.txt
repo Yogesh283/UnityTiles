@@ -1,2 +1,2 @@
-88dfea8
-Add Emerald Temple Unity background, matchmaking shell flow, and WXO lobby/auth updates
+afb8d0c
+tournament seed + board fit + create-account CTA

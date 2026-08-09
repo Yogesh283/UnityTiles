@@ -271,6 +271,50 @@ class ReferralEarning(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class Pool(Base):
+    """IQFX Pro Pool Play: a time-boxed leaderboard tournament with a fixed entry fee."""
+
+    __tablename__ = "pools"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(160))
+    icon: Mapped[str] = mapped_column(String(16), default="🏆")
+    entry_fee: Mapped[int] = mapped_column(Integer)
+    max_players: Mapped[int] = mapped_column(Integer)
+    winners_count: Mapped[int] = mapped_column(Integer, default=1)
+    prize_share: Mapped[float] = mapped_column(Numeric(5, 4), default=0.7)
+    prize_pool: Mapped[int] = mapped_column(Integer, default=0)
+    distribution: Mapped[str] = mapped_column(String(255), default="[100]")
+    level_index: Mapped[int] = mapped_column(Integer, default=0)
+    level_seed: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="open")
+    starts_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    ends_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    created_by: Mapped[str] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class PoolEntry(Base):
+    __tablename__ = "pool_entries"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    pool_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("pools.id"), index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
+    entry_fee: Mapped[int] = mapped_column(Integer)
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    moves: Mapped[int] = mapped_column(Integer, default=0)
+    elapsed_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    rank: Mapped[int] = mapped_column(Integer, nullable=True)
+    prize: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="joined")
+    joined_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    submitted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
+
 class DeviceBan(Base):
     __tablename__ = "device_bans"
 

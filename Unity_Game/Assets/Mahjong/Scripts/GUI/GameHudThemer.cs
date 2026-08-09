@@ -147,6 +147,11 @@ namespace Mkey
                 if (!img) continue;
                 img.sprite = null;
                 img.color = new Color(1f, 1f, 1f, 0f);
+                // The transparent footer tray was left with raycastTarget = true, so it sat over the
+                // lower board and ate tile taps (TouchPadEventArgs drops any collider behind a UI
+                // graphic) — tile matching and boosters stopped responding. Only the tray's own image
+                // is disabled here; the booster buttons are separate children and stay interactive.
+                img.raycastTarget = false;
             }
         }
     }

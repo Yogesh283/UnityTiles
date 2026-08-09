@@ -5,6 +5,7 @@ import { Screen, GameHeader, PrimaryButton, SecondaryButton, PremiumInput } from
 import { colors, spacing, typography } from '../../theme';
 import { formatRupee } from '../../utils';
 import { useUiStore } from '../../store';
+import { poolApi } from '../../api';
 import {
   ENTRY_FEES,
   PLAYER_SIZES,
@@ -43,6 +44,7 @@ export function CreatePoolScreen({ navigation }: Props) {
   const [third, setThird] = useState(initial.third);
   const [others, setOthers] = useState(initial.others);
   const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const pNum = Number(players) || 0;
   const eNum = Number(entry) || 0;
@@ -188,11 +190,35 @@ export function CreatePoolScreen({ navigation }: Props) {
       <View style={styles.row}>
         <SecondaryButton title="Reset" onPress={reset} style={{ flex: 1 }} />
         <PrimaryButton
-          title="Create Pool"
+          title={submitting ? 'Creating…' : 'Create Pool'}
           style={{ flex: 1 }}
-          onPress={() => {
-            showToast(`Pool created · ${pNum}P · ${formatRupee(eNum)} · ${formatRupee(Math.round(pool))}`, 'success');
-            navigation.goBack();
+          disabled={submitting}
+          onPress={async () => {
+            if (submitting) return;
+            const distribution = [Number(first) || 0];
+            if (wNum >= 2) distribution.push(Number(second) || 0);
+            if (wNum >= 3) distribution.push(Number(third) || 0);
+            setSubmitting(true);
+            try {
+              const created = await poolApi.create({
+                entry_fee: eNum,
+                max_players: pNum,
+                winners_count: wNum,
+                distribution,
+              });
+              showToast(
+                `Pool #${created.id} created · ${created.max_players}P · ${formatRupee(
+                  created.entry_fee,
+                )} · ${formatRupee(created.prize_pool)}`,
+                'success',
+              );
+              navigation.goBack();
+            } catch (err: any) {
+              const detail = err?.response?.data?.detail || 'Could not create pool';
+              showToast(detail, 'danger');
+            } finally {
+              setSubmitting(false);
+            }
           }}
         />
       </View>
@@ -219,8 +245,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: colors.surfaceElevated,
   },
-  chipOn: { borderColor: colors.neonPurple, backgroundColor: '#2A1850' },
-  chipBlue: { borderColor: colors.neonBlue, backgroundColor: '#13284A' },
+  chipOn: { borderColor: colors.neonPurple, backgroundColor: '#3A1013' },
+  chipBlue: { borderColor: colors.neonBlue, backgroundColor: '#3A1013' },
   chipText: { color: colors.textSecondary, fontWeight: '700' },
   chipTextOn: { color: colors.white },
   panel: {

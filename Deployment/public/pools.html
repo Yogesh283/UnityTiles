@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>IQFX Pro Pools · WXO</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23; --ink: #111; --muted: #6B7280;
+      --line: #ECEEF2; --bg: #FFF; --soft: #F7F8FA; --gold: #C99213;
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, system-ui, sans-serif; background: #111; color: var(--ink); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto; background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5); padding-bottom: 96px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; }
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+      padding: 10px 14px; background: rgba(255,255,255,.96); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .icon-btn { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; background: var(--soft); color: #222; }
+    .topbar h1 { text-align: center; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800; }
+
+    .pad { padding: 12px 14px; }
+
+    .bal-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #FFF8E7; border: 1px solid #F5E0A8; border-radius: 14px;
+      padding: 10px 12px; margin-bottom: 12px; font-size: 12px; font-weight: 600; color: #8B6914;
+    }
+    .bal-bar b { font-family: Montserrat, sans-serif; color: #111; font-size: 14px; }
+    .bal-bar a { color: var(--red); font-weight: 800; }
+
+    .intro {
+      background: linear-gradient(135deg, #1F2937, #D4A017); color: #fff;
+      border-radius: 18px; padding: 14px 16px; margin-bottom: 14px;
+    }
+    .intro h2 { font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800; }
+    .intro p { font-size: 12px; opacity: .95; margin-top: 4px; line-height: 1.5; }
+
+    .list { display: flex; flex-direction: column; gap: 12px; }
+
+    .p-card {
+      position: relative; border-radius: 18px; padding: 14px; overflow: hidden; color: #fff;
+      box-shadow: 0 8px 22px rgba(0,0,0,.12); border: 1px solid rgba(255,255,255,.15);
+    }
+    .p-card.tier10 { background: linear-gradient(135deg, #EF4444, #B91C1C); }
+    .p-card.tier50 { background: linear-gradient(135deg, #0EA5E9, #0369A1); }
+    .p-card.tier100 { background: linear-gradient(135deg, #1F2937, #D4A017); }
+    .p-card.tierx { background: linear-gradient(135deg, #8B5CF6, #5B21B6); }
+
+    .p-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; position: relative; z-index: 1; }
+    .p-type { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .95; }
+    .p-status {
+      font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      background: rgba(255,255,255,.22); padding: 4px 8px; border-radius: 999px;
+    }
+    .p-icon { position: absolute; right: 12px; top: 40px; font-size: 42px; opacity: .28; z-index: 0; }
+    .p-card h2 { position: relative; z-index: 1; font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 800; margin: 8px 0 10px; }
+
+    .p-stats { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .p-stats div { background: rgba(255,255,255,.16); border-radius: 12px; padding: 8px 10px; }
+    .p-stats span { display: block; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .85; margin-bottom: 2px; }
+    .p-stats strong { font-family: Montserrat, sans-serif; font-size: 14px; font-weight: 800; }
+
+    .p-dist { position: relative; z-index: 1; font-size: 11px; font-weight: 700; margin-bottom: 10px; opacity: .95; }
+
+    .p-fill { position: relative; z-index: 1; height: 6px; border-radius: 999px; background: rgba(255,255,255,.25); margin-bottom: 12px; overflow: hidden; }
+    .p-fill i { display: block; height: 100%; background: #fff; border-radius: 999px; }
+
+    .btn {
+      position: relative; z-index: 1; width: 100%; display: block; text-align: center;
+      border-radius: 12px; padding: 11px; font-weight: 800; font-size: 13px; border: 0; cursor: pointer; font: inherit;
+    }
+    .btn-join { background: #fff; color: var(--red); }
+    .btn-join:active { background: #FEE2E2; }
+    .btn-join[disabled] { opacity: .6; cursor: default; }
+    .btn-play { background: #16A34A; color: #fff; margin-top: 8px; }
+    .joined-tag {
+      position: relative; z-index: 1; text-align: center; border: 1px solid rgba(255,255,255,.55);
+      border-radius: 12px; padding: 10px; font-size: 12px; font-weight: 800;
+    }
+
+    .state { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .note { color: #9CA3AF; font-size: 11px; text-align: center; margin-top: 14px; line-height: 1.6; }
+
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px; }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0; pointer-events: none;
+      transition: .25s var(--ease); white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="icon-btn" href="/tournaments.html" aria-label="Back">←</a>
+      <h1>IQFX Pro Pools</h1>
+      <button class="icon-btn" type="button" id="btnRefresh" aria-label="Refresh">↻</button>
+    </header>
+
+    <div class="pad">
+      <div class="bal-bar">
+        <span>Wallet · usable in all games</span>
+        <span><b id="balLabel">0 WXO</b> · <a href="/wallet.html#deposit">Deposit</a></span>
+      </div>
+
+      <section class="intro">
+        <h2>🏆 IQFX Pro Tournament — Pool Play</h2>
+        <p>Pay a fixed entry, play the same board, and the top scorers share the prize pool. Prize Pool = 70% of total collection.</p>
+      </section>
+
+      <div class="list" id="list">
+        <div class="state" id="loadState">Loading pools…</div>
+      </div>
+
+      <div class="note">
+        Prize Pool = 70% of total collection · Remaining 30% = platform fee + gateway + operations.<br>
+        Winners scale with pool size: ≤50 → 1 · ≤100 → 2 · larger → 3.
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <a href="/"><span class="ico">🏠</span>Home</a>
+      <a class="active" href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
+      <a href="/match-lobby.html?game=iq-match" aria-label="Play"><span class="play-fab">▶</span></a>
+      <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a href="/team.html"><span class="ico">👥</span>Team</a>
+    </nav>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <script>
+    (function () {
+      if (!window.WXOAuth || !WXOAuth.requireAuth()) return;
+
+      const listEl = document.getElementById('list');
+      const balEl = document.getElementById('balLabel');
+
+      function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+      }
+
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      function rupee(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+
+      function tierClass(fee) {
+        if (fee <= 10) return 'tier10';
+        if (fee <= 50) return 'tier50';
+        if (fee <= 100) return 'tier100';
+        return 'tierx';
+      }
+
+      function distLabel(dist) {
+        const medals = ['🥇', '🥈', '🥉'];
+        return (dist || []).map(function (p, i) { return (medals[i] || '🏅') + ' ' + p + '%'; }).join('  •  ');
+      }
+
+      function setBalance(v) { balEl.textContent = Number(v || 0).toLocaleString('en-IN') + ' WXO'; }
+
+      function poolCard(p) {
+        const joined = !!p.my_entry;
+        const full = p.players_joined >= p.max_players;
+        const pct = Math.min(100, Math.round((p.players_joined / Math.max(1, p.max_players)) * 100));
+        const top = (p.prize_breakdown && p.prize_breakdown[0]) || p.prize_pool;
+
+        let action;
+        if (joined) {
+          const e = p.my_entry;
+          let line = '✓ Joined';
+          if (p.status === 'finished') {
+            line = e.prize > 0 ? ('🏆 Won ' + rupee(e.prize) + ' · Rank ' + e.rank)
+                               : ('Result: Rank ' + (e.rank || '—') + ' · No prize');
+          } else if (e.status === 'played') {
+            line = '✓ Played · waiting for results';
+          } else {
+            line = '✓ Joined · play now';
+          }
+          action = '<div class="joined-tag">' + esc(line) + '</div>';
+          if (p.status !== 'finished') {
+            action += '<button type="button" class="btn btn-play" data-play="' + p.id +
+                      '" data-entry="' + p.entry_fee + '" data-prize="' + top +
+                      '" data-seed="' + p.level_seed + '">▶ Play now</button>';
+          }
+        } else if (full) {
+          action = '<button type="button" class="btn btn-join" disabled>Pool Full</button>';
+        } else {
+          action = '<button type="button" class="btn btn-join" data-join="' + p.id + '">Join · ' + rupee(p.entry_fee) + '</button>';
+        }
+
+        return '' +
+          '<article class="p-card ' + tierClass(p.entry_fee) + '">' +
+            '<span class="p-icon">' + esc(p.icon || '🏆') + '</span>' +
+            '<div class="p-top">' +
+              '<span class="p-type">IQFX Pro · ' + rupee(p.entry_fee) + ' Entry</span>' +
+              '<span class="p-status">' + esc((p.status || '').toUpperCase()) + '</span>' +
+            '</div>' +
+            '<h2>' + esc(p.name) + '</h2>' +
+            '<div class="p-stats">' +
+              '<div><span>Prize Pool</span><strong>' + rupee(p.prize_pool) + '</strong></div>' +
+              '<div><span>Top Win</span><strong>' + rupee(top) + '</strong></div>' +
+              '<div><span>Players</span><strong>' + p.players_joined + ' / ' + p.max_players + '</strong></div>' +
+              '<div><span>Winners</span><strong>' + p.winners_count + '</strong></div>' +
+            '</div>' +
+            '<div class="p-dist">' + distLabel(p.distribution) + '</div>' +
+            '<div class="p-fill"><i style="width:' + pct + '%"></i></div>' +
+            action +
+          '</article>';
+      }
+
+      function render(pools) {
+        if (!pools || !pools.length) {
+          listEl.innerHTML = '<div class="state">No open pools right now. Check back soon.</div>';
+          return;
+        }
+        listEl.innerHTML = pools.map(poolCard).join('');
+      }
+
+      function load() {
+        listEl.innerHTML = '<div class="state">Loading pools…</div>';
+        WXOAuth.api('/pools')
+          .then(function (data) {
+            setBalance(data.wallet_balance);
+            render(data.pools || []);
+          })
+          .catch(function (err) {
+            listEl.innerHTML = '<div class="state">' + esc(err.message || 'Could not load pools.') + '</div>';
+          });
+      }
+
+      listEl.addEventListener('click', function (e) {
+        const joinBtn = e.target.closest('[data-join]');
+        const playBtn = e.target.closest('[data-play]');
+
+        if (joinBtn) {
+          const id = Number(joinBtn.dataset.join);
+          joinBtn.disabled = true;
+          joinBtn.textContent = 'Joining…';
+          WXOAuth.api('/pools/join', { method: 'POST', body: { pool_id: id } })
+            .then(function (res) {
+              setBalance(res.wallet_balance);
+              toast('Joined ' + (res.pool && res.pool.name ? res.pool.name : 'pool'));
+              load();
+            })
+            .catch(function (err) {
+              toast(err.message || 'Could not join');
+              joinBtn.disabled = false;
+              joinBtn.textContent = 'Join';
+            });
+          return;
+        }
+
+        if (playBtn && window.WXOWallet && WXOWallet.openUnityGame) {
+          const id = Number(playBtn.dataset.play);
+          const entry = Number(playBtn.dataset.entry || 0);
+          const prize = Number(playBtn.dataset.prize || 0);
+          const seed = Number(playBtn.dataset.seed || 0);
+          try {
+            // Entry fee was already charged on join — Unity should NOT re-deduct. The result
+            // (score/moves/time) will be reported back and submitted to this pool.
+            sessionStorage.setItem('wxo_pending_pool', JSON.stringify({ poolId: id, entry: entry, prize: prize, seed: seed, at: Date.now() }));
+          } catch (_) {}
+          WXOWallet.openUnityGame({
+            game: 'IQFX Pro Pool',
+            gameId: 'iq-match',
+            entry: 0,
+            prize: prize,
+            mode: 'pool',
+            poolId: id,
+            levelSeed: seed,
+            skipLobby: true
+          });
+        }
+      });
+
+      document.getElementById('btnRefresh').onclick = function () { toast('Refreshed'); load(); };
+      load();
+    })();
+  </script>
+</body>
+</html>

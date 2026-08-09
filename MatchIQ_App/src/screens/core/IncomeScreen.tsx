@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  periodChipOn: { borderColor: colors.neonPurple, backgroundColor: '#2A1850' },
+  periodChipOn: { borderColor: colors.neonPurple, backgroundColor: '#3A1013' },
   periodText: { color: colors.textSecondary, fontSize: 12, fontWeight: '700' },
   periodTextOn: { color: colors.white },
   statRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },

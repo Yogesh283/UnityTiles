@@ -96,7 +96,7 @@ namespace Mkey
             timerText = timerGo.GetComponent<Text>();
             timerText.font = font;
             timerText.text = CampaignLevelTimer.FormatRemaining();
-            timerText.fontSize = 44;
+            timerText.fontSize = 36;
             timerText.fontStyle = FontStyle.Bold;
             timerText.color = NormalColor;
             timerText.alignment = TextAnchor.MiddleCenter;
@@ -119,7 +119,9 @@ namespace Mkey
 
         // Shared vertical position for the whole header row so LEVEL / SCORE / timer / MATCHES /
         // menu all sit inside the emerald frame's top banner. Tune this one value to move the row.
-        private const float HeaderY = -84f;
+        // Pulled up (smaller magnitude) so the top nav band is shorter and leaves more room for the
+        // board on tall phones.
+        private const float HeaderY = -54f;
 
         // Horizontal slots along the header row (0 = centre, under the timer badge). Symmetric
         // layout: LEVEL / SCORE sit left of the timer; MATCHES mirrors SCORE and the menu button
@@ -140,7 +142,7 @@ namespace Mkey
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(0f, HeaderY);
-            rt.sizeDelta = new Vector2(132f, 132f);
+            rt.sizeDelta = new Vector2(104f, 104f);
             rt.localScale = Vector3.one;
             rt.SetAsLastSibling();
         }

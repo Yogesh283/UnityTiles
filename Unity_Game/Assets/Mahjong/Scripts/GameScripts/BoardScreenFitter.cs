@@ -15,8 +15,8 @@ namespace Mkey
         // Fractions of screen HEIGHT reserved for the on-screen chrome so tiles never sit under it.
         // Increase topReserve to push the board lower (more room for the header), increase
         // bottomReserve to lift it off the booster buttons. These two are the main tuning knobs.
-        [Range(0f, 0.4f)] public float topReserveFraction = 0.12f;    // level / score / timer HUD
-        [Range(0f, 0.4f)] public float bottomReserveFraction = 0.16f; // booster buttons row
+        [Range(0f, 0.4f)] public float topReserveFraction = 0.15f;    // level / score / timer HUD
+        [Range(0f, 0.4f)] public float bottomReserveFraction = 0.24f; // booster buttons row
         // Breathing room on each side, as a fraction of screen WIDTH.
         [Range(0f, 0.25f)] public float sideReserveFraction = 0.04f;
         // Only ever shrink the board to fit — never blow it up past its designed scale.

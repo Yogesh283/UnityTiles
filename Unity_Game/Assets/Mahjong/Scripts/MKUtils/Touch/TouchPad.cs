@@ -90,6 +90,16 @@ namespace Mkey
 
         public static TouchPad Instance;
 
+        // TEMP on-device tap diagnostic. Shows why a board tap did or did not hit a tile so we can
+        // pinpoint an embedded-only input problem without a PC log. Remove once fixed.
+        private static string s_tapDebug = "tap a tile…";
+        private void OnGUI()
+        {
+            GUIStyle st = new GUIStyle(GUI.skin.label) { fontSize = 26, wordWrap = true };
+            st.normal.textColor = Color.yellow;
+            GUI.Label(new Rect(12f, 64f, Screen.width - 24f, 120f), "DBG: " + s_tapDebug, st);
+        }
+
         #region regular
         void Awake()
         {
@@ -131,12 +141,21 @@ namespace Mkey
                             if (tpea.firstSelected == null && hitList[i]) tpea.firstSelected = hitList[i].GetComponent<TouchPadMessageTarget>();
                         }
                     }
+
+                    Vector3 wp = GetWorldTouchPos();
+                    s_tapDebug = "scr=" + ((Vector2)ScreenTouchPos).ToString("F0")
+                        + " wpos=" + wp.ToString("F2")
+                        + " hits=" + hitList.Count
+                        + " cam=" + (Camera.main ? Camera.main.name : "NULL")
+                        + " res=" + Screen.width + "x" + Screen.height;
+
                     ScreenPointerDownEvent?.Invoke(tpea);
                 }
             }
             else
             {
                 IsTouched = true;
+                s_tapDebug = "PointerDown but TouchPad IsActive=false (input disabled)";
             }
         }
 

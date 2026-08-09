@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { SecondaryButton } from '../../components';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography } from '../../theme';
 import { ROUTES, WXO_ROOM_TOURNAMENTS } from '../../constants';
 import { useAuthStore, usePlayerStore } from '../../store';
 import { tournamentApi, type Room } from '../../api/tournamentApi';
@@ -11,6 +10,35 @@ import { openMatchSocket, type MatchSocket } from '../../services/matchSocket';
 type Props = NativeStackScreenProps<any>;
 
 const POLL_INTERVAL_MS = 1500;
+
+// WXO website "white" palette — applied only on this screen so the match room mirrors the
+// site's light look (white surfaces, crimson-red primary, gold coins). Global dark theme
+// and the shared SecondaryButton stay untouched.
+const wxo = {
+  bg: '#FFFFFF',
+  surface: '#FFFFFF',
+  surfaceMuted: '#F4F5F8',
+  border: '#E6E8EF',
+  ink: '#111214',
+  inkSoft: '#4B5162',
+  muted: '#8A90A2',
+  red: '#E31C23',
+  redSoft: 'rgba(227, 28, 35, 0.10)',
+  gold: '#C99213',
+  success: '#1AA260',
+} as const;
+
+/** WXO-styled secondary action for this white screen (red outline, red label on white). */
+function LeaveButton({ title, onPress, style }: { title: string; onPress?: () => void; style?: any }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.leaveBtnBase, pressed && styles.leaveBtnPressed, style]}
+    >
+      <Text style={styles.leaveBtnText}>{title}</Text>
+    </Pressable>
+  );
+}
 
 function statusLabel(room: Room | null): string {
   if (!room) return 'Joining room…';
@@ -183,9 +211,9 @@ export function MatchmakingScreen({ navigation, route }: Props) {
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={typography.h2}>Could not start</Text>
+        <Text style={[typography.h2, styles.inkText]}>Could not start</Text>
         <Text style={[typography.body, styles.errorText]}>{error}</Text>
-        <SecondaryButton title="Back to lobby" onPress={leave} style={styles.leaveBtn} />
+        <LeaveButton title="Back to lobby" onPress={leave} style={styles.leaveBtn} />
       </View>
     );
   }
@@ -196,7 +224,9 @@ export function MatchmakingScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <Text style={typography.caption}>{live ? 'LIVE STREAM ROOM' : 'MATCH ROOM'}</Text>
+      <Text style={[typography.caption, styles.metaLabel]}>
+        {live ? 'LIVE STREAM ROOM' : 'MATCH ROOM'}
+      </Text>
       <Text style={[typography.hero, styles.title]}>{gameName}</Text>
 
       <View style={styles.pillRow}>
@@ -215,13 +245,13 @@ export function MatchmakingScreen({ navigation, route }: Props) {
       {showCountdown ? (
         <View style={styles.countdownBox}>
           <Text style={styles.countdownNumber}>{countdown === 0 ? 'GO' : countdown}</Text>
-          <Text style={typography.body}>Get ready</Text>
+          <Text style={[typography.body, styles.softText]}>Get ready</Text>
         </View>
       ) : (
         <View style={styles.searchBox}>
-          <ActivityIndicator color={colors.primaryGold} size="large" />
+          <ActivityIndicator color={wxo.red} size="large" />
           <Text style={[typography.h3, styles.searchText]}>{statusLabel(room)}</Text>
-          <Text style={typography.caption}>
+          <Text style={[typography.caption, styles.metaLabel]}>
             {players.length} / {seats} players connected
           </Text>
         </View>
@@ -233,16 +263,16 @@ export function MatchmakingScreen({ navigation, route }: Props) {
           return (
             <View key={index} style={[styles.playerRow, player && styles.playerRowFilled]}>
               <View style={[styles.avatar, player && styles.avatarFilled]}>
-                <Text style={styles.avatarText}>
+                <Text style={[styles.avatarText, player && styles.avatarTextFilled]}>
                   {player ? (player.display_name || 'P').slice(0, 1).toUpperCase() : '?'}
                 </Text>
               </View>
               <View style={styles.playerInfo}>
-                <Text style={typography.bodyStrong} numberOfLines={1}>
+                <Text style={[typography.bodyStrong, styles.inkText]} numberOfLines={1}>
                   {player ? player.display_name : 'Waiting…'}
                 </Text>
                 {player ? (
-                  <Text style={typography.caption}>
+                  <Text style={[typography.caption, styles.metaLabel]}>
                     {player.rank_tier} · Level {player.game_level}
                   </Text>
                 ) : null}
@@ -254,7 +284,7 @@ export function MatchmakingScreen({ navigation, route }: Props) {
       </View>
 
       {!showCountdown ? (
-        <SecondaryButton title="Leave room" onPress={leave} style={styles.leaveBtn} />
+        <LeaveButton title="Leave room" onPress={leave} style={styles.leaveBtn} />
       ) : null}
     </View>
   );
@@ -263,38 +293,41 @@ export function MatchmakingScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: wxo.bg,
     padding: spacing.lg,
     paddingTop: spacing.xxxl,
   },
   center: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: wxo.bg,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
   },
-  title: { marginTop: spacing.xxs, marginBottom: spacing.lg },
-  errorText: { textAlign: 'center', marginVertical: spacing.md },
+  title: { marginTop: spacing.xxs, marginBottom: spacing.lg, color: wxo.ink },
+  metaLabel: { color: wxo.muted },
+  inkText: { color: wxo.ink },
+  softText: { color: wxo.inkSoft },
+  errorText: { textAlign: 'center', marginVertical: spacing.md, color: wxo.inkSoft },
   pillRow: { flexDirection: 'row', gap: spacing.sm },
   pill: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: wxo.surfaceMuted,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: wxo.border,
     padding: spacing.sm,
   },
-  pillLabel: { ...typography.caption },
-  pillValue: { ...typography.h3, color: colors.textPrimary },
-  pillValueGold: { color: colors.primaryGold },
+  pillLabel: { ...typography.caption, color: wxo.muted },
+  pillValue: { ...typography.h3, color: wxo.ink },
+  pillValueGold: { color: wxo.gold },
   searchBox: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.xxl,
     gap: spacing.xs,
   },
-  searchText: { marginTop: spacing.sm },
+  searchText: { marginTop: spacing.sm, color: wxo.ink },
   countdownBox: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -304,32 +337,45 @@ const styles = StyleSheet.create({
     ...typography.hero,
     fontSize: 88,
     lineHeight: 96,
-    color: colors.primaryGold,
+    color: wxo.red,
   },
   playerList: { gap: spacing.xs },
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: wxo.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: wxo.border,
     padding: spacing.sm,
-    opacity: 0.55,
+    opacity: 0.7,
   },
-  playerRowFilled: { opacity: 1, borderColor: colors.borderGold },
+  playerRowFilled: { opacity: 1, borderColor: wxo.red, backgroundColor: wxo.redSoft },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: wxo.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarFilled: { backgroundColor: colors.purple },
-  avatarText: { ...typography.bodyStrong },
+  avatarFilled: { backgroundColor: wxo.red },
+  avatarText: { ...typography.bodyStrong, color: wxo.muted },
+  avatarTextFilled: { color: '#FFFFFF' },
   playerInfo: { flex: 1 },
-  readyTick: { color: colors.accentGreen, fontSize: 14 },
+  readyTick: { color: wxo.success, fontSize: 14 },
   leaveBtn: { marginTop: spacing.lg, alignSelf: 'stretch' },
+  leaveBtnBase: {
+    minHeight: 52,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: wxo.red,
+    backgroundColor: wxo.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  leaveBtnPressed: { backgroundColor: wxo.redSoft },
+  leaveBtnText: { ...typography.button, color: wxo.red },
 });

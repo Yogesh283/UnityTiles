@@ -4,6 +4,8 @@ import {
   BackHandler,
   Platform,
   Pressable,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -12,6 +14,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import type { ShouldStartLoadRequest } from 'react-native-webview/lib/WebViewTypes';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ROUTES, WXO_ROOM_TOURNAMENTS, WXO_SITE_URL } from '../../constants';
 import { consumePendingWxoMatchResult } from '../../services/wxoMatchBridge';
 import { useAuthStore, usePlayerStore } from '../../store';
@@ -82,9 +85,20 @@ function gameIdFromName(game?: string) {
  */
 export function WXOLobbyScreen({ navigation }: Props) {
   const webRef = useRef<WebView>(null);
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [canGoBack, setCanGoBack] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Pull-to-refresh: only armed while the page is scrolled to the very top so a hard downward
+  // pull reloads the WebView, but scrolling within the page stays untouched.
+  const [refreshing, setRefreshing] = useState(false);
+  const [atTop, setAtTop] = useState(true);
+  const [webHeight, setWebHeight] = useState(0);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    webRef.current?.reload();
+  }, []);
   const setSession = useAuthStore((s) => s.setSession);
   const profile = usePlayerStore((s) => s.profile);
 
@@ -245,6 +259,11 @@ export function WXOLobbyScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
+      {/* Solid status-bar band (edge-to-edge is forced on Android 15 / SDK 54, so the app always
+          draws to the very top). This reserves the status-bar height with the WXO brand colour so
+          the OS battery / network / clock icons stay visible, and the website's fixed header and its
+          top-left / top-right buttons sit below the status bar instead of under it. */}
+      <View style={[styles.statusBand, { height: insets.top }]} />
       {error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorTitle}>Connection issue</Text>
@@ -261,42 +280,67 @@ export function WXOLobbyScreen({ navigation }: Props) {
           </Pressable>
         </View>
       ) : (
-        <WebView
-          ref={webRef}
-          source={source}
+        <ScrollView
           style={styles.web}
-          onLoadStart={() => setLoading(true)}
-          onLoadEnd={() => {
-            setLoading(false);
-            reinject();
-          }}
-          onError={() => {
-            setLoading(false);
-            setError('Could not load WXO. Check internet and try again.');
-          }}
-          onHttpError={() => {
-            setLoading(false);
-            setError('Server error. Please retry.');
-          }}
-          onNavigationStateChange={(nav) => setCanGoBack(!!nav.canGoBack)}
-          onShouldStartLoadWithRequest={onShouldStart}
-          onMessage={onMessage}
-          injectedJavaScriptBeforeContentLoaded={INJECT}
-          injectedJavaScript={INJECT}
-          javaScriptEnabled
-          domStorageEnabled
-          thirdPartyCookiesEnabled
-          sharedCookiesEnabled
-          allowsBackForwardNavigationGestures
-          setSupportMultipleWindows={false}
-          mediaPlaybackRequiresUserAction={false}
-          originWhitelist={['*']}
-          userAgent={
-            Platform.OS === 'android'
-              ? 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 WXO-App/1.0 fun.wxo.app'
-              : undefined
+          contentContainerStyle={styles.webContent}
+          onLayout={(e) => setWebHeight(e.nativeEvent.layout.height)}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              enabled={atTop}
+              colors={['#E31C23']}
+              tintColor="#E31C23"
+              progressBackgroundColor="#FFFFFF"
+            />
           }
-        />
+        >
+          <WebView
+            ref={webRef}
+            source={source}
+            style={[styles.web, { height: webHeight }]}
+            nestedScrollEnabled
+            scrollEventThrottle={16}
+            onScroll={(e) => {
+              const top = e.nativeEvent.contentOffset.y <= 0;
+              setAtTop((prev) => (prev === top ? prev : top));
+            }}
+            onLoadStart={() => setLoading(true)}
+            onLoadEnd={() => {
+              setLoading(false);
+              setRefreshing(false);
+              reinject();
+            }}
+            onError={() => {
+              setLoading(false);
+              setRefreshing(false);
+              setError('Could not load WXO. Check internet and try again.');
+            }}
+            onHttpError={() => {
+              setLoading(false);
+              setRefreshing(false);
+              setError('Server error. Please retry.');
+            }}
+            onNavigationStateChange={(nav) => setCanGoBack(!!nav.canGoBack)}
+            onShouldStartLoadWithRequest={onShouldStart}
+            onMessage={onMessage}
+            injectedJavaScriptBeforeContentLoaded={INJECT}
+            injectedJavaScript={INJECT}
+            javaScriptEnabled
+            domStorageEnabled
+            thirdPartyCookiesEnabled
+            sharedCookiesEnabled
+            allowsBackForwardNavigationGestures
+            setSupportMultipleWindows={false}
+            mediaPlaybackRequiresUserAction={false}
+            originWhitelist={['*']}
+            userAgent={
+              Platform.OS === 'android'
+                ? 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 WXO-App/1.0 fun.wxo.app'
+                : undefined
+            }
+          />
+        </ScrollView>
       )}
       {loading && !error ? (
         <View style={styles.loader} pointerEvents="none">
@@ -310,7 +354,9 @@ export function WXOLobbyScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
+  statusBand: { backgroundColor: '#E31C23' },
   web: { flex: 1, backgroundColor: '#FFFFFF' },
+  webContent: { flexGrow: 1 },
   loader: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',

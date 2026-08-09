@@ -50,6 +50,7 @@ export const ROUTES = {
   Matchmaking: 'Matchmaking',
   UnityGameplay: 'UnityGameplay',
   CreatePool: 'CreatePool',
+  Pools: 'Pools',
   MatchResult: 'MatchResult',
   Victory: 'Victory',
   Defeat: 'Defeat',

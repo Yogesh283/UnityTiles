@@ -12,6 +12,7 @@ const LINKS = [
   { label: 'Wallet', route: ROUTES.Wallet },
   { label: 'My Income · WXO', route: ROUTES.Income },
   { label: 'Referral', route: ROUTES.Referral },
+  { label: 'IQFX Pro Pools', route: ROUTES.Pools },
   { label: 'Create Pool', route: ROUTES.CreatePool },
   { label: 'Missions', route: ROUTES.Missions },
   { label: 'Achievements', route: ROUTES.Achievements },

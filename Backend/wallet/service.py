@@ -142,6 +142,37 @@ class WalletService:
             idempotency_key=idempotency_key,
         )
 
+    def deduct_pool_entry(self, user_id: int, amount: int, pool_id: int) -> Wallet:
+        return self._apply(
+            user_id,
+            -amount,
+            "pool_entry",
+            str(pool_id),
+            f"Pool entry fee for pool {pool_id}",
+            idempotency_key=f"pool_entry:{pool_id}:{user_id}",
+        )
+
+    def credit_pool_prize(self, user_id: int, amount: int, pool_id: int, rank: int) -> Wallet:
+        idempotency_key = hashlib.sha256(f"pool_prize:{pool_id}:{user_id}".encode()).hexdigest()[:36]
+        return self._apply(
+            user_id,
+            amount,
+            "pool_prize",
+            str(pool_id),
+            f"Pool prize rank {rank} in pool {pool_id}",
+            idempotency_key=idempotency_key,
+        )
+
+    def refund_pool_entry(self, user_id: int, amount: int, pool_id: int) -> Wallet:
+        return self._apply(
+            user_id,
+            amount,
+            "pool_entry_refund",
+            str(pool_id),
+            f"Refund pool entry for pool {pool_id}",
+            idempotency_key=f"pool_refund:{pool_id}:{user_id}",
+        )
+
     def admin_adjust(self, user_id: int, amount: int, reason: str) -> Wallet:
         return self._apply(user_id, amount, "admin_adjust", None, reason)
 

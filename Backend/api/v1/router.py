@@ -6,6 +6,7 @@ from api.v1 import (
     levels,
     notifications,
     payments,
+    pool,
     presence,
     referral,
     tournament,
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/api/v1")
 router.include_router(auth.router)
 router.include_router(wallet.router)
 router.include_router(referral.router)
+router.include_router(pool.router)
 router.include_router(levels.router)
 router.include_router(payments.router)
 router.include_router(tournament.router)

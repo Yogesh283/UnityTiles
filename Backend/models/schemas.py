@@ -61,6 +61,26 @@ class GooglePlayVerifyResponse(BaseModel):
     balance: int
 
 
+class JoinPoolRequest(BaseModel):
+    pool_id: int
+
+
+class SubmitPoolScoreRequest(BaseModel):
+    pool_id: int
+    score: int = Field(ge=0)
+    moves: int = Field(default=0, ge=0)
+    elapsed_seconds: int = Field(default=0, ge=0)
+
+
+class CreatePoolRequest(BaseModel):
+    entry_fee: int = Field(ge=0)
+    max_players: int = Field(ge=2, le=100000)
+    name: str | None = Field(default=None, max_length=160)
+    icon: str = Field(default="🏆", max_length=16)
+    winners_count: int | None = Field(default=None, ge=1)
+    distribution: list[int] | None = None
+
+
 class TournamentResponse(BaseModel):
     id: str
     icon: str

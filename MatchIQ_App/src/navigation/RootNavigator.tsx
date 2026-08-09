@@ -18,6 +18,7 @@ import { MatchmakingScreen } from '../screens/core/MatchmakingScreen';
 import { WXOLobbyScreen } from '../screens/core/WXOLobbyScreen';
 import { GamesScreen } from '../screens/core/GamesScreen';
 import { CreatePoolScreen } from '../screens/core/CreatePoolScreen';
+import { PoolsScreen } from '../screens/core/PoolsScreen';
 import { IncomeScreen } from '../screens/core/IncomeScreen';
 import { MatchResultScreen, VictoryScreen, DefeatScreen } from '../screens/results/ResultScreens';
 import {
@@ -101,6 +102,7 @@ export function RootNavigator() {
       <Stack.Screen name={ROUTES.MatchSelection} component={MatchSelectionScreen} />
       <Stack.Screen name={ROUTES.Games} component={GamesScreen} />
       <Stack.Screen name={ROUTES.CreatePool} component={CreatePoolScreen} />
+      <Stack.Screen name={ROUTES.Pools} component={PoolsScreen} />
       <Stack.Screen name={ROUTES.DailyReward} component={DailyRewardScreen} />
       <Stack.Screen name={ROUTES.Missions} component={MissionsScreen} />
       <Stack.Screen name={ROUTES.Leaderboard} component={LeaderboardScreen} />

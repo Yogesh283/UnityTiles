@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, UIManager, View } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PrimaryButton, SecondaryButton, Loader } from '../../components';
 import { colors, spacing, typography } from '../../theme';
@@ -74,6 +75,25 @@ export function UnityGameplayScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     let mounted = true;
+
+    // Unity's native view manager only exists in the custom/dev APK. In Expo Go the JS package
+    // still `require`s fine, but rendering <UnityView> would hard-crash. The one place Unity is
+    // genuinely absent is Expo Go (storeClient); every prebuilt/standalone APK embeds it.
+    //
+    // Under the New Architecture (Fabric) UIManager.getViewManagerConfig('RNUnityView') returns
+    // null even when Unity IS present, so we must NOT rely on it alone — otherwise the real APK
+    // wrongly shows the dev fallback. Detect Expo Go explicitly instead.
+    const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+    const getConfig = (UIManager as any).getViewManagerConfig?.bind(UIManager);
+    const legacyHasUnity = !!getConfig?.('RNUnityView') || !!getConfig?.('RCTRNUnityView');
+    const hasNativeUnity = !inExpoGo || legacyHasUnity;
+    if (!hasNativeUnity) {
+      setNativeMissing(true);
+      return () => {
+        mounted = false;
+      };
+    }
+
     (async () => {
       try {
         // Native module — only exists in custom/dev APK, not Expo Go

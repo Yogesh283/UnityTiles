@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Mkey.Tournament;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Mkey.Shell
 {
@@ -253,7 +254,43 @@ namespace Mkey.Shell
             yield return null;
             StripUnityMenus();
             ForceGameplayBackground();
+            UnblockBoardTaps();
             HideBootCurtain();
+        }
+
+        /// <summary>
+        /// Tiles are hit-tested by the world-space <c>TouchPad</c> (a full-screen bottom-most UI
+        /// catcher). If any full-screen, non-interactive UI graphic ends up above it — e.g. a
+        /// runtime overlay that survived a scene reload — it swallows every board tap while the
+        /// power-up buttons still work (they are <c>Selectable</c> and are left alone here). Drop
+        /// the raycast target on such blockers so taps reach the board again.
+        /// </summary>
+        private static void UnblockBoardTaps()
+        {
+            TouchPad pad = UnityEngine.Object.FindFirstObjectByType<TouchPad>();
+            Graphic padGraphic = pad ? pad.GetComponent<Graphic>() : null;
+
+            foreach (Graphic g in UnityEngine.Object.FindObjectsByType<Graphic>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                if (!g || !g.raycastTarget) continue;
+                if (g == padGraphic || g.GetComponentInParent<TouchPad>()) continue;
+                if (g.GetComponentInParent<Selectable>()) continue; // keep buttons / toggles clickable
+                if (!CoversViewport(g.rectTransform)) continue;
+
+                g.raycastTarget = false;
+                Debug.Log("[MatchIQShell] Cleared raycast on full-screen overlay blocking the board: " + g.name);
+            }
+        }
+
+        private static bool CoversViewport(RectTransform rt)
+        {
+            if (!rt) return false;
+            Vector3[] corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            float w = Mathf.Abs(corners[2].x - corners[0].x);
+            float h = Mathf.Abs(corners[2].y - corners[0].y);
+            // Overlay-canvas corners are in screen pixels; treat >= 85% of the screen as full-screen.
+            return w >= Screen.width * 0.85f && h >= Screen.height * 0.85f;
         }
 
         /// <summary>
