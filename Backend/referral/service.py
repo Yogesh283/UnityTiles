@@ -100,6 +100,38 @@ class ReferralService:
             counts[level] = len(current_ids)
         return counts
 
+    def direct_members(self, user: User, limit: int = 200) -> list[dict]:
+        """Level-1 (direct) referrals of `user`, newest first.
+
+        Each entry also carries how many people that member has personally
+        sponsored, so the UI can show who is building a team of their own.
+        """
+        rows = (
+            self.db.query(User)
+            .filter(User.referred_by == user.id)
+            .order_by(User.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        members: list[dict] = []
+        for u in rows:
+            sub_directs = (
+                self.db.query(func.count(User.id))
+                .filter(User.referred_by == u.id)
+                .scalar()
+            )
+            members.append(
+                {
+                    "id": u.id,
+                    "name": u.display_name or u.username or "Player",
+                    "referral_code": u.referral_code,
+                    "is_guest": bool(u.is_guest),
+                    "joined_at": u.created_at,
+                    "directs": int(sub_directs or 0),
+                }
+            )
+        return members
+
     # ---------------------------------------------------------------- payouts
 
     @staticmethod

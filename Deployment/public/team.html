@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WXO Team</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23; --ink: #111; --muted: #6B7280;
+      --line: #ECEEF2; --bg: #FFF; --soft: #F7F8FA; --gold: #C99213;
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif; background: #111; color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto; background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5); padding-bottom: 96px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; }
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+      padding: 10px 14px; background: rgba(255,255,255,.96); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; background: var(--soft);
+    }
+    .topbar h1 {
+      text-align: center; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800;
+    }
+
+    .pad { padding: 14px; }
+
+    /* Stat tiles */
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .stat {
+      border-radius: 20px; padding: 18px 14px; text-align: center;
+      background: linear-gradient(180deg, #FFF1F2 0%, #fff 75%); border: 1px solid #FECDD3;
+    }
+    .stat.total {
+      background: linear-gradient(180deg, #FFF8E7 0%, #fff 75%); border-color: #F3E2B3;
+    }
+    .stat .num {
+      font-family: Montserrat, sans-serif; font-size: 34px; font-weight: 800; line-height: 1;
+      color: var(--red);
+    }
+    .stat.total .num { color: var(--gold); }
+    .stat .lbl {
+      margin-top: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    /* Referral code */
+    .refcard {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+      background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px;
+    }
+    .refcard .rc-info { flex: 1; min-width: 0; }
+    .refcard .rc-lbl {
+      font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+    }
+    .refcard .rc-code {
+      font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 800; letter-spacing: .02em;
+      margin-top: 2px;
+    }
+    .btn-copy {
+      background: var(--red); color: #fff; border-radius: 12px; padding: 10px 16px;
+      font-weight: 800; font-size: 13px; box-shadow: 0 6px 14px rgba(227,28,35,.28); flex: none;
+    }
+
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 6px 14px; margin-bottom: 12px;
+    }
+    .card > h2 {
+      font-family: Montserrat, sans-serif; font-size: 13px; font-weight: 800;
+      letter-spacing: .04em; text-transform: uppercase; padding: 12px 0 6px; color: var(--muted);
+    }
+
+    .member {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-top: 1px solid var(--line);
+    }
+    .member:first-of-type { border-top: 0; }
+    .m-av {
+      width: 42px; height: 42px; border-radius: 50%; flex: none;
+      background: linear-gradient(135deg, #FCA5A5, var(--red)); color: #fff;
+      display: grid; place-items: center; font-family: Montserrat, sans-serif; font-weight: 800; font-size: 15px;
+    }
+    .m-main { flex: 1; min-width: 0; }
+    .m-name { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .m-name .tag {
+      font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+      background: var(--soft); color: var(--muted); padding: 2px 6px; border-radius: 999px;
+    }
+    .m-meta { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .m-sub {
+      flex: none; text-align: center; min-width: 54px;
+    }
+    .m-sub .n { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 16px; color: var(--ink); }
+    .m-sub .t { font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+
+    .empty { text-align: center; padding: 32px 16px; color: var(--muted); }
+    .empty .em-ico { font-size: 40px; }
+    .empty p { font-size: 13px; font-weight: 600; margin-top: 10px; line-height: 1.5; }
+
+    .state { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 13px; font-weight: 600; }
+
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px;
+    }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0; pointer-events: none;
+      transition: .25s var(--ease); white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="icon-btn" href="/profile.html" aria-label="Back">←</a>
+      <h1>My Team</h1>
+      <a class="icon-btn" href="/wallet.html" aria-label="Wallet">👛</a>
+    </header>
+
+    <div class="pad">
+      <section class="stats">
+        <div class="stat">
+          <div class="num" id="directCount">0</div>
+          <div class="lbl">Direct</div>
+        </div>
+        <div class="stat total">
+          <div class="num" id="teamCount">0</div>
+          <div class="lbl">Total Team</div>
+        </div>
+      </section>
+
+      <section class="refcard">
+        <div class="rc-info">
+          <div class="rc-lbl">Your referral code</div>
+          <div class="rc-code" id="refCode">—</div>
+        </div>
+        <button class="btn-copy" id="btnCopy" type="button">Copy</button>
+      </section>
+
+      <div class="card">
+        <h2>Direct referrals</h2>
+        <div id="list">
+          <div class="state" id="loadState">Loading your team…</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <a href="/"><span class="ico">🏠</span>Home</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
+      <a href="/match-lobby.html?game=iq-match" aria-label="Play"><span class="play-fab">▶</span></a>
+      <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a class="active" href="/team.html"><span class="ico">👥</span>Team</a>
+    </nav>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script>
+    (function () {
+      if (!window.WXOAuth || !WXOAuth.requireAuth()) return;
+
+      function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+      }
+
+      function initials(name) {
+        const p = (name || 'Player').trim().split(/\s+/).filter(Boolean);
+        if (!p.length) return 'WX';
+        if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+        return (p[0][0] + p[1][0]).toUpperCase();
+      }
+
+      function fmtDate(s) {
+        if (!s) return '';
+        const d = new Date(s);
+        if (isNaN(d)) return '';
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      const listEl = document.getElementById('list');
+      const refCodeEl = document.getElementById('refCode');
+      let refCode = '';
+
+      function renderMembers(members) {
+        if (!members || !members.length) {
+          listEl.innerHTML =
+            '<div class="empty"><div class="em-ico">👥</div>' +
+            '<p>No direct referrals yet.<br>Share your code to start building your team.</p></div>';
+          return;
+        }
+        listEl.innerHTML = members.map(function (m) {
+          const meta = [m.referral_code, fmtDate(m.joined_at) && ('Joined ' + fmtDate(m.joined_at))]
+            .filter(Boolean).join(' · ');
+          const tag = m.is_guest ? '<span class="tag">Guest</span>' : '';
+          return '' +
+            '<div class="member">' +
+              '<div class="m-av">' + esc(initials(m.name)) + '</div>' +
+              '<div class="m-main">' +
+                '<div class="m-name">' + esc(m.name) + tag + '</div>' +
+                '<div class="m-meta">' + esc(meta) + '</div>' +
+              '</div>' +
+              '<div class="m-sub"><div class="n">' + (m.directs || 0) + '</div><div class="t">Team</div></div>' +
+            '</div>';
+        }).join('');
+      }
+
+      document.getElementById('btnCopy').onclick = function () {
+        if (!refCode) return;
+        const share = location.origin + '/register.html?ref=' + encodeURIComponent(refCode);
+        const text = refCode + '  ' + share;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { toast('Code copied'); },
+            function () { toast(refCode); });
+        } else {
+          toast(refCode);
+        }
+      };
+
+      WXOAuth.api('/referral/directs?limit=100')
+        .then(function (data) {
+          document.getElementById('directCount').textContent = data.direct_count || 0;
+          document.getElementById('teamCount').textContent = data.team_size || 0;
+          refCode = data.referral_code || '';
+          refCodeEl.textContent = refCode || '—';
+          renderMembers(data.members || []);
+        })
+        .catch(function (err) {
+          listEl.innerHTML = '<div class="state">' + esc(err.message || 'Could not load your team.') + '</div>';
+        });
+    })();
+  </script>
+</body>
+</html>

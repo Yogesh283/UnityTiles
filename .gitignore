@@ -1,3 +1,6 @@
+# Local Gradle cache (GRADLE_USER_HOME) — never commit; breaks git with long/locked paths
+.gr/
+
 # Android release signing (do not commit)
 Unity_Game/Keystore/*.keystore
 Unity_Game/Keystore/*.jks

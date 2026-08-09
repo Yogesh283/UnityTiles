@@ -89,6 +89,26 @@ def earnings(
     return {"items": ReferralService(db).recent_earnings(user.id, limit=limit)}
 
 
+@router.get("/directs")
+def directs(
+    limit: int = Query(100, ge=1, le=200),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Direct referral list plus direct/total team counts for the current user."""
+    service = ReferralService(db)
+    service.ensure_code(user)
+    db.commit()
+
+    counts = service.team_counts(user)
+    return {
+        "direct_count": counts.get(1, 0),
+        "team_size": sum(counts.values()),
+        "referral_code": user.referral_code,
+        "members": service.direct_members(user, limit=limit),
+    }
+
+
 @router.get("/team")
 def team(
     user: User = Depends(get_current_user),
