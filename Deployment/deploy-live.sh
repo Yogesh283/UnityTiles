@@ -21,6 +21,19 @@ cd "$APP_ROOT/Backend"
 python3 -m venv venv 2>/dev/null || true
 venv/bin/pip install -r requirements.txt
 
+echo "==> Database migrations"
+# Applies every Database/migrations/*.sql in order. Migrations are written to be
+# idempotent (CREATE TABLE IF NOT EXISTS, guarded INSERTs, additive ALTERs), so
+# re-running on each deploy is safe.
+if command -v mysql >/dev/null 2>&1; then
+  for f in $(ls "$APP_ROOT/Database/migrations/"*.sql 2>/dev/null | sort); do
+    echo "  -> $(basename "$f")"
+    mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$f" || echo "  WARN: $(basename "$f") reported an error (continuing)"
+  done
+else
+  echo "  WARN: mysql client not found; skipping migrations"
+fi
+
 echo "==> Admin panel"
 cd "$APP_ROOT/AdminPanel"
 composer install --no-dev --optimize-autoloader
