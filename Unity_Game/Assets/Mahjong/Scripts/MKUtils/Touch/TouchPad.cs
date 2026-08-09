@@ -90,14 +90,17 @@ namespace Mkey
 
         public static TouchPad Instance;
 
-        // TEMP on-device tap diagnostic. Shows why a board tap did or did not hit a tile so we can
-        // pinpoint an embedded-only input problem without a PC log. Remove once fixed.
-        private static string s_tapDebug = "tap a tile…";
+        // TEMP on-device tap diagnostic. Only shows when a board tap fails to hit any tile, so we can
+        // pinpoint an embedded-only input problem without a PC log. Stays hidden when tiles respond
+        // normally. Remove once the tile-tap fix is confirmed.
+        private static string s_tapDebug = "";
+        private static bool s_showDebug = false;
         private void OnGUI()
         {
+            if (!s_showDebug) return;
             GUIStyle st = new GUIStyle(GUI.skin.label) { fontSize = 26, wordWrap = true };
             st.normal.textColor = Color.yellow;
-            GUI.Label(new Rect(12f, 64f, Screen.width - 24f, 120f), "DBG: " + s_tapDebug, st);
+            GUI.Label(new Rect(12f, 64f, Screen.width - 24f, 140f), "DBG (no tile hit): " + s_tapDebug, st);
         }
 
         #region regular
@@ -142,12 +145,16 @@ namespace Mkey
                         }
                     }
 
-                    Vector3 wp = GetWorldTouchPos();
-                    s_tapDebug = "scr=" + ((Vector2)ScreenTouchPos).ToString("F0")
-                        + " wpos=" + wp.ToString("F2")
-                        + " hits=" + hitList.Count
-                        + " cam=" + (Camera.main ? Camera.main.name : "NULL")
-                        + " res=" + Screen.width + "x" + Screen.height;
+                    // Only surface the diagnostic when a tap found no tile (the failure we're chasing).
+                    s_showDebug = hitList.Count == 0;
+                    if (s_showDebug)
+                    {
+                        Vector3 wp = GetWorldTouchPos();
+                        s_tapDebug = "scr=" + ScreenTouchPos.ToString("F0")
+                            + " wpos=" + wp.ToString("F2")
+                            + " cam=" + (Camera.main ? Camera.main.name + " z=" + Camera.main.transform.position.z.ToString("F1") : "NULL")
+                            + " res=" + Screen.width + "x" + Screen.height;
+                    }
 
                     ScreenPointerDownEvent?.Invoke(tpea);
                 }
@@ -155,7 +162,6 @@ namespace Mkey
             else
             {
                 IsTouched = true;
-                s_tapDebug = "PointerDown but TouchPad IsActive=false (input disabled)";
             }
         }
 

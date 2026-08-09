@@ -6,16 +6,31 @@ using UnityEngine.UI;
 namespace Mkey
 {
     /// <summary>
-    /// Replaces the tiny top-left menu/burger button with a clear "Leave" button during gameplay,
-    /// so the player can always exit the match back to the React Native app. The old menu button is
-    /// hidden and a labelled red button is dropped into the top-left corner, wired straight to
-    /// <see cref="Shell.MatchIQShellBridge.ReturnToShell(bool)"/>. Runtime-only and revertible.
+    /// Adds a clear "Leave" button to the top-left of the gameplay header so the player can always
+    /// exit the match back to the React Native app, wired to
+    /// <see cref="Shell.MatchIQShellBridge.ReturnToShell(bool)"/>. The original burger menu
+    /// (ButtonMenu) is left in place on the RIGHT of the header (positioned by CampaignTimerHud) so
+    /// the in-game pause/options popup is still reachable. Runtime-only and revertible.
     /// </summary>
     [DefaultExecutionOrder(260)]
     public class GameLeaveButton : MonoBehaviour
     {
-        // Legacy top-left buttons to hide (burger / menu / pause).
-        private static readonly string[] OldButtonNames = { "ButtonMenu", "MenuButton", "PauseButton" };
+        // Stray legacy buttons to hide (duplicate menu / pause). ButtonMenu is intentionally NOT here
+        // — it stays on the right of the header as the in-game menu option.
+        private static readonly string[] OldButtonNames = { "MenuButton", "PauseButton" };
+
+        // Vertical centre of the header row (matches CampaignTimerHud.HeaderY) so the Leave button sits
+        // inside the top banner, level with LEVEL / SCORE / timer instead of poking out of the corner.
+        private const float HeaderY = -86f;
+        private const float LeftMargin = 24f;
+        private static readonly Vector2 ButtonSize = new Vector2(168f, 70f);
+
+        // Cached so we can keep the button parked in the banner after rotation / safe-area changes.
+        private RectTransform leaveRt;
+        private Canvas leaveCanvas;
+        private int lastW = -1;
+        private int lastH = -1;
+        private float lastTop = float.NaN;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -70,11 +85,16 @@ namespace Mkey
             btnGo.transform.SetParent(canvas.transform, false);
 
             RectTransform rt = btnGo.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f); // top-left
-            rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(26f, -26f);
-            rt.sizeDelta = new Vector2(196f, 76f);
+            // Anchor to the top-left but pivot on the LEFT-MIDDLE so anchoredPosition.y is the button's
+            // vertical centre — we line it up with the header row (HeaderY), pushed below the safe area.
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 0.5f);
+            rt.sizeDelta = ButtonSize;
             rt.SetAsLastSibling();
+
+            leaveRt = rt;
+            leaveCanvas = canvas;
+            PositionLeave();
 
             Image img = btnGo.GetComponent<Image>();
             img.color = new Color(0.89f, 0.11f, 0.14f, 0.96f); // WXO brand red
@@ -99,6 +119,27 @@ namespace Mkey
 
             Button btn = btnGo.GetComponent<Button>();
             btn.onClick.AddListener(OnLeave);
+        }
+
+        // Parks the button inside the header banner: left edge (past any landscape punch-hole) and
+        // vertically centred on the header row, dropped below the status bar / notch safe area.
+        private void PositionLeave()
+        {
+            if (!leaveRt) return;
+            float top = WxoSafeArea.TopInsetCanvas(leaveCanvas);
+            float left = LeftMargin + WxoSafeArea.LeftInsetCanvas(leaveCanvas);
+            leaveRt.anchoredPosition = new Vector2(left, HeaderY - top);
+            lastW = Screen.width;
+            lastH = Screen.height;
+            lastTop = top;
+        }
+
+        private void Update()
+        {
+            if (!leaveRt) return;
+            float top = WxoSafeArea.TopInsetCanvas(leaveCanvas);
+            if (Screen.width != lastW || Screen.height != lastH || !Mathf.Approximately(top, lastTop))
+                PositionLeave();
         }
 
         private void OnLeave()

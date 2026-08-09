@@ -27,16 +27,22 @@ namespace Mkey
         private Vector3 lastAppliedScale = Vector3.positiveInfinity;
         private int lastW;
         private int lastH;
+        private float lastTopInset = -1f;
+        private float lastBottomInset = -1f;
 
         private void LateUpdate()
         {
             if (!EnsureRefs()) return;
 
             // Refit when the board was rebuilt (MatchGrid.SetScale resets localScale to the level's
-            // designed scale) or when the screen size / orientation changed.
+            // designed scale), when the screen size / orientation changed, or when the device safe
+            // area changed (notch device, rotation) so the board stays clear of the top HUD.
             bool scaleReset = grid.localScale != lastAppliedScale;
             bool screenChanged = Screen.width != lastW || Screen.height != lastH;
-            if (!scaleReset && !screenChanged) return;
+            bool insetChanged =
+                !Mathf.Approximately(WxoSafeArea.TopInsetFraction(), lastTopInset) ||
+                !Mathf.Approximately(WxoSafeArea.BottomInsetFraction(), lastBottomInset);
+            if (!scaleReset && !screenChanged && !insetChanged) return;
 
             Fit();
         }
@@ -79,7 +85,15 @@ namespace Mkey
             float worldH = cam.orthographicSize * 2f;
             float worldW = worldH * cam.aspect;
 
-            float availH = worldH * (1f - topReserveFraction - bottomReserveFraction);
+            // Add the device safe-area insets on top of the designed reserves so the board drops below
+            // the notch/status-bar HUD and lifts above the gesture/nav bar. Both are 0 on devices
+            // without insets, so the designed layout is unchanged there.
+            float topInset = WxoSafeArea.TopInsetFraction();
+            float bottomInset = WxoSafeArea.BottomInsetFraction();
+            float topReserve = topReserveFraction + topInset;
+            float bottomReserve = bottomReserveFraction + bottomInset;
+
+            float availH = worldH * (1f - topReserve - bottomReserve);
             float availW = worldW * (1f - 2f * sideReserveFraction);
             if (availH <= 0f || availW <= 0f) return;
 
@@ -91,10 +105,11 @@ namespace Mkey
             grid.localScale *= fit;
 
             // Slide the (now correctly sized) board into the free band between the top HUD and the
-            // bottom boosters, and centre it horizontally on the camera.
+            // bottom boosters, and centre it horizontally on the camera. Uses the safe-area-adjusted
+            // reserves so the band (and its centre) shifts down with the HUD on notched devices.
             Bounds after = MeasureTiles() ?? bounds;
             float bandCenterY =
-                cam.transform.position.y + (bottomReserveFraction - topReserveFraction) * worldH * 0.5f;
+                cam.transform.position.y + (bottomReserve - topReserve) * worldH * 0.5f;
 
             Vector3 pos = grid.position;
             pos.x += cam.transform.position.x - after.center.x;
@@ -104,6 +119,8 @@ namespace Mkey
             lastAppliedScale = grid.localScale;
             lastW = Screen.width;
             lastH = Screen.height;
+            lastTopInset = topInset;
+            lastBottomInset = bottomInset;
         }
 
         private Bounds? MeasureTiles()

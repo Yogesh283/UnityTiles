@@ -28,13 +28,18 @@ namespace Mkey
 
         // --- Tunables --------------------------------------------------------------------------
         // Normalized centre of each painted circle inside the background art (0..1, x left→right).
-        private static readonly float[] SlotNX = { 0.313f, 0.5f, 0.692f };
-        // Normalized height of the circle row inside the art (0 = art bottom, 1 = art top).
-        private const float SlotNY = 0.075f;
+        // Measured directly from the gold ring glow in Bkg Emerald Temple.png so the discs land
+        // dead-centre in each painted ring.
+        private static readonly float[] SlotNX = { 0.190f, 0.490f, 0.805f };
+        // Normalized height of each circle centre (0 = art bottom, 1 = art top). Tuned empirically on
+        // device: pixel-detection over-reads the height because of the ring's upward glow, so this is
+        // the on-screen sweet spot that drops the discs into the middle of each ring.
+        private static readonly float[] SlotNY = { 0.097f, 0.097f, 0.095f };
         // On-screen size of each booster disc (px at the canvas reference resolution).
         private const float SlotSize = 145f;
-        // Footer container(s) whose background art (wooden tray) should be hidden.
-        private static readonly string[] FooterContainers = { "FooterPanel", "FooterGui" };
+        // Footer container(s) whose background art (wooden tray) should be hidden. The boosters live
+        // in "LayerButtonsPanel" (a HorizontalLayoutGroup) sitting on the wooden "FooterPanel".
+        private static readonly string[] FooterContainers = { "FooterPanel", "FooterGui", "LayerButtonsPanel" };
         // ---------------------------------------------------------------------------------------
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -61,14 +66,43 @@ namespace Mkey
             yield return null;
             yield return null;
 
-            HideFooterTray();
+            // The footer tray and background sprite can build/swap a little late, and a level load can
+            // rebuild the booster tray after we've themed it. So re-apply for the first few seconds…
+            float t = 0f;
+            while (t < 4f)
+            {
+                HideFooterTray();
+                Apply();
+                yield return new WaitForSecondsRealtime(0.25f);
+                t += 0.25f;
+            }
 
-            // The shell swaps in the emerald background shortly after the board builds, so wait
-            // for a real sprite before we measure it, then re-apply once in case it swaps late.
-            Apply();
-            yield return new WaitForSecondsRealtime(0.4f);
-            HideFooterTray();
-            Apply();
+            // …then keep a cheap watchdog running: if the boosters ever fall back into the wooden
+            // tray (e.g. after a level load rebuilds it), lift them onto the rings again.
+            while (true)
+            {
+                if (BoostersInTray())
+                {
+                    HideFooterTray();
+                    Apply();
+                }
+                yield return new WaitForSecondsRealtime(1f);
+            }
+        }
+
+        // True while any booster button is still parented under the wooden tray / layout group,
+        // i.e. it has not yet been lifted onto the background's gold rings.
+        private static bool BoostersInTray()
+        {
+            for (int i = 0; i < BoosterNames.Length; i++)
+            {
+                GameObject go = GameObject.Find(BoosterNames[i]);
+                if (!go || !go.transform.parent) continue;
+                string parent = go.transform.parent.name;
+                for (int f = 0; f < FooterContainers.Length; f++)
+                    if (parent == FooterContainers[f]) return true;
+            }
+            return false;
         }
 
         private void Apply()
@@ -108,9 +142,10 @@ namespace Mkey
 
             if (TryPlaceOnCircle(rt, index, root, bg, cam)) return;
 
-            // Fallback: treat the slot coordinates as normalized screen anchors.
-            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(SlotNX[index], SlotNY);
-            rt.anchoredPosition = Vector2.zero;
+            // Fallback: treat the slot coordinates as normalized screen anchors, lifted above the
+            // bottom safe-area inset (gesture / nav bar) so the buttons stay fully tappable.
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(SlotNX[index], SlotNY[index]);
+            rt.anchoredPosition = new Vector2(0f, WxoSafeArea.BottomInsetCanvas(root));
         }
 
         /// <summary>Projects the painted circle position (inside the background sprite) to the
@@ -123,7 +158,7 @@ namespace Mkey
             Bounds b = bg.bounds;
             Vector3 world = new Vector3(
                 b.min.x + SlotNX[index] * b.size.x,
-                b.min.y + SlotNY * b.size.y,
+                b.min.y + SlotNY[index] * b.size.y,
                 b.center.z);
 
             Vector3 screen = cam.WorldToScreenPoint(world);
@@ -133,6 +168,9 @@ namespace Mkey
                 return false;
 
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+            // Land exactly on the painted ring. No safe-area lift here: the rings are baked into the
+            // artwork (already clear of the gesture bar), so adding a device-dependent bottom inset
+            // would push the discs up off-centre — which is exactly what made them float above.
             rt.anchoredPosition = local;
             return true;
         }

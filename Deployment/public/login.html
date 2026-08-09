@@ -101,7 +101,7 @@
     }
 
     .foot {
-      margin-top: 18px; padding: 4px 16px calc(20px + env(safe-area-inset-bottom));
+      margin-top: 6px; padding: 4px 16px calc(20px + env(safe-area-inset-bottom));
       text-align: center; font-size: 13px; color: var(--muted); font-weight: 600;
     }
     .foot a { color: var(--red); font-weight: 800; }
@@ -183,6 +183,10 @@
       </div>
 
       <button class="btn-red" type="submit" id="submitBtn">Login</button>
+
+      <div class="sep">OR</div>
+
+      <button class="btn-ghost" type="button" id="guestBtn">Continue as Guest</button>
     </form>
 
     <div class="foot">
@@ -242,6 +246,22 @@
         const show = pwInput.type === 'password';
         pwInput.type = show ? 'text' : 'password';
         this.textContent = show ? 'HIDE' : 'SHOW';
+      };
+
+      const guestBtn = document.getElementById('guestBtn');
+      guestBtn.onclick = async function () {
+        clearError();
+        guestBtn.disabled = true;
+        guestBtn.textContent = 'Please wait…';
+        try {
+          const data = await WXOAuth.guestLogin();
+          toast('Welcome, ' + (data.display_name || 'Guest'));
+          setTimeout(function () { location.replace(next); }, 500);
+        } catch (err) {
+          showError(err.message || 'Guest login failed.');
+          guestBtn.disabled = false;
+          guestBtn.textContent = 'Continue as Guest';
+        }
       };
 
       form.addEventListener('submit', async function (e) {

@@ -1,2 +1,2 @@
-afb8d0c
-tournament seed + board fit + create-account CTA
+875f578
+deploy: auto-apply DB migrations on live deploy

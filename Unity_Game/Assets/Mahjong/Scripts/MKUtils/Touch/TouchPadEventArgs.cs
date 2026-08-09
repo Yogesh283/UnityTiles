@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /*
     23.08.2020 - first
@@ -67,6 +68,7 @@ namespace Mkey
             pointerData.position = touch.position;
             List<RaycastResult> results = new List<RaycastResult>();
             if(EventSystem.current) EventSystem.current.RaycastAll(pointerData, results);
+            IgnoreCatcherHits(results);
             //  Debug.Log("results.Count: " + results.Count);
             if (results.Count > 0) { hits = new Collider2D[0]; return; }
 
@@ -110,6 +112,7 @@ namespace Mkey
             pointerData.position = position;
             List<RaycastResult> results = new List<RaycastResult>();
             if(EventSystem.current)   EventSystem.current.RaycastAll(pointerData, results);
+            IgnoreCatcherHits(results);
             //  Debug.Log("results.Count: " + results.Count);
             float camPosZ = (Camera.main) ? Camera.main.transform.position.z : -float.MaxValue;
 
@@ -168,6 +171,26 @@ namespace Mkey
                 return null;
             }
 
+        }
+
+        /// <summary>
+        /// Drops UI raycast hits that must not shadow the tile board: the full-screen
+        /// <see cref="TouchPad"/> catcher itself and any fully-transparent overlay. These are
+        /// always hit on a board tap, and using them to compute the depth cutoff (their
+        /// worldPosition.z vs the camera z is unreliable on device) wrongly filtered out every
+        /// tile — so a tap registered but no tile was ever selected. Only a real, visible UI
+        /// panel should block the tiles beneath it.
+        /// </summary>
+        private static void IgnoreCatcherHits(List<RaycastResult> results)
+        {
+            if (results == null || results.Count == 0) return;
+            results.RemoveAll(r =>
+            {
+                if (!r.gameObject) return true;
+                if (r.gameObject.GetComponent<TouchPad>()) return true;
+                Graphic g = r.gameObject.GetComponent<Graphic>();
+                return g != null && g.color.a <= 0.02f;
+            });
         }
 
         private Vector2 GetPriorityOneDirAbs(Vector2 sourceDir)

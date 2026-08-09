@@ -67,18 +67,13 @@
       display: grid; place-items: center; font-size: 18px; color: #222;
     }
     .brand {
-      justify-self: center; text-align: center;
-      display: flex; flex-direction: column; align-items: center; gap: 0;
+      justify-self: center; text-decoration: none;
+      display: flex; flex-direction: row; align-items: center; gap: 9px;
     }
-    .brand img { width: 36px; height: 36px; object-fit: contain; }
-    .brand .name {
-      font-family: Montserrat, sans-serif; font-weight: 800; font-size: 15px;
-      letter-spacing: .06em; color: var(--red); line-height: 1; margin-top: 1px;
-    }
-    .brand .sub {
-      font-size: 7px; font-weight: 700; letter-spacing: .14em; color: var(--muted);
-      text-transform: uppercase; margin-top: 2px;
-    }
+    .brand img { height: 40px; width: 40px; object-fit: contain; display: block; }
+    .brand-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
+    .brand-name { font-weight: 900; font-size: 21px; letter-spacing: .02em; color: var(--red); }
+    .brand-tag { font-size: 8px; font-weight: 800; letter-spacing: .16em; color: var(--muted); margin-top: 3px; }
     .top-actions { display: flex; align-items: center; gap: 6px; }
     .bell { position: relative; }
     .bell .dot {
@@ -514,10 +509,12 @@
 
     <header class="topbar">
       <button class="icon-btn" type="button" id="menuOpen" aria-label="Menu">☰</button>
-      <a class="brand" href="#top">
-        <img src="/assets/wxo-logo.png" alt="WXO" />
-        <span class="name">WXO</span>
-        <span class="sub">Tournament Platform</span>
+      <a class="brand" href="#top" aria-label="WXO — Tournament Platform">
+        <img src="/assets/wxo-logo.png" alt="" />
+        <span class="brand-text">
+          <span class="brand-name">WXO</span>
+          <span class="brand-tag">TOURNAMENT PLATFORM</span>
+        </span>
       </a>
       <div class="top-actions">
         <button class="icon-btn bell" type="button" id="btnBell" aria-label="Notifications">🔔<span class="dot"></span></button>
@@ -737,9 +734,9 @@
     <nav class="bottom-nav" aria-label="Primary">
       <a class="active" href="#top"><span class="ico">🏠</span>Home</a>
       <a href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
-      <a href="#" id="fabUnity" aria-label="Play Unity"><span class="play-fab">▶</span></a>
+      <a href="#referral" aria-label="Earn"><span class="play-fab">💰</span></a>
       <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
-      <a href="/swap.html"><span class="ico">⇄</span>Swap</a>
+      <a href="/profile.html"><span class="ico">👤</span>Profile</a>
     </nav>
   </div>
 
