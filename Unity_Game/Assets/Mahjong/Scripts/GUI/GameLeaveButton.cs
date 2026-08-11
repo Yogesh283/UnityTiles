@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Mkey.Shell;
 
 namespace Mkey
 {
@@ -19,11 +20,12 @@ namespace Mkey
         // — it stays on the right of the header as the in-game menu option.
         private static readonly string[] OldButtonNames = { "MenuButton", "PauseButton" };
 
-        // Vertical centre of the header row (matches CampaignTimerHud.HeaderY) so the Leave button sits
-        // inside the top banner, level with LEVEL / SCORE / timer instead of poking out of the corner.
-        private const float HeaderY = -86f;
-        private const float LeftMargin = 24f;
-        private static readonly Vector2 ButtonSize = new Vector2(168f, 70f);
+        // Vertical centre matches CampaignTimerHud.HeaderY — Leave stays level with the HUD row.
+        private const float HeaderY = -148f;
+        // Extra left padding so Leave clears LEVEL on 1080 / 1220 phones.
+        private const float LeftMargin = 20f;
+        // Compact Leave (~68px tall) matching HUD visual height, not the full section box.
+        private static readonly Vector2 ButtonSize = new Vector2(128f, 68f);
 
         // Cached so we can keep the button parked in the banner after rotation / safe-area changes.
         private RectTransform leaveRt;
@@ -72,6 +74,15 @@ namespace Mkey
 
         private void CreateLeaveButton()
         {
+            // React Native renders Leave + exit confirmation when the shell owns the match.
+            if (MatchIQShellBridge.IsActive)
+            {
+                // Destroy any stale Leave from a previous non-shell session.
+                GameObject stale = GameObject.Find("LeaveNowButton");
+                if (stale) MatchIQShellHudHider.HideVisuals(stale);
+                return;
+            }
+
             Canvas canvas = ResolveCanvas();
             if (!canvas) return;
             if (canvas.transform.Find("LeaveNowButton")) return;
@@ -107,7 +118,7 @@ namespace Mkey
             Text txt = txtGo.GetComponent<Text>();
             txt.font = font;
             txt.text = "\u2039 Leave";
-            txt.fontSize = 30;
+            txt.fontSize = 26;
             txt.fontStyle = FontStyle.Bold;
             txt.color = Color.white;
             txt.alignment = TextAnchor.MiddleCenter;

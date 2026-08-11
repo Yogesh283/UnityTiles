@@ -6,14 +6,17 @@ export const RESULT_SCHEME = 'matchiq://match-result';
 export const WXO_ANDROID_PACKAGE = 'fun.wxo.app';
 /** Legacy standalone Unity APK (not used when embed is present) */
 export const UNITY_ANDROID_PACKAGE = 'com.matchiq.game';
-export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ?? 'https://rmsurveyai.com/api/v1';
-export const WXO_SITE_URL =
-  process.env.EXPO_PUBLIC_SITE_URL ?? 'https://rmsurveyai.com/';
-/** Live match socket lives at the server root, outside the /api/v1 prefix. */
-export const WS_BASE_URL =
-  process.env.EXPO_PUBLIC_WS_URL ??
-  API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/v1\/?$/, '');
+
+/**
+ * Live WXO production — locked for all phones / all networks.
+ * Do not point release builds at localhost or LAN IPs.
+ * Site: https://rmsurveyai.com/
+ * API:  https://rmsurveyai.com/api/v1
+ */
+export const API_BASE_URL = 'https://rmsurveyai.com/api/v1';
+export const WXO_SITE_URL = 'https://rmsurveyai.com/';
+/** Live match socket at server root (outside /api/v1). */
+export const WS_BASE_URL = 'wss://rmsurveyai.com';
 
 /**
  * Match lobby room id → backend tournament id. The web lobby and the app offer the same
@@ -48,6 +51,7 @@ export const ROUTES = {
   Games: 'Games',
   GameplayLoader: 'GameplayLoader',
   Matchmaking: 'Matchmaking',
+  MatchLobby: 'MatchLobby',
   UnityGameplay: 'UnityGameplay',
   CreatePool: 'CreatePool',
   Pools: 'Pools',

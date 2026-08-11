@@ -150,13 +150,16 @@ export function WXOLobbyScreen({ navigation }: Props) {
     [navigation],
   );
 
-  const openMatchLobbyInWeb = useCallback((game?: string) => {
-    const id = gameIdFromName(game);
-    const url = `https://rmsurveyai.com/match-lobby.html?game=${encodeURIComponent(id)}`;
-    webRef.current?.injectJavaScript(
-      `window.location.href=${JSON.stringify(url)}; true;`,
-    );
-  }, []);
+  const openMatchLobby = useCallback(
+    (game?: string) => {
+      const id = gameIdFromName(game);
+      navigation.navigate(ROUTES.MatchLobby, {
+        gameId: id,
+        game: id === 'ludo' ? 'Ludo' : id === 'racing' ? 'Car Racing' : 'IQ Match',
+      });
+    },
+    [navigation],
+  );
 
   const syncWalletFromNative = useCallback(() => {
     const result = consumePendingWxoMatchResult();
@@ -196,10 +199,22 @@ export function WXOLobbyScreen({ navigation }: Props) {
     (req: ShouldStartLoadRequest) => {
       const url = req.url || '';
 
-      // Old play.html links → shared match lobby (fee / rooms), not raw HTML game
+      // Play → native full-page room picker (2 Players, members, shared level/timer).
       if (isPlayUrl(url)) {
         const p = parsePlayParams(url);
-        openMatchLobbyInWeb(p.game);
+        openMatchLobby(p.game);
+        return false;
+      }
+
+      // Website match-lobby → same native room page (do not keep WebView lobby).
+      if (/\/match-lobby\.html(\?|$)/i.test(url)) {
+        try {
+          const u = new URL(url);
+          const gid = u.searchParams.get('game') || 'iq-match';
+          openMatchLobby(gid);
+        } catch {
+          openMatchLobby('iq-match');
+        }
         return false;
       }
 
@@ -220,7 +235,7 @@ export function WXOLobbyScreen({ navigation }: Props) {
       }
       return false;
     },
-    [openMatchLobbyInWeb],
+    [openMatchLobby],
   );
 
   const onMessage = useCallback(
@@ -244,13 +259,13 @@ export function WXOLobbyScreen({ navigation }: Props) {
           });
         }
         if (data?.type === 'OPEN_MATCH_LOBBY') {
-          openMatchLobbyInWeb(data.game || data.gameId);
+          openMatchLobby(data.game || data.gameId);
         }
       } catch {
         // ignore non-JSON
       }
     },
-    [adoptWebSession, openMatchmaking, openMatchLobbyInWeb],
+    [adoptWebSession, openMatchmaking, openMatchLobby],
   );
 
   const reinject = useCallback(() => {

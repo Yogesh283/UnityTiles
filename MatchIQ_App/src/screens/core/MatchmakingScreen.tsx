@@ -3,9 +3,10 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { radius, spacing, typography } from '../../theme';
 import { ROUTES, WXO_ROOM_TOURNAMENTS } from '../../constants';
-import { useAuthStore, usePlayerStore } from '../../store';
+import { useAuthStore, usePlayerStore, useUiStore } from '../../store';
 import { tournamentApi, type Room } from '../../api/tournamentApi';
 import { openMatchSocket, type MatchSocket } from '../../services/matchSocket';
+import { WXO_GAMES } from '../../constants/wxoGames';
 
 type Props = NativeStackScreenProps<any>;
 
@@ -70,6 +71,7 @@ export function MatchmakingScreen({ navigation, route }: Props) {
 
   const token = useAuthStore((s) => s.session?.token);
   const setBalances = usePlayerStore((s) => s.setBalances);
+  const lastRoomWinner = useUiStore((s) => s.lastRoomWinner);
 
   const [room, setRoom] = useState<Room | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +91,10 @@ export function MatchmakingScreen({ navigation, route }: Props) {
     (active: Room) => {
       if (launchedRef.current || leftRef.current) return;
       launchedRef.current = true;
+      // Keep the socket briefly; UnityGameplay reconnects on the same room so every
+      // device still receives match_finished / player_left while the board is open.
       socketRef.current?.close();
+      socketRef.current = null;
 
       navigation.replace(ROUTES.UnityGameplay, {
         roomId: active.room_id,
@@ -98,6 +103,7 @@ export function MatchmakingScreen({ navigation, route }: Props) {
         levelSeed: active.level_seed,
         game: gameName,
         gameId,
+        roomKey,
         entry: entryFee,
         prize: winPrize,
         mode: 'tournament',
@@ -105,7 +111,7 @@ export function MatchmakingScreen({ navigation, route }: Props) {
         live,
       });
     },
-    [entryFee, gameId, gameName, live, navigation, winPrize],
+    [entryFee, gameId, gameName, live, navigation, roomKey, winPrize],
   );
 
   const applyRoom = useCallback(
@@ -221,13 +227,31 @@ export function MatchmakingScreen({ navigation, route }: Props) {
   const players = room?.players ?? [];
   const seats = soloPractice ? 1 : room?.max_players ?? (Number(route.params?.players) || 2);
   const showCountdown = countdown != null && (soloPractice || room?.status === 'starting');
+  const sharedLevel =
+    room != null && Number.isFinite(room.level_index) ? room.level_index + 1 : null;
+  const roomLabel =
+    WXO_GAMES[gameId]?.rooms.find((r) => r.id === roomKey)?.label ||
+    (roomKey === 'duel' ? '2 Players' : roomKey);
 
   return (
     <View style={styles.root}>
       <Text style={[typography.caption, styles.metaLabel]}>
-        {live ? 'LIVE STREAM ROOM' : 'MATCH ROOM'}
+        {live ? 'LIVE STREAM ROOM' : 'MATCH ROOM'} · {roomLabel}
       </Text>
       <Text style={[typography.hero, styles.title]}>{gameName}</Text>
+
+      {lastRoomWinner ? (
+        <View style={styles.lastWinnerBox}>
+          <Text style={styles.lastWinnerLabel}>LAST WHO WON</Text>
+          <Text style={styles.lastWinnerName}>
+            {lastRoomWinner.won ? 'You' : lastRoomWinner.winnerName}
+          </Text>
+          <Text style={[typography.caption, styles.metaLabel]}>
+            {lastRoomWinner.roomLabel}
+            {lastRoomWinner.prize > 0 ? ` · +${lastRoomWinner.prize} WXO` : ''}
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.pillRow}>
         <View style={styles.pill}>
@@ -238,6 +262,12 @@ export function MatchmakingScreen({ navigation, route }: Props) {
           <Text style={styles.pillLabel}>Winner gets</Text>
           <Text style={[styles.pillValue, styles.pillValueGold]}>
             {winPrize ? `${winPrize} WXO` : '—'}
+          </Text>
+        </View>
+        <View style={styles.pill}>
+          <Text style={styles.pillLabel}>Shared level</Text>
+          <Text style={styles.pillValue}>
+            {sharedLevel != null ? `Lv ${sharedLevel}` : '—'}
           </Text>
         </View>
       </View>
@@ -304,7 +334,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.lg,
   },
-  title: { marginTop: spacing.xxs, marginBottom: spacing.lg, color: wxo.ink },
+  title: { marginTop: spacing.xxs, marginBottom: spacing.md, color: wxo.ink },
+  lastWinnerBox: {
+    backgroundColor: wxo.redSoft,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(227, 28, 35, 0.25)',
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  lastWinnerLabel: { ...typography.caption, color: wxo.red, fontWeight: '800', letterSpacing: 1 },
+  lastWinnerName: { ...typography.h3, color: wxo.ink, marginTop: 2 },
   metaLabel: { color: wxo.muted },
   inkText: { color: wxo.ink },
   softText: { color: wxo.inkSoft },

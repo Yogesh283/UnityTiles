@@ -18,6 +18,9 @@ export const colors = {
   goldLight: '#FFD54F',
   goldDark: '#C49000',
   accentGreen: '#22C55E',
+  /** Premium emerald used for in-match Hint / Shuffle / Undo. */
+  emerald: '#0FA958',
+  emeraldGlow: 'rgba(15, 169, 88, 0.55)',
   danger: '#EF4444',
   neonPurple: '#FF4D52',
   neonBlue: '#FF7A7E',

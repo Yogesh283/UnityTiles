@@ -15,7 +15,7 @@ namespace Mkey
         [Header("Default data", order = 1)]
         [Tooltip("Default count at start")]
         [SerializeField]
-        private int defCount = 5;
+        private int defCount = 1;
         #endregion default data
 
         #region keys

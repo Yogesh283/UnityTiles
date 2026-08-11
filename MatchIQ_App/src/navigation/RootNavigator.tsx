@@ -15,6 +15,7 @@ import {
 } from '../screens/core/MatchFlowScreens';
 import { UnityGameplayScreen } from '../screens/core/UnityGameplayScreen';
 import { MatchmakingScreen } from '../screens/core/MatchmakingScreen';
+import { MatchLobbyScreen } from '../screens/core/MatchLobbyScreen';
 import { WXOLobbyScreen } from '../screens/core/WXOLobbyScreen';
 import { GamesScreen } from '../screens/core/GamesScreen';
 import { CreatePoolScreen } from '../screens/core/CreatePoolScreen';
@@ -85,6 +86,7 @@ export function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={screenOptions} initialRouteName={ROUTES.WXOLobby}>
       <Stack.Screen name={ROUTES.WXOLobby} component={WXOLobbyScreen} />
+      <Stack.Screen name={ROUTES.MatchLobby} component={MatchLobbyScreen} />
       <Stack.Screen name={ROUTES.Matchmaking} component={MatchmakingScreen} />
       <Stack.Screen name={ROUTES.UnityGameplay} component={UnityGameplayScreen} />
       <Stack.Screen name={ROUTES.Victory} component={VictoryScreen} />

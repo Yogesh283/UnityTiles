@@ -50,13 +50,24 @@ export type Tournament = {
 export type MatchResultPayload = {
   matchId: string;
   tournamentId?: string;
+  roomId?: string;
   won: boolean;
   score: number;
   timeSeconds: number;
   accuracy: number;
+  /** Existing Unity accuracy ratio (score ÷ average × 100). */
+  iq?: number;
+  /** Existing ScoreController max combo. */
+  combo?: number;
+  /** Motivational line from Unity result message when present. */
+  message?: string;
+  level?: number;
+  rank?: number | null;
+  moves?: number;
   coinsEarned: number;
   xpEarned: number;
   opponentName?: string;
+  league?: string;
 };
 
 export type Mission = {

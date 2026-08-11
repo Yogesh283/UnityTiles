@@ -10,13 +10,13 @@ namespace Mkey.Network
     public class ApiConfig : ScriptableObject
     {
         [Header("Backend URLs")]
-        [Tooltip("Local FastAPI server (XAMPP development)")]
+        [Tooltip("Local FastAPI server (dev only — not reachable from other phones/networks)")]
         public string baseUrl = "http://localhost:8000";
 
-        [Tooltip("Production API")]
-        public string productionUrl = "https://api.matchiq.fun";
+        [Tooltip("Live WXO production (all users / all networks)")]
+        public string productionUrl = "https://rmsurveyai.com";
 
-        public bool useProductionUrl;
+        public bool useProductionUrl = true;
 
         [Header("Mode")]
         [Tooltip("When enabled, all systems use local simulation (no API calls).")]

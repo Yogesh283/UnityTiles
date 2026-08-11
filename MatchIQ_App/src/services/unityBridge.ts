@@ -34,10 +34,15 @@ export function parseMatchResultUrl(url: string): MatchResultPayload | null {
     return {
       matchId: String(q.matchId ?? `match-${Date.now()}`),
       tournamentId: q.tournamentId ? String(q.tournamentId) : undefined,
+      roomId: q.roomId ? String(q.roomId) : undefined,
       won,
       score,
       timeSeconds: Number(q.timeSeconds ?? 0),
-      accuracy: Number(q.accuracy ?? 0),
+      accuracy: Number(q.accuracy ?? q.iq ?? 0),
+      iq: q.iq != null ? Number(q.iq) : q.accuracy != null ? Number(q.accuracy) : undefined,
+      combo: q.combo != null ? Number(q.combo) : undefined,
+      message: q.message ? String(q.message) : undefined,
+      level: q.level != null ? Number(q.level) : undefined,
       coinsEarned: Number(q.coinsEarned ?? 0),
       xpEarned: Number(q.xpEarned ?? 0),
       opponentName: q.opponentName ? String(q.opponentName) : undefined,
@@ -52,7 +57,13 @@ export function parseMatchResultJson(raw: string): MatchResultPayload | null {
   try {
     const q = JSON.parse(raw) as Record<string, unknown>;
     if (q == null || typeof q !== 'object') return null;
-    if (q.type && String(q.type) !== 'match-result') {
+    const type = q.type ? String(q.type) : '';
+    if (
+      type &&
+      type !== 'match-result' &&
+      type !== 'LevelCompleted' &&
+      type !== 'GameOver'
+    ) {
       // allow plain result objects without type
       if (q.won == null && q.score == null) return null;
     }
@@ -60,10 +71,15 @@ export function parseMatchResultJson(raw: string): MatchResultPayload | null {
     return {
       matchId: String(q.matchId ?? `match-${Date.now()}`),
       tournamentId: q.tournamentId ? String(q.tournamentId) : undefined,
+      roomId: q.roomId ? String(q.roomId) : undefined,
       won,
       score: Number(q.score ?? 0),
       timeSeconds: Number(q.timeSeconds ?? 0),
-      accuracy: Number(q.accuracy ?? 0),
+      accuracy: Number(q.accuracy ?? q.iq ?? 0),
+      iq: q.iq != null ? Number(q.iq) : q.accuracy != null ? Number(q.accuracy) : undefined,
+      combo: q.combo != null ? Number(q.combo) : undefined,
+      message: q.message ? String(q.message) : undefined,
+      level: q.level != null ? Number(q.level) : undefined,
       coinsEarned: Number(q.coinsEarned ?? 0),
       xpEarned: Number(q.xpEarned ?? 0),
       opponentName: q.opponentName ? String(q.opponentName) : undefined,
@@ -166,11 +182,78 @@ export function createSimulatedResult(matchId: string, tournamentId?: string): M
   };
 }
 
+export type UnityCommand =
+  | 'PauseGame'
+  | 'ResumeGame'
+  | 'RestartGame'
+  | 'UseHint'
+  | 'ShuffleTiles'
+  | 'UndoMove'
+  | 'ExitGame'
+  | 'GrantShuffle'
+  | 'GrantUndo'
+  | 'WatchRewardedAd';
+
+export type UnityEventType =
+  | 'GameStarted'
+  | 'GamePaused'
+  | 'ScoreUpdated'
+  | 'MatchesUpdated'
+  | 'TimerUpdated'
+  | 'LevelCompleted'
+  | 'GameOver'
+  | 'ExitRequested'
+  | 'RewardGranted'
+  | 'match-result';
+
+/** postMessage target on the Unity side (DontDestroyOnLoad GO). */
+export const UNITY_BRIDGE_GO = 'MatchIQShellBridge';
+
+export function sendUnityCommand(
+  unity: { postMessage: (go: string, method: string, message: string) => void } | null | undefined,
+  command: UnityCommand,
+  opts?: { amount?: number },
+): boolean {
+  if (!unity?.postMessage) return false;
+  try {
+    const amount = opts?.amount;
+    const msg = amount != null ? String(amount) : command;
+    // Non-empty message — some Android UnitySendMessage builds drop "" payloads.
+    unity.postMessage(UNITY_BRIDGE_GO, command, msg);
+    unity.postMessage(
+      UNITY_BRIDGE_GO,
+      'OnReactNativeCommand',
+      JSON.stringify({ command, amount: amount ?? 1 }),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function parseUnityEvent(raw: string): { type: string; payload: Record<string, unknown> } | null {
+  if (!raw) return null;
+  try {
+    const json = JSON.parse(raw) as Record<string, unknown>;
+    if (json && typeof json === 'object' && json.type) {
+      return { type: String(json.type), payload: json };
+    }
+  } catch {
+    // not JSON
+  }
+  if (raw.startsWith('matchiq://') || raw.includes('match-result')) {
+    return { type: 'match-result', payload: { raw } };
+  }
+  return null;
+}
+
 export const unityBridge = {
   launchUnityMatch,
   parseMatchResultUrl,
   parseMatchResultJson,
   createSimulatedResult,
+  sendUnityCommand,
+  parseUnityEvent,
   resultScheme: RESULT_SCHEME,
   isUnityInstalled,
 };

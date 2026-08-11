@@ -40,20 +40,20 @@ public static class MatchIQDevSetup
             "2. ParrelSync → Clones Manager → Create clone\n" +
             "3. Open ORIGINAL project → Play Tournament Scene → Join 1v1 Duel\n" +
             "4. Open CLONE project → Play Tournament Scene → Join 1v1 Duel\n" +
-            "5. Both match in same room on api.matchiq.fun\n\n" +
+            "5. Both match in same room on rmsurveyai.com\n\n" +
             "OPTION B — PC + Phone (no ParrelSync):\n" +
             "1. This PC: Production Server Testing + Play → Join 1v1\n" +
             "2. Phone: APK with production server → Join 1v1\n\n" +
             "Note: Local Tournament Testing uses a BOT — not 2 humans.");
     }
 
-    [MenuItem("Match IQ/Production Server Testing (PC + api.matchiq.fun)", false, 11)]
+    [MenuItem("Match IQ/Production Server Testing (PC + rmsurveyai.com)", false, 11)]
     public static void EnableProductionServerTesting()
     {
         ApplyApiConfig(localSimulation: false, useProductionUrl: true);
         Debug.Log(
             "[Match IQ] Production server testing ON.\n" +
-            "• Uses https://api.matchiq.fun\n" +
+            "• Uses https://rmsurveyai.com\n" +
             "• For final check before APK build");
     }
 
@@ -235,6 +235,7 @@ public static class MatchIQDevSetup
         var serialized = new SerializedObject(config);
         serialized.FindProperty("developmentMode").boolValue = localSimulation;
         serialized.FindProperty("useProductionUrl").boolValue = useProductionUrl;
+        serialized.FindProperty("productionUrl").stringValue = "https://rmsurveyai.com";
         if (!string.IsNullOrEmpty(baseUrl))
             serialized.FindProperty("baseUrl").stringValue = baseUrl;
         serialized.ApplyModifiedPropertiesWithoutUndo();

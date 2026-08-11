@@ -88,4 +88,18 @@ async function balance(): Promise<number> {
   return data.balance;
 }
 
-export const tournamentApi = { join, room, submitScore, balance };
+export type MatchHistoryRow = {
+  tournament_id: string;
+  room_id: string;
+  rank: number;
+  score: number;
+  prize: number;
+  created_at?: string;
+};
+
+async function history(): Promise<MatchHistoryRow[]> {
+  const { data } = await apiClient.get<MatchHistoryRow[]>('/tournaments/history');
+  return Array.isArray(data) ? data : [];
+}
+
+export const tournamentApi = { join, room, submitScore, balance, history };

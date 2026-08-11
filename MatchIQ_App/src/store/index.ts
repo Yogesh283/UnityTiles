@@ -59,22 +59,36 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setUnread: (unreadNotifications) => set({ unreadNotifications }),
 }));
 
+type LastRoomWinner = {
+  roomKey: string;
+  roomLabel: string;
+  winnerName: string;
+  won: boolean;
+  prize: number;
+  level?: number;
+  at: number;
+};
+
 type UiState = {
   toast: { message: string; tone: 'info' | 'success' | 'danger' } | null;
   sidebarOpen: boolean;
   lastMatchResult: MatchResultPayload | null;
+  lastRoomWinner: LastRoomWinner | null;
   showToast: (message: string, tone?: 'info' | 'success' | 'danger') => void;
   clearToast: () => void;
   setSidebarOpen: (open: boolean) => void;
   setLastMatchResult: (result: MatchResultPayload | null) => void;
+  setLastRoomWinner: (winner: LastRoomWinner | null) => void;
 };
 
 export const useUiStore = create<UiState>((set) => ({
   toast: null,
   sidebarOpen: false,
   lastMatchResult: null,
+  lastRoomWinner: null,
   showToast: (message, tone = 'info') => set({ toast: { message, tone } }),
   clearToast: () => set({ toast: null }),
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
   setLastMatchResult: (lastMatchResult) => set({ lastMatchResult }),
+  setLastRoomWinner: (lastRoomWinner) => set({ lastRoomWinner }),
 }));

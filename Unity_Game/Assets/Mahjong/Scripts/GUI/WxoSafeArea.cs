@@ -10,14 +10,13 @@ namespace Mkey
     /// Everything reads <see cref="Screen.safeArea"/> at runtime and converts the pixel insets into
     /// the units each consumer needs (canvas reference units for UI anchoredPositions, or a fraction
     /// of screen height for the world-space board fitter). On devices with no inset (and in the
-    /// Editor) every value is 0, so the current look is unchanged — the offset only appears where the
-    /// hardware actually needs it.
+    /// Editor) every value is 0, so the offset only appears where the hardware actually needs it.
     /// </summary>
     public static class WxoSafeArea
     {
         // Required Canvas Scaler reference (Scale With Screen Size).
         public const float RefW = 1080f;
-        public const float RefH = 1920f;
+        public const float RefH = 2400f;
         public const float Match = 0.5f;
 
         /// <summary>Unsafe strip at the TOP of the screen, in real pixels (status bar / notch).</summary>
@@ -75,6 +74,12 @@ namespace Mkey
             return sf > 0f ? LeftInsetPixels() / sf : 0f;
         }
 
+        /// <summary>Pixels → fraction of screen height.</summary>
+        public static float PixelsToHeightFraction(float pixels)
+        {
+            return Screen.height > 0 ? Mathf.Clamp01(pixels / Screen.height) : 0f;
+        }
+
         /// <summary>The canvas' px-per-unit. Uses the live scaleFactor when available, otherwise
         /// reproduces the "Scale With Screen Size" (match 0.5) formula so callers work before the
         /// CanvasScaler has run.</summary>
@@ -88,7 +93,7 @@ namespace Mkey
         }
 
         /// <summary>Forces the required Canvas Scaler config on a HUD canvas: Scale With Screen Size,
-        /// 1080×1920 reference, match 0.5. No-op if the canvas has no scaler.</summary>
+        /// 1080×2400 reference, match 0.5. No-op if the canvas has no scaler.</summary>
         public static void ConfigureScaler(Canvas root)
         {
             if (!root) return;
@@ -98,6 +103,26 @@ namespace Mkey
             cs.referenceResolution = new Vector2(RefW, RefH);
             cs.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             cs.matchWidthOrHeight = Match;
+        }
+
+        /// <summary>
+        /// Applies <see cref="Screen.safeArea"/> as offsets on a full-stretch RectTransform so its
+        /// children (header / footer) sit inside the safe rectangle. Uses the root canvas scale.
+        /// </summary>
+        public static void ApplySafeAreaInsets(RectTransform rt, Canvas root)
+        {
+            if (!rt) return;
+            float top = TopInsetCanvas(root);
+            float bottom = BottomInsetCanvas(root);
+            float left = LeftInsetCanvas(root);
+            // Right inset = screen width - (safe.x + safe.width)
+            Rect s = Screen.safeArea;
+            float rightPx = Screen.width - (s.x + s.width);
+            float sf = ScaleFactor(root);
+            float right = (sf > 0f && rightPx > 1f) ? rightPx / sf : 0f;
+
+            rt.offsetMin = new Vector2(left, bottom);
+            rt.offsetMax = new Vector2(-right, -top);
         }
     }
 }

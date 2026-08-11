@@ -146,16 +146,42 @@ public static class MatchIQReactNativeExport
         }
 
         string xml = File.ReadAllText(manifest);
+        // Unity 6 may emit MAIN/LAUNCHER in either order — strip any intent-filter that
+        // declares both, so the RN host app keeps the only launcher icon.
         string stripped = System.Text.RegularExpressions.Regex.Replace(
             xml,
-            @"<intent-filter>\s*<action android:name=""android\.intent\.action\.MAIN""\s*/>\s*<category android:name=""android\.intent\.category\.LAUNCHER""\s*/>\s*</intent-filter>",
+            @"<intent-filter>\s*(?:(?:<action[^>]*android\.intent\.action\.MAIN[^/]*/>\s*)|(?:<category[^>]*android\.intent\.category\.LAUNCHER[^/]*/>\s*)){2}</intent-filter>",
             string.Empty,
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        if (stripped == xml)
+        {
+            // Fallback: remove LAUNCHER category lines inside Unity game activity filters.
+            stripped = System.Text.RegularExpressions.Regex.Replace(
+                xml,
+                @"\s*<category\s+android:name=""android\.intent\.category\.LAUNCHER""\s*/>\s*",
+                "\n",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            stripped = System.Text.RegularExpressions.Regex.Replace(
+                stripped,
+                @"<intent-filter>\s*<action\s+android:name=""android\.intent\.action\.MAIN""\s*/>\s*</intent-filter>",
+                string.Empty,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            stripped = System.Text.RegularExpressions.Regex.Replace(
+                stripped,
+                @"<intent-filter>\s*</intent-filter>",
+                string.Empty,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
 
         if (stripped != xml)
         {
             File.WriteAllText(manifest, stripped);
             Debug.Log("[Match IQ] Removed LAUNCHER intent-filter from unityLibrary (library-only).");
+        }
+        else
+        {
+            Debug.LogWarning("[Match IQ] No LAUNCHER intent-filter found to strip in unityLibrary manifest.");
         }
     }
 }

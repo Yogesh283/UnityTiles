@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Mkey.Shell;
 
 namespace Mkey
 {
@@ -23,6 +24,7 @@ namespace Mkey
         private float appliedTop = float.NaN;
         private int safeLastW = -1;
         private int safeLastH = -1;
+        private bool shellVisualsHidden;
 
         // Original header positions (restored on hide)
         private RectTransform levelRt;
@@ -98,31 +100,31 @@ namespace Mkey
                 rim.effectDistance = new Vector2(1.4f, -1.4f);
             }
 
-            // "TIME" caption pinned to the top of the section.
+            // "TIME" caption — top band of the equal-height section.
             GameObject capGo = new GameObject("Caption", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
             capGo.transform.SetParent(rt, false);
             Text caption = capGo.GetComponent<Text>();
             caption.font = font;
             caption.text = "TIME";
-            caption.fontSize = 26;
+            caption.fontSize = 22;
             caption.fontStyle = FontStyle.Bold;
             caption.color = new Color(1f, 0.85f, 0.4f, 0.85f);
             caption.alignment = TextAnchor.MiddleCenter;
             caption.raycastTarget = false;
             RectTransform capRt = caption.rectTransform;
-            capRt.anchorMin = new Vector2(0f, 1f);
+            capRt.anchorMin = new Vector2(0f, 0.52f);
             capRt.anchorMax = new Vector2(1f, 1f);
-            capRt.pivot = new Vector2(0.5f, 1f);
-            capRt.offsetMin = new Vector2(10f, -56f);
-            capRt.offsetMax = new Vector2(-10f, -14f);
+            capRt.pivot = new Vector2(0.5f, 0.5f);
+            capRt.offsetMin = new Vector2(6f, 0f);
+            capRt.offsetMax = new Vector2(-6f, -4f);
 
-            // Countdown value fills the rest of the section, under the caption.
+            // Countdown value — bottom band, vertically centred in its half.
             GameObject timerGo = new GameObject("Timer", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
             timerGo.transform.SetParent(rt, false);
             timerText = timerGo.GetComponent<Text>();
             timerText.font = font;
             timerText.text = CampaignLevelTimer.FormatRemaining();
-            timerText.fontSize = 52;
+            timerText.fontSize = 40;
             timerText.fontStyle = FontStyle.Bold;
             timerText.color = NormalColor;
             timerText.alignment = TextAnchor.MiddleCenter;
@@ -131,16 +133,16 @@ namespace Mkey
             timerText.raycastTarget = false;
             RectTransform tRt = timerText.rectTransform;
             tRt.anchorMin = new Vector2(0f, 0f);
-            tRt.anchorMax = new Vector2(1f, 1f);
+            tRt.anchorMax = new Vector2(1f, 0.50f);
             tRt.pivot = new Vector2(0.5f, 0.5f);
-            tRt.offsetMin = new Vector2(10f, 10f);
-            tRt.offsetMax = new Vector2(-10f, -48f);
-            // Drop shadow keeps the gold digits legible on the dark panel.
+            tRt.offsetMin = new Vector2(6f, 6f);
+            tRt.offsetMax = new Vector2(-6f, 0f);
             Shadow glow = timerGo.AddComponent<Shadow>();
             glow.effectColor = new Color(0f, 0f, 0f, 0.7f);
             glow.effectDistance = new Vector2(1f, -1.5f);
 
             ApplyLayout();
+            SyncShellVisibility();
         }
 
         // WXO gold — warm gold digits that read well on the dark badge / red-gold banner.
@@ -148,29 +150,24 @@ namespace Mkey
         // WXO brand red (#E31C23) — used for the final countdown seconds.
         private static readonly Color WxoRed = new Color(0.89f, 0.11f, 0.14f, 1f);
 
-        // Shared vertical position for the whole header row so LEVEL / SCORE / timer / MATCHES /
-        // menu all sit inside the emerald frame's top banner. Tune this one value to move the row.
-        // Nudged down so the taller top-nav sections sit lower inside the banner nameplate.
-        private const float HeaderY = -86f;
+        // Shared vertical centre of the header row (canvas units, top-anchored) + safe-area inset.
+        private const float HeaderY = -148f;
 
-        // Horizontal slots along the header row (0 = centre, under the timer badge). Equal spacing of
-        // HeaderSpacing between LEVEL → SCORE → TIMER → MATCHES so the row reads evenly; the menu slot
-        // mirrors on the right (the burger ButtonMenu = in-game menu; Leave sits on the left).
-        // Widened so the top section spreads across the banner and clears the bigger TIME panel.
-        private const float HeaderSpacing = 168f;
-        private const float LevelX = -2f * HeaderSpacing; // -310
-        private const float ScoreX = -HeaderSpacing;      // -155
-        private const float MatchesX = HeaderSpacing;     //  155
-        private const float MenuX = 2f * HeaderSpacing;   //  310
+        // Equal-width sections: LEVEL | SCORE | TIME | MATCHES. TIME stays at X=0.
+        // LevelX chosen so LEVEL clears the compact Leave button on 1080×2400 / 1220×2584.
+        private const float SectionW = 150f;
+        private const float SectionH = 104f;
+        private const float LevelX = -305f;
+        private const float ScoreX = -160f;
+        private const float MatchesX = 160f;
+        private const float MenuX = 320f;
 
-        // Square size for the right-hand burger menu so it fits the banner row (its authored rect is
-        // 136x140, which pokes above the screen top when centred on the row).
-        private const float MenuSize = 96f;
+        private static readonly Vector2 StatSize = new Vector2(SectionW, SectionH);
+        // Menu icon matches Leave height (~68), vertically centred on HeaderY with TIME.
+        private const float MenuSize = 68f;
 
-        // Legacy-Text "auto size" (the project has no TextMeshPro): every HUD label/value shrinks to
-        // fit its own rect between these bounds, so nothing overflows its panel on any aspect ratio.
-        private const int AutoSizeMin = 22;
-        private const int AutoSizeMax = 40;
+        private const int AutoSizeMin = 15;
+        private const int AutoSizeMax = 32;
 
         private void ApplyLayout()
         {
@@ -184,7 +181,8 @@ namespace Mkey
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(0f, HeaderY - TopOffset());
-            rt.sizeDelta = new Vector2(200f, 118f);
+            // Same width as LEVEL / SCORE / MATCHES for a balanced equal-width HUD row.
+            rt.sizeDelta = new Vector2(SectionW, SectionH);
             rt.localScale = Vector3.one;
             rt.SetAsLastSibling();
         }
@@ -209,22 +207,110 @@ namespace Mkey
         private void ApplyHeaderRow(float top)
         {
             float y = HeaderY - top;
-            if (levelRt) levelRt.anchoredPosition = new Vector2(LevelX, y);
-            if (scoreRt) scoreRt.anchoredPosition = new Vector2(ScoreX, y);
-            if (matchesRt) matchesRt.anchoredPosition = new Vector2(MatchesX, y);
+            PlaceStat(levelRt, LevelX, y);
+            PlaceStat(scoreRt, ScoreX, y);
+            PlaceStat(matchesRt, MatchesX, y);
             if (menuRt)
             {
-                // Right-hand in-game menu (burger). Sized to sit inside the banner row and aligned
-                // with the timer badge so its large authored rect doesn't clip above the screen.
-                menuRt.anchoredPosition = new Vector2(MenuX, y);
-                menuRt.sizeDelta = new Vector2(MenuSize, MenuSize);
+                // React Native owns Pause/Settings when the shell is active.
+                if (MatchIQShellBridge.IsActive)
+                {
+                    MuteHudRect(menuRt);
+                }
+                else
+                {
+                    menuRt.gameObject.SetActive(true);
+                    menuRt.anchorMin = menuRt.anchorMax = new Vector2(0.5f, 1f);
+                    menuRt.pivot = new Vector2(0.5f, 0.5f);
+                    menuRt.anchoredPosition = new Vector2(MenuX, y);
+                    menuRt.sizeDelta = new Vector2(MenuSize, MenuSize);
+                }
             }
 
+            // When shell owns HUD, don't leave LEVEL/SCORE/MATCHES/TIME drawing under RN.
+            if (MatchIQShellBridge.IsActive)
+            {
+                MuteHudRect(levelRt);
+                MuteHudRect(scoreRt);
+                MuteHudRect(matchesRt);
+            }
+
+            // TIME stays perfectly centred on X = 0.
             if (transform is RectTransform rt) rt.anchoredPosition = new Vector2(0f, y);
+
+            PolishHeaderText();
 
             appliedTop = top;
             safeLastW = Screen.width;
             safeLastH = Screen.height;
+            SyncShellVisibility();
+        }
+
+        /// <summary>
+        /// When React Native owns the HUD, keep this component alive for expiry callbacks but hide
+        /// every graphic (TIME badge + LEVEL/SCORE/MATCHES/menu) so nothing double-draws under RN.
+        /// </summary>
+        private void SyncShellVisibility()
+        {
+            bool hide = MatchIQShellBridge.IsActive;
+            if (!hide)
+            {
+                if (!shellVisualsHidden) return;
+                shellVisualsHidden = false;
+                SetSubtreeGraphicsEnabled(transform, true);
+                return;
+            }
+
+            // Always re-apply while shell-active — header polish / themer may re-enable Graphics.
+            shellVisualsHidden = true;
+            SetSubtreeGraphicsEnabled(transform, false);
+            MuteHudRect(levelRt);
+            MuteHudRect(scoreRt);
+            MuteHudRect(matchesRt);
+            MuteHudRect(menuRt);
+            MatchIQShellHudHider.HideVisuals(gameObject);
+        }
+
+        private static void MuteHudRect(RectTransform rt)
+        {
+            if (!rt) return;
+            MatchIQShellHudHider.HideVisuals(rt.gameObject);
+        }
+
+        private static void SetSubtreeGraphicsEnabled(Transform root, bool enabled)
+        {
+            if (!root) return;
+            Graphic[] graphics = root.GetComponentsInChildren<Graphic>(true);
+            for (int i = 0; i < graphics.Length; i++)
+            {
+                if (!graphics[i]) continue;
+                graphics[i].enabled = enabled;
+                if (!enabled) graphics[i].raycastTarget = false;
+            }
+            CanvasGroup cg = root.GetComponent<CanvasGroup>();
+            if (!enabled)
+            {
+                if (!cg) cg = root.gameObject.AddComponent<CanvasGroup>();
+                cg.alpha = 0f;
+                cg.interactable = false;
+                cg.blocksRaycasts = false;
+            }
+            else if (cg)
+            {
+                cg.alpha = 1f;
+                cg.interactable = true;
+                cg.blocksRaycasts = true;
+            }
+        }
+
+        private static void PlaceStat(RectTransform rt, float x, float y)
+        {
+            if (!rt) return;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(x, y);
+            rt.sizeDelta = StatSize;
+            rt.localScale = Vector3.one;
         }
 
         private void ArrangeHeader()
@@ -248,33 +334,77 @@ namespace Mkey
             PolishHeaderText();
         }
 
-        // Keeps every LEVEL / SCORE / MATCHES label and value inside its panel on all devices:
-        // enables legacy best-fit (auto size 22–40) and centres the text both ways. Best-fit scales
-        // the font to the rect, so text can never overflow — the fixed-size + Overflow authoring was
-        // what let the numbers spill outside the black/gold panels on tall Android screens.
+        // Stacks the caption above the value inside each LEVEL / SCORE / MATCHES section so they
+        // never overlap (the old "stretch both texts to fill parent" path caused the overlap).
         private void PolishHeaderText()
         {
-            ApplyAutoSize(levelRt);
-            ApplyAutoSize(scoreRt);
-            ApplyAutoSize(matchesRt);
+            StackStatTexts(levelRt);
+            StackStatTexts(scoreRt);
+            StackStatTexts(matchesRt);
         }
 
-        private static void ApplyAutoSize(RectTransform container)
+        private static void StackStatTexts(RectTransform container)
         {
             if (!container) return;
             Text[] texts = container.GetComponentsInChildren<Text>(true);
+            if (texts == null || texts.Length == 0) return;
+
+            Text label = null;
+            Text value = null;
             for (int i = 0; i < texts.Length; i++)
             {
                 Text t = texts[i];
                 if (!t) continue;
-                t.alignment = TextAnchor.MiddleCenter;
-                t.resizeTextForBestFit = true;
-                t.resizeTextMinSize = AutoSizeMin;
-                t.resizeTextMaxSize = AutoSizeMax;
-                // Best-fit governs the size; keep single-line and clip rather than grow the rect.
-                t.horizontalOverflow = HorizontalWrapMode.Wrap;
-                t.verticalOverflow = VerticalWrapMode.Truncate;
+                string n = t.gameObject.name;
+                // Scene names: LevelText / ScoreText / MatchesText = labels;
+                // CounterText / ScoreCounterText = values.
+                bool looksLikeValue =
+                    n.IndexOf("Counter", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    IsMostlyDigits(t.text);
+                if (looksLikeValue) value = t;
+                else if (label == null) label = t;
             }
+
+            if (label == null && texts.Length > 0) label = texts[0];
+            if (value == null && texts.Length > 1) value = texts[texts.Length - 1];
+            if (value == null) value = label;
+
+            if (label && label != value)
+                PlaceTextBand(label, 0.52f, 1f, 4f, -2f, AutoSizeMin, 26);
+            if (value)
+                PlaceTextBand(value, 0f, label && label != value ? 0.50f : 1f, 2f, -4f, AutoSizeMin, AutoSizeMax);
+        }
+
+        private static bool IsMostlyDigits(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            int digits = 0, other = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (char.IsDigit(c)) digits++;
+                else if (!char.IsWhiteSpace(c)) other++;
+            }
+            return digits > 0 && digits >= other;
+        }
+
+        private static void PlaceTextBand(
+            Text t, float anchorMinY, float anchorMaxY,
+            float padBottom, float padTop, int minSize, int maxSize)
+        {
+            RectTransform tr = t.rectTransform;
+            tr.anchorMin = new Vector2(0f, anchorMinY);
+            tr.anchorMax = new Vector2(1f, anchorMaxY);
+            tr.pivot = new Vector2(0.5f, 0.5f);
+            tr.offsetMin = new Vector2(4f, padBottom);
+            tr.offsetMax = new Vector2(-4f, padTop);
+            t.alignment = TextAnchor.MiddleCenter;
+            t.resizeTextForBestFit = true;
+            t.resizeTextMinSize = minSize;
+            t.resizeTextMaxSize = maxSize;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.raycastTarget = false;
         }
 
         private void RestoreHeader()
@@ -313,6 +443,9 @@ namespace Mkey
                 timerText.color = new Color(1f, 0.75f, 0.25f, 1f);
             else
                 timerText.color = NormalColor;
+
+            // Keep shell visibility in sync if IsActive flips mid-match.
+            SyncShellVisibility();
 
             if (expiredHandled || !CampaignLevelTimer.IsRunning) return;
             if (remaining > 0f) return;

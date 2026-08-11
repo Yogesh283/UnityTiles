@@ -5,22 +5,20 @@ using UnityEngine.SceneManagement;
 namespace Mkey
 {
     /// <summary>
-    /// Installs safe-area handling for the gameplay scene. Its job is to enforce the required Canvas
-    /// Scaler config (Scale With Screen Size · 1080×1920 · match 0.5) on the gameplay HUD canvas and
-    /// re-apply it if the screen changes (rotation / fold).
+    /// Installs safe-area handling for the gameplay scene. Enforces Canvas Scaler
+    /// (Scale With Screen Size · 1080×2400 · match 0.5) on the gameplay HUD canvas and
+    /// re-applies it when the screen or safe area changes.
     ///
-    /// The actual downward shift of the HUD, timer badge and board is applied by
-    /// <see cref="CampaignTimerHud"/>, <see cref="BoardScreenFitter"/> and <see cref="GameHudThemer"/>,
-    /// all of which read <see cref="WxoSafeArea"/> directly. This controller only owns the scaler so
-    /// those consumers compute their insets against the correct px-per-unit.
-    ///
-    /// Runtime-only (created via <see cref="RuntimeInitializeOnLoadMethod"/> like the other themers),
-    /// so deleting this file fully reverts the behaviour. It only ever touches the HUD canvas that
-    /// hosts the header — never the level-constructor canvas.
+    /// Per-widget layout (header / leave / board / boosters) reads <see cref="WxoSafeArea"/>
+    /// directly so everything clears the Android status bar and gesture / nav bar.
     /// </summary>
     [DefaultExecutionOrder(-100)]
     public class SafeAreaController : MonoBehaviour
     {
+        private int lastW = -1;
+        private int lastH = -1;
+        private Rect lastSafe;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
@@ -41,7 +39,6 @@ namespace Mkey
 
         private IEnumerator ConfigureWhenReady()
         {
-            // The HUD canvas builds over the first couple of frames.
             yield return null;
             yield return null;
             Configure();
@@ -51,9 +48,11 @@ namespace Mkey
         {
             Canvas hud = ResolveHudCanvas();
             if (hud) WxoSafeArea.ConfigureScaler(hud);
+            lastW = Screen.width;
+            lastH = Screen.height;
+            lastSafe = Screen.safeArea;
         }
 
-        /// <summary>The gameplay HUD canvas (the one hosting the header) — never the constructor.</summary>
         private static Canvas ResolveHudCanvas()
         {
             if (HeaderGUIController.Instance)
@@ -70,14 +69,10 @@ namespace Mkey
             return null;
         }
 
-        private int lastW = -1;
-        private int lastH = -1;
-
         private void Update()
         {
-            if (Screen.width == lastW && Screen.height == lastH) return;
-            lastW = Screen.width;
-            lastH = Screen.height;
+            if (Screen.width == lastW && Screen.height == lastH && Screen.safeArea.Equals(lastSafe))
+                return;
             Configure();
         }
     }

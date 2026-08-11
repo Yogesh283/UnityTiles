@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ApiConfig
   m_EditorClassIdentifier: 
   baseUrl: http://localhost:8000
-  productionUrl: https://api.matchiq.fun
+  productionUrl: https://rmsurveyai.com
   useProductionUrl: 1
   developmentMode: 0
   useNakamaRealtime: 0

@@ -5,15 +5,13 @@ using System.Collections;
 
 namespace Mkey
 {
+    /// <summary>Restored from E-drive TilesClash; drag threshold raised so taps never become drags.</summary>
     public class TouchManager : TouchPadMessageTarget, IPointerExitHandler
     {
         public bool dlog = false;
         public static TouchManager Instance;
         public Transform PointerUpObject;
-        public Transform FirstObject; // can be drag
-        //{
-        //    get; private set;
-        //}
+        public Transform FirstObject;
 
         public bool CanDrag = false;
         public bool MinDragReached = false;
@@ -30,52 +28,64 @@ namespace Mkey
         private Action<Action> ResetDragEvent;
         #endregion temp vars
 
+        // E-drive used 0.1f which turned every finger jitter into a drag.
+        private const float MinDragWorld = 0.45f;
+
         #region regular
         private IEnumerator Start()
         {
             if (Instance != null) Destroy(gameObject);
-            else
-            {
-                Instance = this;
-            }
+            else Instance = this;
 
             while (!TouchPad.Instance) yield return new WaitForEndOfFrame();
-            if (GameBoard.GMode == GameMode.Play)
-            {
-                TouchPad.Instance.ScreenDragEvent += LastScreenDragHandler;
-                TouchPad.Instance.ScreenPointerDownEvent += LastScreenPointerDownEventHandler;
-                TouchPad.Instance.ScreenPointerUpEvent += LastScreePointerUpEventHandler;
-            }
+            // Shell can enter Play after this Start — always hook the pad.
+            TouchPad.Instance.ScreenDragEvent += LastScreenDragHandler;
+            TouchPad.Instance.ScreenPointerDownEvent += LastScreenPointerDownEventHandler;
+            TouchPad.Instance.ScreenPointerUpEvent += LastScreePointerUpEventHandler;
             dragPathLength = 0;
         }
         #endregion regular
 
-        /// <summary>
-        /// Return true touch pad run on mobile device
-        /// </summary>
         public static bool IsMobileDevice()
         {
-            //check if our current system info equals a desktop
-            if (SystemInfo.deviceType == DeviceType.Desktop)
-            {
-                //we are on a desktop device, so don't use touch
-                return false;
-            }
-            //if it isn't a desktop, lets see if our device is a handheld device aka a mobile device
-            else if (SystemInfo.deviceType == DeviceType.Handheld)
-            {
-                //we are on a mobile device, so lets use touch input
-                return true;
-            }
+            if (SystemInfo.deviceType == DeviceType.Desktop) return false;
+            if (SystemInfo.deviceType == DeviceType.Handheld) return true;
             return false;
         }
 
-        /// <summary>
-        /// Enable or disable touch pad callbacks handling.
-        /// </summary>
         internal static void SetTouchActivity(bool activity)
         {
-            TouchPad.Instance.SetTouchActivity(activity);
+            if (TouchPad.Instance) TouchPad.Instance.SetTouchActivity(activity);
+            if (!activity && Instance != null)
+            {
+                // Shuffle / collect disable: drop drag + selection so nothing stays sticky.
+                Instance.CanDrag = false;
+                Instance.MinDragReached = false;
+                Instance.SetFirstObject(null, null);
+            }
+        }
+
+        /// <summary>Clear FirstObject if the transform was destroyed (match/collect).</summary>
+        public static void PurgeDestroyedFirstObject()
+        {
+            if (Instance == null) return;
+            // Live Unity object: overloaded != null is true.
+            if (Instance.FirstObject != null) return;
+            // True C# null (no selection) — nothing to purge.
+            if (ReferenceEquals(Instance.FirstObject, null)) return;
+            // Destroyed Unity object (fake-null) — wipe sticky selection.
+            Instance.FirstObject = null;
+            Instance.PointerUpObject = null;
+            Instance.CanDrag = false;
+            Instance.MinDragReached = false;
+        }
+
+        public static void ClearSelectionState()
+        {
+            if (Instance == null) return;
+            Instance.CanDrag = false;
+            Instance.MinDragReached = false;
+            Instance.SetFirstObject(null, null);
         }
 
         #region touchpad handlers
@@ -83,25 +93,25 @@ namespace Mkey
         {
             if (!CanDrag) return;
             tPEA = tpea;
-            dragPathLength += (dragPos - pointerDownPos).magnitude;
-            dragPos = tpea.WorldPos;
+            Vector3 newPos = tpea.WorldPos;
+            dragPathLength += (newPos - dragPos).magnitude;
+            dragPos = newPos;
             dragDirection = dragPos - pointerDownPos;
             dragMagnitude = dragDirection.magnitude;
-            MinDragReached = (dragPathLength > 0.1f);
+            MinDragReached = dragMagnitude >= MinDragWorld || dragPathLength >= MinDragWorld;
 #if UNITY_EDITOR
             if (dlog) Debug.Log("drag: " + gameObject.name + " ; Draggable: " + FirstObject + " ; distance:" + dragMagnitude);
 #endif
-            if (FirstObject )
+            if (FirstObject && MinDragReached)
             {
-                // Debug.Log("follow _ 0");
-                if (!followStarted) StartCoroutine(SlowFollowC()); // &&  !criticalDrag
+                if (!followStarted) StartCoroutine(SlowFollowC());
             }
         }
-        private IEnumerator SlowFollowC() // slow motion
+
+        private IEnumerator SlowFollowC()
         {
-           // Debug.Log("follow_1");
             followStarted = true;
-            if(FirstObject && CanDrag) FirstObject.position = draggableStartPos + dragDirection;  // show drag
+            if (FirstObject && CanDrag) FirstObject.position = draggableStartPos + dragDirection;
             yield return new WaitForEndOfFrame();
             followStarted = false;
             if (dlog) Debug.Log("end follow cor");
@@ -118,27 +128,23 @@ namespace Mkey
 
         private void LastScreePointerUpEventHandler(TouchPadEventArgs tpea)
         {
-            // Debug.Log("LastScreenPointerUpEventHandler");
+            // Shell direct-touch owns selection — TouchPad Up must not clear FirstObject.
+            if (BoardDirectTouchController.IsAuthoritative) return;
+
             CanDrag = false;
             if (FirstObject && PointerUpObject) return;
-            if (FirstObject)
-            {
-                ResetDragEventRaise(null);
-            }
+            if (FirstObject) ResetDragEventRaise(null);
         }
         #endregion touchpad handlers
 
         #region interface implement
         public void OnPointerExit(PointerEventData eventData)
         {
+            if (BoardDirectTouchController.IsAuthoritative) return;
             if (GameBoard.GMode == GameMode.Play)
             {
                 CanDrag = false;
-                if (FirstObject)
-                {
-                    // FirstObject.GetComponentInParent<TileTouchBehavior>().SetInitialposition();
-                    ResetDragEventRaise(null);
-                }
+                if (FirstObject) ResetDragEventRaise(null);
             }
         }
         #endregion interface implement

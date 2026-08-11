@@ -153,6 +153,8 @@ namespace Mkey
                 // Keep the tile board inside the phone screen (between the top HUD and the bottom
                 // boosters) on tall aspect ratios instead of letting it overflow under them.
                 if (!GetComponent<BoardScreenFitter>()) gameObject.AddComponent<BoardScreenFitter>();
+                // Cover-fit the background sprite (preserve aspect, fill camera) on every phone size.
+                if (!GetComponent<GameBackgroundCover>()) gameObject.AddComponent<GameBackgroundCover>();
 
                 if (gConstructor) DestroyImmediate(gConstructor.gameObject);
 
@@ -384,8 +386,10 @@ namespace Mkey
         internal void SetControlActivity(bool activityGrid, bool activityMenu)
         {
             TouchManager.SetTouchActivity(activityGrid);
-            HeaderGUIController.Instance.SetControlActivity(activityMenu);
-            FooterGUIController.Instance.SetControlActivity(activityMenu);
+            if (HeaderGUIController.Instance)
+                HeaderGUIController.Instance.SetControlActivity(activityMenu);
+            if (FooterGUIController.Instance)
+                FooterGUIController.Instance.SetControlActivity(activityMenu);
         }
         #endregion states
 

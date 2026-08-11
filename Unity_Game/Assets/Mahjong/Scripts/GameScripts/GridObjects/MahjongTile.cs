@@ -214,6 +214,9 @@ namespace Mkey
 
         public bool IsFreeToMatch()
         {
+            if (rawOverBlockers == null || rawLeftBlockers == null || rawRightBlockers == null)
+                CacheRawBlockers();
+
             // use cached raw blockers
             GridObject bl = null;
             //check over blocked

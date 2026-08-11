@@ -14,7 +14,7 @@ namespace Mkey
         [Header("Default data", order = 1)]
         [Tooltip("Default count at start")]
         [SerializeField]
-        private int defCount = 20;
+        private int defCount = 1;
 
         [SerializeField]
         private string saveKey = "mk_mahjong_undo";

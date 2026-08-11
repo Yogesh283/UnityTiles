@@ -2,45 +2,36 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Mkey.Shell;
 
 namespace Mkey
 {
     /// <summary>
-    /// Reskins the in-game power-up HUD to sit inside the emerald background's painted slots:
-    /// hides the wooden footer tray and drops the three power-up buttons straight into the three
-    /// gold circles painted on the background.
-    ///
-    /// Placement is bound to the actual background <see cref="SpriteRenderer"/>: we take each
-    /// circle's normalized position inside the artwork, project it through the game camera to a
-    /// screen point, and convert that to a canvas position. This lands the icons exactly on the
-    /// painted circles regardless of camera framing or CanvasScaler settings (a plain normalized
-    /// anchor cannot, because the UI canvas and the world background are scaled independently).
-    ///
-    /// Each booster's icon is baked into its own disc sprite (no separate icon child), so we never
-    /// hide the button image — we only move + size it. The "20" cost badge is a child and rides
-    /// along. Runtime-only: deleting this file fully reverts the look.
+    /// Places Shuffle / Hint / Undo in an equal-spaced bottom row, vertically centred inside the
+    /// wooden FooterPanel (height reduced ~15%), nudged 25px upward, and clear of the Android
+    /// bottom safe area. Keeps the decorative wooden frame visible.
     /// </summary>
     [DefaultExecutionOrder(250)]
     public class GameHudThemer : MonoBehaviour
     {
-        // Booster button object names, left → right, to match the three background circles.
         private static readonly string[] BoosterNames = { "ShuffleButton", "HintButton", "UndoButton" };
 
-        // --- Tunables --------------------------------------------------------------------------
-        // Normalized centre of each painted circle inside the background art (0..1, x left→right).
-        // Measured directly from the gold ring glow in Bkg Emerald Temple.png so the discs land
-        // dead-centre in each painted ring.
-        private static readonly float[] SlotNX = { 0.190f, 0.490f, 0.805f };
-        // Normalized height of each circle centre (0 = art bottom, 1 = art top). Tuned empirically on
-        // device: pixel-detection over-reads the height because of the ring's upward glow, so this is
-        // the on-screen sweet spot that drops the discs into the middle of each ring.
-        private static readonly float[] SlotNY = { 0.097f, 0.097f, 0.095f };
-        // On-screen size of each booster disc (px at the canvas reference resolution).
-        private const float SlotSize = 145f;
-        // Footer container(s) whose background art (wooden tray) should be hidden. The boosters live
-        // in "LayerButtonsPanel" (a HorizontalLayoutGroup) sitting on the wooden "FooterPanel".
-        private static readonly string[] FooterContainers = { "FooterPanel", "FooterGui", "LayerButtonsPanel" };
-        // ---------------------------------------------------------------------------------------
+        // Equal horizontal slots across the wooden panel.
+        private static readonly float[] SlotNX = { 0.25f, 0.50f, 0.75f };
+        private const float SlotSize = 120f;
+        // Authored FooterPanel height (scene) before the 15% shrink.
+        private const float AuthoredPanelH = 248f;
+        private const float PanelHeightScale = 0.85f;
+        // Extra lift inside the panel so buttons sit slightly above geometric centre.
+        private const float InsidePanelNudgeUp = 25f;
+        private static readonly string[] TrayOnly = { "LayerButtonsPanel" };
+
+        // Premium emerald booster look (#0FA958 + gold rim + soft gold glow).
+        private static readonly Color EmeraldBg = new Color(0.059f, 0.663f, 0.345f, 0.96f); // #0FA958
+        private static readonly Color GoldRim = new Color(0.961f, 0.718f, 0f, 0.95f);       // #F5B700
+        private static readonly Color GoldIcon = new Color(1f, 0.85f, 0.4f, 1f);
+
+        private bool panelSized;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -62,36 +53,42 @@ namespace Mkey
 
         private IEnumerator ApplyWhenReady()
         {
-            // Give the footer UI and the game board a couple of frames to build.
             yield return null;
             yield return null;
 
-            // The footer tray and background sprite can build/swap a little late, and a level load can
-            // rebuild the booster tray after we've themed it. So re-apply for the first few seconds…
             float t = 0f;
             while (t < 4f)
             {
-                HideFooterTray();
-                Apply();
+                if (MatchIQShellBridge.IsActive)
+                {
+                    Apply(); // hides boosters + footer
+                }
+                else
+                {
+                    HideInnerTrayOnly();
+                    SizeAndLiftWoodenPanel();
+                    Apply();
+                }
                 yield return new WaitForSecondsRealtime(0.25f);
                 t += 0.25f;
             }
 
-            // …then keep a cheap watchdog running: if the boosters ever fall back into the wooden
-            // tray (e.g. after a level load rebuilds it), lift them onto the rings again.
             while (true)
             {
-                if (BoostersInTray())
+                if (MatchIQShellBridge.IsActive)
                 {
-                    HideFooterTray();
+                    Apply();
+                }
+                else if (BoostersInTray())
+                {
+                    HideInnerTrayOnly();
+                    SizeAndLiftWoodenPanel();
                     Apply();
                 }
                 yield return new WaitForSecondsRealtime(1f);
             }
         }
 
-        // True while any booster button is still parented under the wooden tray / layout group,
-        // i.e. it has not yet been lifted onto the background's gold rings.
         private static bool BoostersInTray()
         {
             for (int i = 0; i < BoosterNames.Length; i++)
@@ -99,97 +96,193 @@ namespace Mkey
                 GameObject go = GameObject.Find(BoosterNames[i]);
                 if (!go || !go.transform.parent) continue;
                 string parent = go.transform.parent.name;
-                for (int f = 0; f < FooterContainers.Length; f++)
-                    if (parent == FooterContainers[f]) return true;
+                if (parent == "LayerButtonsPanel" || parent == "FooterPanel" || parent == "FooterGui")
+                    return true;
             }
             return false;
         }
 
         private void Apply()
         {
-            GameBoard board = FindFirstObjectByType<GameBoard>();
-            SpriteRenderer bg = board ? board.backGround : null;
-            Camera cam = Camera.main ?? FindFirstObjectByType<Camera>();
+            // React Native owns Hint / Shuffle / Undo — mute Unity chrome, keep helpers alive.
+            if (MatchIQShellBridge.IsActive)
+            {
+                HideShellOwnedBottomChrome();
+                return;
+            }
 
             Canvas root = null;
+            float panelH = AuthoredPanelH * PanelHeightScale;
+            float bottomInset = 0f;
+
             for (int i = 0; i < BoosterNames.Length; i++)
             {
                 GameObject go = GameObject.Find(BoosterNames[i]);
                 if (!go) continue;
-
                 if (root == null)
                 {
                     Canvas c = go.GetComponentInParent<Canvas>();
                     root = c ? c.rootCanvas : null;
+                    bottomInset = root ? WxoSafeArea.BottomInsetCanvas(root) : 0f;
                 }
-
-                PlaceInSlot(go, i, root, bg, cam);
+                PlaceBottomButton(go, i, root, bottomInset, panelH);
+                StyleEmeraldBooster(go);
             }
         }
 
-        private void PlaceInSlot(GameObject button, int index, Canvas root, SpriteRenderer bg, Camera cam)
+        private static void HideShellOwnedBottomChrome()
+        {
+            for (int i = 0; i < BoosterNames.Length; i++)
+                HideNamedIncludingInactive(BoosterNames[i]);
+            HideNamedIncludingInactive("FooterPanel");
+            HideNamedIncludingInactive("FooterGui");
+            HideNamedIncludingInactive("LayerButtonsPanel");
+        }
+
+        private static void HideNamedIncludingInactive(string name)
+        {
+            foreach (Transform t in Resources.FindObjectsOfTypeAll<Transform>())
+            {
+                if (!t || t.name != name) continue;
+                if (!t.gameObject.scene.IsValid() || !t.gameObject.scene.isLoaded) continue;
+                MatchIQShellHudHider.HideVisuals(t.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Premium emerald-green circular booster: #0FA958 fill, gold border, gold child icons,
+        /// soft outer glow. Size is applied by <see cref="PlaceBottomButton"/>.
+        /// </summary>
+        private static void StyleEmeraldBooster(GameObject button)
+        {
+            Image img = button.GetComponent<Image>();
+            if (img)
+            {
+                img.color = EmeraldBg;
+                img.raycastTarget = true;
+            }
+
+            Outline outline = button.GetComponent<Outline>();
+            if (!outline) outline = button.AddComponent<Outline>();
+            outline.effectColor = GoldRim;
+            outline.effectDistance = new Vector2(2.2f, -2.2f);
+
+            Shadow glow = button.GetComponent<Shadow>();
+            if (!glow) glow = button.AddComponent<Shadow>();
+            glow.effectColor = new Color(GoldRim.r, GoldRim.g, GoldRim.b, 0.45f);
+            glow.effectDistance = new Vector2(0f, -3f);
+
+            // Tint any nested icon / label gold so the glyph reads premium on emerald.
+            foreach (Graphic g in button.GetComponentsInChildren<Graphic>(true))
+            {
+                if (!g || g.gameObject == button) continue;
+                if (g is Text || g is Image)
+                    g.color = GoldIcon;
+            }
+        }
+
+        /// <summary>
+        /// Bottom-anchored equal spacing. Y = safe-area + vertical centre of the (shrunken) wooden
+        /// panel + 25px nudge up — buttons stay fully inside the frame.
+        /// </summary>
+        private static void PlaceBottomButton(
+            GameObject button, int index, Canvas root, float bottomInset, float panelH)
         {
             if (!(button.transform is RectTransform rt)) return;
 
-            // Move onto the full-screen root canvas so the position we compute maps to the screen.
             if (root)
             {
                 rt.SetParent(root.transform, false);
                 rt.SetAsLastSibling();
             }
-            rt.sizeDelta = new Vector2(SlotSize, SlotSize);
+
+            // Responsive: scale slightly down on very narrow canvases so 3×120 never clips.
+            float canvasW = Screen.width;
+            if (root && root.transform is RectTransform rootRt && rootRt.rect.width > 1f)
+                canvasW = rootRt.rect.width;
+            float size = SlotSize;
+            if (canvasW < 980f)
+                size = Mathf.Clamp(canvasW * 0.12f, 96f, SlotSize);
+
+            float centerY = bottomInset + panelH * 0.5f + InsidePanelNudgeUp;
+            rt.anchorMin = rt.anchorMax = new Vector2(SlotNX[index], 0f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(size, size);
             rt.localScale = Vector3.one;
-
-            if (TryPlaceOnCircle(rt, index, root, bg, cam)) return;
-
-            // Fallback: treat the slot coordinates as normalized screen anchors, lifted above the
-            // bottom safe-area inset (gesture / nav bar) so the buttons stay fully tappable.
-            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(SlotNX[index], SlotNY[index]);
-            rt.anchoredPosition = new Vector2(0f, WxoSafeArea.BottomInsetCanvas(root));
+            rt.anchoredPosition = new Vector2(0f, centerY);
         }
 
-        /// <summary>Projects the painted circle position (inside the background sprite) to the
-        /// canvas so the booster lands exactly on it. Returns false if anything is missing.</summary>
-        private bool TryPlaceOnCircle(RectTransform rt, int index, Canvas root, SpriteRenderer bg, Camera cam)
+        private static void HideInnerTrayOnly()
         {
-            if (!bg || !cam || !root) return false;
-            if (!(root.transform is RectTransform canvasRt)) return false;
-
-            Bounds b = bg.bounds;
-            Vector3 world = new Vector3(
-                b.min.x + SlotNX[index] * b.size.x,
-                b.min.y + SlotNY[index] * b.size.y,
-                b.center.z);
-
-            Vector3 screen = cam.WorldToScreenPoint(world);
-            Camera uiCam = root.renderMode == RenderMode.ScreenSpaceOverlay ? null : root.worldCamera;
-
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRt, screen, uiCam, out Vector2 local))
-                return false;
-
-            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-            // Land exactly on the painted ring. No safe-area lift here: the rings are baked into the
-            // artwork (already clear of the gesture bar), so adding a device-dependent bottom inset
-            // would push the discs up off-centre — which is exactly what made them float above.
-            rt.anchoredPosition = local;
-            return true;
-        }
-
-        private static void HideFooterTray()
-        {
-            for (int i = 0; i < FooterContainers.Length; i++)
+            for (int i = 0; i < TrayOnly.Length; i++)
             {
-                GameObject go = GameObject.Find(FooterContainers[i]);
+                GameObject go = GameObject.Find(TrayOnly[i]);
                 if (!go) continue;
                 Image img = go.GetComponent<Image>();
-                if (!img) continue;
-                img.sprite = null;
-                img.color = new Color(1f, 1f, 1f, 0f);
-                // The transparent footer tray was left with raycastTarget = true, so it sat over the
-                // lower board and ate tile taps (TouchPadEventArgs drops any collider behind a UI
-                // graphic) — tile matching and boosters stopped responding. Only the tray's own image
-                // is disabled here; the booster buttons are separate children and stay interactive.
-                img.raycastTarget = false;
+                if (img)
+                {
+                    img.color = new Color(1f, 1f, 1f, 0f);
+                    img.raycastTarget = false;
+                }
+                var layout = go.GetComponent<HorizontalLayoutGroup>();
+                if (layout) layout.enabled = false;
+            }
+        }
+
+        /// <summary>
+        /// Shrinks FooterPanel height by ~15%, restores its wood/gold look, and lifts it by the
+        /// bottom safe-area inset so the decorative frame stays fully on-screen.
+        /// </summary>
+        private void SizeAndLiftWoodenPanel()
+        {
+            string[] frames = { "FooterPanel", "FooterGui" };
+            for (int i = 0; i < frames.Length; i++)
+            {
+                GameObject go = GameObject.Find(frames[i]);
+                if (!go || !(go.transform is RectTransform rt)) continue;
+
+                Image img = go.GetComponent<Image>();
+                if (img)
+                {
+                    if (img.color.a < 0.05f && img.sprite != null)
+                        img.color = Color.white;
+                    img.raycastTarget = false;
+                }
+
+                Canvas c = go.GetComponentInParent<Canvas>();
+                Canvas root = c ? c.rootCanvas : null;
+                float bottomInset = root ? WxoSafeArea.BottomInsetCanvas(root) : 0f;
+
+                // FooterPanel is bottom-pivoted with a fixed sizeDelta height — shrink once.
+                if (go.name == "FooterPanel")
+                {
+                    Vector2 size = rt.sizeDelta;
+                    float targetH = AuthoredPanelH * PanelHeightScale;
+                    if (!panelSized || !Mathf.Approximately(size.y, targetH))
+                    {
+                        size.y = targetH;
+                        rt.sizeDelta = size;
+                        panelSized = true;
+                    }
+                    // Keep width responsive: stretch-ish via anchors already bottom-centred.
+                    rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, bottomInset);
+                }
+                else
+                {
+                    // FooterGui: raise above the gesture bar if bottom-anchored / stretched.
+                    if (Mathf.Approximately(rt.anchorMin.y, 0f) && Mathf.Approximately(rt.anchorMax.y, 0f))
+                    {
+                        Vector2 pos = rt.anchoredPosition;
+                        pos.y = Mathf.Max(pos.y, bottomInset);
+                        rt.anchoredPosition = pos;
+                    }
+                    else
+                    {
+                        Vector2 min = rt.offsetMin;
+                        min.y = Mathf.Max(min.y, bottomInset);
+                        rt.offsetMin = min;
+                    }
+                }
             }
         }
     }

@@ -3,27 +3,26 @@ using UnityEngine;
 namespace Mkey
 {
     /// <summary>
-    /// Scales &amp; recenters the tile board so it always fits inside the phone screen, between the top
-    /// HUD (level / score / timer) and the bottom booster row, instead of overflowing under them on
-    /// tall aspect ratios. The scale is uniform, so tiles are never distorted — the board just gets
-    /// smaller and slots into the free band. Play mode only; the level constructor (Edit mode) keeps
-    /// the raw designed layout. Added at runtime by <see cref="GameBoard"/>.
+    /// Scales &amp; recenters the tile board so it fits between the RN top HUD and bottom boosters.
+    /// Always measures at a captured base scale, then applies an absolute fit — never compounds.
     /// </summary>
     [DefaultExecutionOrder(50)]
     public class BoardScreenFitter : MonoBehaviour
     {
-        // Fractions of screen HEIGHT reserved for the on-screen chrome so tiles never sit under it.
-        // Increase topReserve to push the board lower (more room for the header), increase
-        // bottomReserve to lift it off the booster buttons. These two are the main tuning knobs.
-        [Range(0f, 0.4f)] public float topReserveFraction = 0.15f;    // level / score / timer HUD
-        [Range(0f, 0.4f)] public float bottomReserveFraction = 0.24f; // booster buttons row
-        // Breathing room on each side, as a fraction of screen WIDTH.
-        [Range(0f, 0.25f)] public float sideReserveFraction = 0.04f;
-        // Only ever shrink the board to fit — never blow it up past its designed scale.
+        [Range(0f, 0.45f)] public float topReserveFraction = 0.17f;
+        [Range(0f, 0.45f)] public float bottomReserveFraction = 0.23f;
+        [Range(0f, 0.25f)] public float sideReserveFraction = 0.05f;
         public bool shrinkOnly = true;
+
+        private const float MinGapBelowHudPx = 100f;
+        private const float MinGapAboveBottomPx = 180f;
+        private const float HudChromePx = 220f;
+        private const float BottomChromePx = 240f;
 
         private Transform grid;
         private Camera cam;
+        private Vector3 baseScale = Vector3.one;
+        private bool capturedBase;
         private Vector3 lastAppliedScale = Vector3.positiveInfinity;
         private int lastW;
         private int lastH;
@@ -34,15 +33,13 @@ namespace Mkey
         {
             if (!EnsureRefs()) return;
 
-            // Refit when the board was rebuilt (MatchGrid.SetScale resets localScale to the level's
-            // designed scale), when the screen size / orientation changed, or when the device safe
-            // area changed (notch device, rotation) so the board stays clear of the top HUD.
-            bool scaleReset = grid.localScale != lastAppliedScale;
             bool screenChanged = Screen.width != lastW || Screen.height != lastH;
             bool insetChanged =
                 !Mathf.Approximately(WxoSafeArea.TopInsetFraction(), lastTopInset) ||
                 !Mathf.Approximately(WxoSafeArea.BottomInsetFraction(), lastBottomInset);
-            if (!scaleReset && !screenChanged && !insetChanged) return;
+            // Only refit when screen/insets change, or the first time (lastAppliedScale sentinel).
+            bool firstFit = lastAppliedScale.x == Mathf.Infinity;
+            if (!firstFit && !screenChanged && !insetChanged) return;
 
             Fit();
         }
@@ -76,8 +73,19 @@ namespace Mkey
 
         private void Fit()
         {
+            if (!capturedBase)
+            {
+                baseScale = grid.localScale;
+                if (baseScale.x <= 0.0001f || baseScale.y <= 0.0001f)
+                    baseScale = Vector3.one;
+                capturedBase = true;
+            }
+
+            // Always measure at the original authored scale so fit never compounds.
+            grid.localScale = baseScale;
+
             Bounds? measured = MeasureTiles();
-            if (measured == null) return; // tiles not built yet
+            if (measured == null) return;
 
             Bounds bounds = measured.Value;
             if (bounds.size.x <= 0f || bounds.size.y <= 0f) return;
@@ -85,13 +93,23 @@ namespace Mkey
             float worldH = cam.orthographicSize * 2f;
             float worldW = worldH * cam.aspect;
 
-            // Add the device safe-area insets on top of the designed reserves so the board drops below
-            // the notch/status-bar HUD and lifts above the gesture/nav bar. Both are 0 on devices
-            // without insets, so the designed layout is unchanged there.
             float topInset = WxoSafeArea.TopInsetFraction();
             float bottomInset = WxoSafeArea.BottomInsetFraction();
-            float topReserve = topReserveFraction + topInset;
-            float bottomReserve = bottomReserveFraction + bottomInset;
+
+            float topPx = WxoSafeArea.TopInsetPixels() + HudChromePx + MinGapBelowHudPx;
+            float botPx = WxoSafeArea.BottomInsetPixels() + BottomChromePx + MinGapAboveBottomPx;
+            float topFromPx = WxoSafeArea.PixelsToHeightFraction(topPx);
+            float botFromPx = WxoSafeArea.PixelsToHeightFraction(botPx);
+
+            float topReserve = Mathf.Max(topReserveFraction + topInset, topFromPx);
+            float bottomReserve = Mathf.Max(bottomReserveFraction + bottomInset, botFromPx);
+
+            if (topReserve + bottomReserve > 0.78f)
+            {
+                float scale = 0.78f / (topReserve + bottomReserve);
+                topReserve *= scale;
+                bottomReserve *= scale;
+            }
 
             float availH = worldH * (1f - topReserve - bottomReserve);
             float availW = worldW * (1f - 2f * sideReserveFraction);
@@ -101,12 +119,8 @@ namespace Mkey
             if (shrinkOnly) fit = Mathf.Min(fit, 1f);
             if (fit <= 0f) return;
 
-            // Uniform shrink about the board's current pivot.
-            grid.localScale *= fit;
+            grid.localScale = baseScale * fit;
 
-            // Slide the (now correctly sized) board into the free band between the top HUD and the
-            // bottom boosters, and centre it horizontally on the camera. Uses the safe-area-adjusted
-            // reserves so the band (and its centre) shifts down with the HUD on notched devices.
             Bounds after = MeasureTiles() ?? bounds;
             float bandCenterY =
                 cam.transform.position.y + (bottomReserve - topReserve) * worldH * 0.5f;

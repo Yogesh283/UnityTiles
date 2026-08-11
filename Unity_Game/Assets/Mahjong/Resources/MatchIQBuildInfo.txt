@@ -1,2 +1,2 @@
-875f578
-deploy: auto-apply DB migrations on live deploy
+a0504bd
+...

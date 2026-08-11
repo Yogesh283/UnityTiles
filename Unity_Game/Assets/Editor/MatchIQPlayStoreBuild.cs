@@ -6,7 +6,7 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
-/// Production Play Store AAB/APK build (api.matchiq.fun, release-signed).
+/// Production Play Store AAB/APK build (rmsurveyai.com, release-signed).
 /// </summary>
 public static class MatchIQPlayStoreBuild
 {
@@ -17,7 +17,7 @@ public static class MatchIQPlayStoreBuild
     private const string OutputDir = "Builds/Android";
     private const string SigningConfigPath = "Keystore/signing.local.json";
 
-    [MenuItem("Match IQ/Build Production APK (Live api.matchiq.fun v1.0.8)", false, 49)]
+    [MenuItem("Match IQ/Build Production APK (Live rmsurveyai.com)", false, 49)]
     public static void BuildProductionApkFromMenu()
     {
         BuildProductionApk();
@@ -51,6 +51,9 @@ public static class MatchIQPlayStoreBuild
 
         EditorUserBuildSettings.buildAppBundle = false;
         EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+        // Reset in case a prior React Native export left this on — otherwise Unity exports a Gradle
+        // project folder instead of assembling an installable .apk.
+        EditorUserBuildSettings.exportAsGoogleAndroidProject = false;
 
         Directory.CreateDirectory(OutputDir);
         string outputPath = Path.Combine(OutputDir, "MatchIQ-" + AppVersion + ".apk");
@@ -80,7 +83,7 @@ public static class MatchIQPlayStoreBuild
                 "[Match IQ] Production APK ready.\n" +
                 "• Version: " + AppVersion + " (" + AndroidVersionCode + ")\n" +
                 "• Signed: release keystore\n" +
-                "• Server: https://api.matchiq.fun\n" +
+                "• Server: https://rmsurveyai.com\n" +
                 "• File: " + fullPath);
             EditorApplication.Exit(0);
             return;
@@ -124,6 +127,8 @@ public static class MatchIQPlayStoreBuild
 
         EditorUserBuildSettings.buildAppBundle = true;
         EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+        // Reset in case a prior React Native export left this on (would export a project, not an .aab).
+        EditorUserBuildSettings.exportAsGoogleAndroidProject = false;
 
         Directory.CreateDirectory(OutputDir);
         string outputPath = Path.Combine(OutputDir, "MatchIQ-" + AppVersion + ".aab");
@@ -153,7 +158,7 @@ public static class MatchIQPlayStoreBuild
                 "[Match IQ] Play Store AAB ready.\n" +
                 "• Version: " + AppVersion + " (" + AndroidVersionCode + ")\n" +
                 "• Signed: release keystore\n" +
-                "• Server: https://api.matchiq.fun\n" +
+                "• Server: https://rmsurveyai.com\n" +
                 "• File: " + fullPath);
             EditorApplication.Exit(0);
             return;
@@ -223,7 +228,7 @@ public static class MatchIQPlayStoreBuild
         var serialized = new SerializedObject(config);
         serialized.FindProperty("developmentMode").boolValue = false;
         serialized.FindProperty("useProductionUrl").boolValue = true;
-        serialized.FindProperty("productionUrl").stringValue = "https://api.matchiq.fun";
+        serialized.FindProperty("productionUrl").stringValue = "https://rmsurveyai.com";
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(config);
 
