@@ -1,0 +1,52 @@
+/* Shared WXO bottom navigation — 5 equal tabs, no floating FAB */
+.bottom-nav {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 0 !important;
+  transform: translateX(-50%) !important;
+  width: 100% !important;
+  max-width: 430px !important;
+  background: #fff !important;
+  border-top: 1px solid #ECEEF2 !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding: 8px 2px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 50 !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.04);
+}
+.bottom-nav a {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-height: 52px !important;
+  padding: 6px 2px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  color: #9CA3AF !important;
+  text-decoration: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav a.active {
+  color: #E31C23 !important;
+}
+.bottom-nav .ico,
+.bottom-nav .play-fab {
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  display: block !important;
+}

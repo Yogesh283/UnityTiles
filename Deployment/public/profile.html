@@ -143,7 +143,7 @@
     .bottom-nav {
       position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
       width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
-      display: grid; grid-template-columns: repeat(4, 1fr);
+      display: grid; grid-template-columns: repeat(5, 1fr);
       padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
     }
     .bottom-nav a {
@@ -152,11 +152,7 @@
     }
     .bottom-nav a.active { color: var(--red); }
     .bottom-nav .ico { font-size: 18px; }
-    .bottom-nav .play-fab {
-      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
-      background: var(--red); color: #fff; display: grid; place-items: center;
-      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
-    }
+    .bottom-nav .play-fab { /* flat; see wxo-bottom-nav.css */ }
 
     .toast {
       position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
@@ -168,6 +164,7 @@
 
     #photoInput { display: none; }
   </style>
+  <link rel="stylesheet" href="/assets/wxo-bottom-nav.css?v=2" />
 </head>
 <body>
   <div class="app">
@@ -258,10 +255,11 @@
       </div>
     </div>
 
-    <nav class="bottom-nav" aria-label="Primary">
+        <nav class="bottom-nav" aria-label="Primary">
       <a href="/"><span class="ico">🏠</span>Home</a>
       <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
-      <a href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
+      <a href="/earn.html"><span class="ico">🎁</span>Earn</a>
+      <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
       <a class="active" href="/profile.html"><span class="ico">👤</span>Profile</a>
     </nav>
   </div>
