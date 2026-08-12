@@ -1,4 +1,4 @@
-/* Shared WXO bottom navigation — 5 equal tabs, no floating FAB */
+/* Shared WXO bottom navigation — 5 equal tabs, WXO logo for Reward */
 .bottom-nav {
   position: fixed !important;
   left: 50% !important;
@@ -49,4 +49,15 @@
   font-size: 20px !important;
   line-height: 1 !important;
   display: block !important;
+}
+.bottom-nav .nav-logo {
+  width: 26px !important;
+  height: 26px !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 !important;
+  border-radius: 6px;
+}
+.bottom-nav a.active .nav-logo {
+  filter: none;
 }
