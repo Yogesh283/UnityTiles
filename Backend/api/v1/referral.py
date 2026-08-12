@@ -144,11 +144,17 @@ def team(
     db: Session = Depends(get_db),
 ):
     service = ReferralService(db)
+    service.ensure_code(user)
+    db.commit()
     snap = service.team_snapshot(user)
     counts = snap["counts"]
     summary = service.income_summary(user.id)
     by_level = {row["level"]: row for row in summary["by_level"]}
+    structure = service.members_by_level(user)
+    people_by_level = {row["level"]: row.get("members") or [] for row in structure}
     return {
+        "referral_code": user.referral_code,
+        "referral_link": service.referral_link(user.referral_code or ""),
         "direct_count": snap["direct_count"],
         "sat_count": snap["sat_count"],
         "total_members": snap["team_size"],
@@ -159,10 +165,41 @@ def team(
             {
                 "level": lvl,
                 "percent": LEVEL_PERCENTS[lvl],
+                "label": "Direct" if lvl == 1 else f"Sat L{lvl}",
                 "members": counts.get(lvl, 0),
                 "points": by_level.get(lvl, {}).get("points", 0),
                 "entries": by_level.get(lvl, {}).get("entries", 0),
+                "people": people_by_level.get(lvl, []),
             }
             for lvl in range(1, MAX_LEVEL + 1)
         ],
     }
+
+
+@router.post("/claim")
+def claim_referral(
+    body: dict,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Attach a sponsor after signup if the user is not already in a team."""
+    code = str(body.get("referral_code") or body.get("code") or "").strip()
+    service = ReferralService(db)
+    if user.referred_by:
+        sponsor = db.query(User).filter(User.id == user.referred_by).first()
+        return {
+            "attached": False,
+            "already": True,
+            "sponsor_id": user.referred_by,
+            "sponsor_name": (sponsor.display_name if sponsor else None),
+        }
+    attached = service.attach_sponsor(user, code)
+    if attached:
+        db.commit()
+        db.refresh(user)
+        from wallet.service import WalletService
+
+        WalletService(db).credit_direct_referral_bonus(user.referred_by, user.id)
+    else:
+        db.rollback()
+    return {"attached": attached, "already": False, "sponsor_id": user.referred_by}

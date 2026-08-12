@@ -110,6 +110,18 @@
     }
     .note strong { color: #111; }
 
+    .id-card {
+      display: flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, #111, #2a0a0c 80%); color: #fff;
+      border-radius: 18px; padding: 14px; margin-bottom: 12px;
+    }
+    .id-card .k { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.65); }
+    .id-card .v { font-family: Montserrat, sans-serif; font-size: 22px; font-weight: 800; margin-top: 2px; }
+    .id-card .copy {
+      margin-left: auto; background: #fff; color: var(--red); border-radius: 12px;
+      padding: 10px 14px; font-weight: 800; font-size: 13px; flex: none;
+    }
+
     .income-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .ibox { background: var(--soft); border-radius: 14px; padding: 12px 8px; text-align: center; }
     .ibox .n { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 16px; }
@@ -204,8 +216,17 @@
         </div>
       </section>
 
+      <section class="id-card" id="earnIdCard">
+        <div>
+          <div class="k">Your User ID</div>
+          <div class="v" id="earnUserId">—</div>
+        </div>
+        <button class="copy" type="button" id="btnCopyEarnId">Copy</button>
+      </section>
+
       <div class="note">
-        Share your link. Friends join with your code. When they play paid tournaments you earn
+        Share your link. Friends join with your code — you get <strong>100 WXO</strong> direct bonus
+        (bonus wallet). When they play paid tournaments you also earn
         <strong>L1 Direct 5%</strong> · <strong>L2–L6 Sat Team 1%</strong> each.
       </div>
 
@@ -280,7 +301,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-auth.js?v=3"></script>
   <script>
     (function () {
       if (!window.WXOAuth || !WXOAuth.requireAuth()) return;
@@ -322,6 +343,13 @@
 
       document.getElementById('btnCopyCode').onclick = function () { copyText(refCode, 'Code copied'); };
       document.getElementById('btnCopyLink').onclick = function () { copyText(refLink, 'Link copied'); };
+      document.getElementById('btnCopyEarnId').onclick = function () {
+        WXOAuth.refreshUserId().then(function (id) {
+          if (!id) return toast('User ID not ready');
+          copyText(id, 'User ID copied');
+        });
+      };
+      WXOAuth.paintUserId(document.getElementById('earnUserId'));
       document.getElementById('btnShare').onclick = function () {
         if (!refCode) return toast('Not ready yet');
         var msg = 'Join WXO with my referral code ' + refCode + '\n' + refLink;

@@ -70,11 +70,40 @@ class ReferralService:
             .first()
         )
 
+    def find_sponsor(self, referral_code: str | None) -> User | None:
+        """Accept referral code, numeric User ID, or a register URL with ?ref=."""
+        raw = self._normalize_ref_input(referral_code)
+        if not raw:
+            return None
+        found = self.find_by_code(raw)
+        if found:
+            return found
+        if raw.isdigit():
+            return self.db.query(User).filter(User.id == int(raw)).first()
+        return None
+
+    @staticmethod
+    def _normalize_ref_input(value: str | None) -> str:
+        s = (value or "").strip()
+        if not s:
+            return ""
+        lower = s.lower()
+        if "ref=" in lower:
+            try:
+                from urllib.parse import parse_qs, urlparse
+
+                q = parse_qs(urlparse(s).query)
+                if q.get("ref"):
+                    s = str(q["ref"][0]).strip()
+            except Exception:
+                pass
+        return s
+
     def attach_sponsor(self, user: User, referral_code: str | None) -> bool:
         """Link a freshly registered user to their sponsor. Idempotent."""
         if not referral_code or user.referred_by:
             return False
-        sponsor = self.find_by_code(referral_code)
+        sponsor = self.find_sponsor(referral_code)
         if not sponsor or sponsor.id == user.id:
             return False
         # Guard against a cycle: sponsor must not already sit below this user.
@@ -162,11 +191,55 @@ class ReferralService:
                     "name": u.display_name or u.username or "Player",
                     "referral_code": u.referral_code,
                     "is_guest": bool(u.is_guest),
-                    "joined_at": u.created_at,
+                    "joined_at": u.created_at.isoformat() if u.created_at else None,
                     "directs": int(sub_directs or 0),
                 }
             )
         return members
+
+    def members_by_level(self, user: User, per_level: int = 80) -> list[dict]:
+        """L1–L6 downline lists for the team structure UI."""
+        levels: list[dict] = []
+        current_ids = [user.id]
+        for level in range(1, MAX_LEVEL + 1):
+            if not current_ids:
+                levels.append(
+                    {
+                        "level": level,
+                        "percent": LEVEL_PERCENTS[level],
+                        "label": "Direct" if level == 1 else f"Sat L{level}",
+                        "count": 0,
+                        "members": [],
+                    }
+                )
+                continue
+            rows = (
+                self.db.query(User)
+                .filter(User.referred_by.in_(current_ids))
+                .order_by(User.created_at.desc())
+                .all()
+            )
+            current_ids = [u.id for u in rows]
+            shown = rows[:per_level]
+            levels.append(
+                {
+                    "level": level,
+                    "percent": LEVEL_PERCENTS[level],
+                    "label": "Direct" if level == 1 else f"Sat L{level}",
+                    "count": len(rows),
+                    "members": [
+                        {
+                            "id": u.id,
+                            "name": u.display_name or u.username or "Player",
+                            "referral_code": u.referral_code,
+                            "is_guest": bool(u.is_guest),
+                            "joined_at": u.created_at.isoformat() if u.created_at else None,
+                        }
+                        for u in shown
+                    ],
+                }
+            )
+        return levels
 
     # ---------------------------------------------------------------- payouts
 

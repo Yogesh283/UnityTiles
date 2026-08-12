@@ -200,7 +200,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-auth.js?v=3"></script>
   <script>
     (function () {
       if (!window.WXOAuth || !WXOAuth.requireAuth()) return;
@@ -235,6 +235,7 @@
       const listEl = document.getElementById('list');
       const refCodeEl = document.getElementById('refCode');
       let refCode = '';
+      const user = window.WXOAuth ? WXOAuth.getUser() : null;
 
       function renderMembers(members) {
         if (!members || !members.length) {
@@ -271,16 +272,72 @@
         }
       };
 
-      WXOAuth.api('/referral/directs?limit=100')
+      WXOAuth.api('/referral/team')
         .then(function (data) {
           document.getElementById('directCount').textContent = data.direct_count || 0;
           document.getElementById('satCount').textContent = data.sat_count || 0;
-          refCode = data.referral_code || '';
+          refCode = user && user.referralCode ? user.referralCode : (data.referral_code || '');
           refCodeEl.textContent = refCode || '—';
-          renderMembers(data.members || []);
+
+          var levels = data.levels || [];
+          var html = levels.filter(function (lvl) { return lvl.count > 0 || lvl.level === 1; }).map(function (lvl) {
+            var label = lvl.label || (lvl.level === 1 ? 'Direct' : 'Sat L' + lvl.level);
+            var people = (lvl.people || []).slice(0, 8);
+            var peopleTiles = people.map(function (p) {
+              var ini = (p.name || 'P').trim().slice(0, 1).toUpperCase();
+              return '<div class="m-av" style="width:32px;height:32px;font-size:12px;margin:0 4px 4px 0">' + esc(ini) + '</div>';
+            }).join('');
+            return '' +
+              '<div style="padding:12px 0;border-top:1px solid var(--line)">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+                  '<div>' +
+                    '<span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:' +
+                      (lvl.level === 1 ? 'var(--red)' : 'var(--muted)') + '">L' + lvl.level + ' ' + esc(label) + '</span>' +
+                    '<span style="margin-left:8px;font-size:11px;font-weight:700;color:var(--muted)">' + lvl.percent + '% income</span>' +
+                  '</div>' +
+                  '<span style="font-family:Montserrat,sans-serif;font-size:16px;font-weight:800">' + (lvl.count || 0) + '</span>' +
+                '</div>' +
+                (peopleTiles ? '<div style="display:flex;flex-wrap:wrap">' + peopleTiles + (lvl.count > 8 ? '<span style="font-size:11px;color:var(--muted);align-self:center">+' + (lvl.count - 8) + ' more</span>' : '') + '</div>' : '') +
+              '</div>';
+          }).join('');
+
+          var allDirect = (levels[0] && levels[0].people) || [];
+          if (!html) {
+            listEl.innerHTML =
+              '<div class="empty"><div class="em-ico">👥</div>' +
+              '<p>No team yet.<br>Share your referral code to build your team.</p></div>';
+          } else {
+            listEl.innerHTML = html;
+          }
+
+          // Also render L1 direct members list below
+          var directs = allDirect;
+          if (directs.length) {
+            listEl.innerHTML += '<h2 style="margin-top:14px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;color:var(--muted);letter-spacing:.04em">Direct members</h2>';
+            listEl.innerHTML += directs.map(function (m) {
+              var tag = m.is_guest ? '<span class="tag">Guest</span>' : '';
+              return '' +
+                '<div class="member">' +
+                  '<div class="m-av">' + esc((m.name || 'P').slice(0, 1).toUpperCase()) + '</div>' +
+                  '<div class="m-main">' +
+                    '<div class="m-name">' + esc(m.name || 'Player') + tag + '</div>' +
+                    '<div class="m-meta">' + (m.joined_at ? 'Joined ' + new Date(m.joined_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '') + '</div>' +
+                  '</div>' +
+                '</div>';
+            }).join('');
+          }
         })
         .catch(function (err) {
           listEl.innerHTML = '<div class="state">' + esc(err.message || 'Could not load your team.') + '</div>';
+          // Fallback to /referral/directs for basic info
+          WXOAuth.api('/referral/directs?limit=100')
+            .then(function (data) {
+              document.getElementById('directCount').textContent = data.direct_count || 0;
+              document.getElementById('satCount').textContent = data.sat_count || 0;
+              refCode = data.referral_code || '';
+              refCodeEl.textContent = refCode || '—';
+              renderMembers(data.members || []);
+            }).catch(function () {});
         });
     })();
   </script>

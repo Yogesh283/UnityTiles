@@ -504,6 +504,11 @@
       <a class="m-link" href="#faq" data-close-menu>FAQ</a>
       <a class="m-link" href="/login.html" id="menuAuthLink" data-close-menu>Login / Register</a>
       <div class="menu-ref">
+        <div class="label">Your User ID</div>
+        <div class="code" id="menuUserId">—</div>
+        <div class="row" style="margin-bottom:12px">
+          <button type="button" data-copy="uid">Copy User ID</button>
+        </div>
         <div class="label">Your referral code</div>
         <div class="code" id="menuRefCode">————</div>
         <div class="link-box" id="menuRefLink">https://rmsurveyai.com/?ref=</div>
@@ -681,7 +686,7 @@
         <div class="illus">🤝</div>
         <div style="flex:1;min-width:0">
           <h3>Invite Friends &amp; Earn WXO Coins</h3>
-          <p>Refer friends and earn unlimited rewards when they join tournaments. L1 = 5%, L2–L6 = 1%.</p>
+          <p>New signup: <strong>1,000 WXO</strong> bonus. Direct referral: <strong>100 WXO</strong> bonus. Tournament income: L1 = 5%, L2–L6 = 1%.</p>
           <p class="code-line">Your code: <b id="pageRefCode">————</b></p>
           <div class="ref-actions">
             <button type="button" data-copy="code">Copy Code</button>
@@ -713,8 +718,8 @@
       <section class="faq" id="faq">
         <div class="sec-head"><h2>FAQ</h2></div>
         <details><summary>How to buy WXO Coin?</summary><p>Open Wallet → Add Coins. 1 Coin = ₹1. Coins credit instantly after payment.</p></details>
-        <details><summary>How to earn WXO Coin?</summary><p>Win tournaments, join events, and earn via your referral code when friends play.</p></details>
-        <details><summary>How does referral work?</summary><p>Share your code or link. When invited players join tournaments, you earn WXO Coin rewards.</p></details>
+        <details><summary>How to earn WXO Coin?</summary><p>New users get 1,000 WXO signup bonus. Win tournaments, and earn via your referral code when friends join and play.</p></details>
+        <details><summary>How does referral work?</summary><p>Share your code or link. Each direct signup gives you 100 WXO bonus. When invited players join tournaments, you also earn L1 5% and L2–L6 1%.</p></details>
         <details><summary>How can I sell eligible coins?</summary><p>Withdraw is USDT BEP20 only. 100 WXO = 1 USDT. Submit your BEP20 address; admin approves once, then USDT is sent.</p></details>
       </section>
 
@@ -750,36 +755,39 @@
   </div>
 
   <div class="toast" id="toast" role="status"></div>
-  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-auth.js?v=3"></script>
   <script src="/assets/wxo-wallet.js?v=9"></script>
   <script>
     const ORIGIN = location.origin || 'https://rmsurveyai.com';
-    function makeCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let s = 'WXO';
-      for (let i = 0; i < 5; i++) s += chars[Math.floor(Math.random() * chars.length)];
-      return s;
-    }
-    function getMyCode() {
-      let code = localStorage.getItem('wxo_ref_code');
-      if (!code) { code = makeCode(); localStorage.setItem('wxo_ref_code', code); }
-      return code.toUpperCase();
-    }
-    const myCode = getMyCode();
-    const myLink = ORIGIN + '/?ref=' + encodeURIComponent(myCode);
+    let myCode = '';
+    let myLink = ORIGIN + '/register.html';
 
-    const incoming = (new URLSearchParams(location.search).get('ref') || '').toUpperCase().trim();
-    if (incoming && incoming !== myCode) localStorage.setItem('wxo_referred_by', incoming);
+    const incoming = (new URLSearchParams(location.search).get('ref') || '').trim();
+    if (incoming) {
+      try { localStorage.setItem('wxo_referred_by', incoming); } catch (e) {}
+    }
 
     function paintReferral() {
       const codeEl = document.getElementById('pageRefCode');
       const menuCode = document.getElementById('menuRefCode');
       const menuLink = document.getElementById('menuRefLink');
-      if (codeEl) codeEl.textContent = myCode;
-      if (menuCode) menuCode.textContent = myCode;
+      if (codeEl) codeEl.textContent = myCode || 'Login for code';
+      if (menuCode) menuCode.textContent = myCode || '—';
       if (menuLink) menuLink.textContent = myLink;
     }
     paintReferral();
+
+    if (window.WXOAuth && WXOAuth.isLoggedIn()) {
+      WXOAuth.claimPendingReferral();
+      WXOAuth.api('/referral/me').then(function (me) {
+        myCode = (me && me.referral_code) || '';
+        myLink = (me && me.referral_link) || (ORIGIN + '/register.html?ref=' + encodeURIComponent(myCode));
+        paintReferral();
+        window.WXO = window.WXO || {};
+        window.WXO.referralCode = myCode;
+        window.WXO.referralLink = myLink;
+      }).catch(function () {});
+    }
 
     function toast(msg) {
       const t = document.getElementById('toast');
@@ -803,6 +811,11 @@
       const kind = btn.getAttribute('data-copy');
       if (kind === 'code') { if (await copyText(myCode)) toast('Referral code copied'); }
       else if (kind === 'link') { if (await copyText(myLink)) toast('Referral link copied'); }
+      else if (kind === 'uid') {
+        const id = window.WXOAuth ? await WXOAuth.refreshUserId() : '';
+        if (id && await copyText(id)) toast('User ID copied');
+        else if (id) toast(id);
+      }
       else if (kind === 'share') {
         const msg = 'Join WXO with my code ' + myCode + ' — Play. Earn. Win.\n' + myLink;
         if (navigator.share) {
@@ -916,12 +929,17 @@
       referralLink: myLink,
       referredBy: localStorage.getItem('wxo_referred_by') || null
     };
-
     // Side-menu login/logout only — top nav has logo + menu, not profile.
     function paintNavProfile() {
       try {
         const account = window.WXOAuth ? WXOAuth.getUser() : null;
         const authLink = document.getElementById('menuAuthLink');
+        const menuUid = document.getElementById('menuUserId');
+        if (menuUid && account && WXOAuth.isLoggedIn()) {
+          WXOAuth.paintUserId(menuUid);
+        } else if (menuUid) {
+          menuUid.textContent = '—';
+        }
         if (!authLink) return;
         if (account) {
           authLink.textContent = 'Logout (' + (account.name || 'Player') + ')';

@@ -114,10 +114,13 @@
     return 'Something went wrong (' + status + ')';
   }
 
-  function register(email, password, displayName) {
+  function register(email, password, displayName, referralCode) {
+    const body = { email: email, password: password, display_name: displayName || 'Player' };
+    const ref = referralCode || pendingReferral();
+    if (ref) body.referral_code = ref;
     return api('/auth/register', {
       method: 'POST',
-      body: { email: email, password: password, display_name: displayName || 'Player' }
+      body: body
     }).then(function (data) {
       setSession(Object.assign({ email: email }, data));
       return data;
@@ -130,14 +133,18 @@
       body: { email: email, password: password }
     }).then(function (data) {
       setSession(Object.assign({ email: email }, data));
+      claimPendingReferral();
       return data;
     });
   }
 
   function guestLogin(displayName) {
+    const body = { guest_id: deviceId(), display_name: displayName || 'Guest' };
+    const ref = pendingReferral();
+    if (ref) body.referral_code = ref;
     return api('/auth/guest', {
       method: 'POST',
-      body: { guest_id: deviceId(), display_name: displayName || 'Guest' }
+      body: body
     }).then(function (data) {
       setSession(data);
       return data;
@@ -156,6 +163,32 @@
     return api('/wallet/transactions');
   }
 
+  function pendingReferral() {
+    try {
+      const q = new URLSearchParams(location.search).get('ref');
+      if (q) {
+        localStorage.setItem('wxo_referred_by', q.trim());
+        return q.trim();
+      }
+      return (localStorage.getItem('wxo_referred_by') || '').trim();
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function claimPendingReferral() {
+    const code = pendingReferral();
+    if (!code || !isLoggedIn()) return Promise.resolve(null);
+    return api('/referral/claim', { method: 'POST', body: { referral_code: code } })
+      .then(function (data) {
+        if (data && (data.attached || data.already)) {
+          try { localStorage.removeItem('wxo_referred_by'); } catch (e) {}
+        }
+        return data;
+      })
+      .catch(function () { return null; });
+  }
+
   /** Send user to login if no session. Returns true when allowed. */
   function requireAuth() {
     if (isLoggedIn()) return true;
@@ -164,11 +197,64 @@
     return false;
   }
 
+  /** Numeric User ID from login cache (instant, no network). */
+  function getUserId() {
+    const u = getUser();
+    if (u && u.userId != null && u.userId !== '') return String(u.userId);
+    return '';
+  }
+
+  function setUserIdCache(id) {
+    if (id == null || id === '') return;
+    const u = getUser();
+    if (!u) return;
+    if (String(u.userId) === String(id)) return;
+    u.userId = id;
+    try { localStorage.setItem(USER_KEY, JSON.stringify(u)); } catch (e) {}
+  }
+
+  /** Resolve User ID: cache first, then /auth/me. */
+  function refreshUserId() {
+    const cached = getUserId();
+    if (!isLoggedIn()) return Promise.resolve(cached);
+    return me().then(function (data) {
+      const id = data && data.id != null ? String(data.id) : cached;
+      if (id) setUserIdCache(id);
+      return id;
+    }).catch(function () { return cached; });
+  }
+
+  function copyText(text) {
+    if (!text) return Promise.resolve(false);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }).catch(function () { return false; });
+    }
+    return Promise.resolve(false);
+  }
+
+  /** Fill element(s) with User ID. opts: { onCopy(msg) } */
+  function paintUserId(target, opts) {
+    const options = opts || {};
+    const nodes = typeof target === 'string'
+      ? Array.prototype.slice.call(document.querySelectorAll(target))
+      : (target ? [target] : []);
+    if (!nodes.length) return refreshUserId();
+
+    function apply(id) {
+      const val = id || '—';
+      nodes.forEach(function (el) { el.textContent = val; });
+    }
+    apply(getUserId());
+    return refreshUserId().then(apply);
+  }
+
   global.WXOAuth = {
     API_BASE: API_BASE,
-    getToken, getUser, isLoggedIn, deviceId,
+    getToken, getUser, getUserId, isLoggedIn, deviceId,
     setSession, clearSession, logout,
     api, register, login, guestLogin, me,
-    walletBalance, walletTransactions, requireAuth
+    walletBalance, walletTransactions, requireAuth,
+    refreshUserId, paintUserId, copyText,
+    pendingReferral, claimPendingReferral
   };
 })(window);

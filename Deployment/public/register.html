@@ -130,8 +130,8 @@
       <div class="err" id="err"></div>
 
       <div class="perks">
-        New ID gets <b>100 WXO signup bonus</b> in Bonus Wallet (tournament only, no withdraw).
-        Entry uses 80% main + 20% bonus while bonus remains. Winner prize goes to main wallet.
+        New ID gets <b>1,000 WXO signup bonus</b> in Bonus Wallet (tournament only, no withdraw).
+        Your referrer gets <b>100 WXO</b> direct bonus. Entry uses 80% main + 20% bonus while bonus remains.
       </div>
 
       <div class="field">
@@ -178,7 +178,7 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-auth.js?v=3"></script>
   <script>
     (function () {
       const params = new URLSearchParams(location.search);
@@ -247,7 +247,7 @@
 
         busy(true);
         try {
-          await WXOAuth.register(email, password, name);
+          await WXOAuth.register(email, password, name, refInput.value.trim());
 
           const ref = refInput.value.trim();
           if (ref) {
