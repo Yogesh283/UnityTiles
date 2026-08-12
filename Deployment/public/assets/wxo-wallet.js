@@ -1,6 +1,7 @@
-/* Shared WXO wallet — one balance for all games & tournaments */
+/* Shared WXO wallet — main (withdrawable) + bonus (tournament only) */
 (function (global) {
   const BAL_KEY = 'wxo_balance';
+  const BONUS_KEY = 'wxo_bonus_v1';
   const TX_KEY = 'wxo_tx_v1';
   const DEFAULT_BAL = 0;
 
@@ -11,10 +12,24 @@
     return Number.isFinite(n) ? n : DEFAULT_BAL;
   }
 
+  function getBonus() {
+    const raw = localStorage.getItem(BONUS_KEY);
+    if (raw === null || raw === '') return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
+  }
+
   function setBal(n) {
     const v = Math.max(0, Math.round(n));
     localStorage.setItem(BAL_KEY, String(v));
-    global.dispatchEvent(new CustomEvent('wxo:balance', { detail: { balance: v } }));
+    global.dispatchEvent(new CustomEvent('wxo:balance', { detail: { balance: v, bonus: getBonus() } }));
+    return v;
+  }
+
+  function setBonus(n) {
+    const v = Math.max(0, Math.round(n));
+    localStorage.setItem(BONUS_KEY, String(v));
+    global.dispatchEvent(new CustomEvent('wxo:balance', { detail: { balance: getBal(), bonus: v } }));
     return v;
   }
 
@@ -27,8 +42,9 @@
       .then(function (data) {
         if (data && typeof data.balance === 'number') {
           setBal(data.balance);
+          setBonus(typeof data.bonus_balance === 'number' ? data.bonus_balance : 0);
           paintBalanceElements();
-          return { ok: true, balance: data.balance };
+          return { ok: true, balance: data.balance, bonus: getBonus() };
         }
         return { ok: false };
       })
@@ -60,13 +76,8 @@
     return { ok: true, balance: bal, amount: amt };
   }
 
-  function withdraw(amount, method) {
-    const amt = Math.floor(Number(amount) || 0);
-    if (amt < 10) return { ok: false, error: 'Minimum withdrawal 10 WXO' };
-    if (amt > getBal()) return { ok: false, error: 'Insufficient balance' };
-    const bal = setBal(getBal() - amt);
-    addTx({ type: 'out', amount: amt, title: 'Withdraw', note: method || 'UPI' });
-    return { ok: true, balance: bal, amount: amt };
+  function withdraw() {
+    return { ok: false, error: 'Withdraw is USDT BEP20 only. Open Wallet → Withdraw.' };
   }
 
   /** Spend entry fee for any game / tournament */
@@ -217,11 +228,18 @@
 
   function paintBalanceElements() {
     const bal = getBal();
+    const bonus = getBonus();
     document.querySelectorAll('[data-wxo-balance]').forEach((el) => {
       el.textContent = bal.toLocaleString('en-IN');
     });
     document.querySelectorAll('[data-wxo-balance-label]').forEach((el) => {
       el.textContent = bal.toLocaleString('en-IN') + ' WXO';
+    });
+    document.querySelectorAll('[data-wxo-bonus]').forEach((el) => {
+      el.textContent = bonus.toLocaleString('en-IN');
+    });
+    document.querySelectorAll('[data-wxo-bonus-label]').forEach((el) => {
+      el.textContent = bonus.toLocaleString('en-IN') + ' WXO bonus';
     });
   }
 
@@ -409,7 +427,7 @@
   }
 
   global.WXOWallet = {
-    getBal, getBalance: getBal, setBal, deposit, withdraw, spend, creditWin,
+    getBal, getBalance: getBal, setBal, getBonus, setBonus, deposit, withdraw, spend, creditWin,
     playGame, launchUnity: openMatchLobby, openUnityGame, openMatchLobby, applyMatchResult, checkUnityReturn,
     showPopup, closePopup, getTx, addTx, paintBalanceElements, isInApp, syncFromServer
   };

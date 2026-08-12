@@ -52,6 +52,7 @@ class Wallet(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), unique=True)
     balance: Mapped[int] = mapped_column(Integer, default=0)
+    bonus_balance: Mapped[int] = mapped_column(Integer, default=0)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
@@ -70,6 +71,53 @@ class IapPurchase(Base):
     purchase_token: Mapped[str] = mapped_column(String(512), unique=True)
     coins_added: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class WithdrawalRequest(Base):
+    """USDT BEP20 withdrawal awaiting admin approval."""
+
+    __tablename__ = "withdrawal_requests"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    request_code: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
+    coins: Mapped[int] = mapped_column(Integer)
+    usdt_amount: Mapped[float] = mapped_column(Numeric(18, 8))
+    bep20_address: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    admin_note: Mapped[str] = mapped_column(String(255), nullable=True)
+    payout_tx: Mapped[str] = mapped_column(String(128), nullable=True)
+    reviewed_by: Mapped[str] = mapped_column(String(64), nullable=True)
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class DepositOrder(Base):
+    """UPI (Razorpay) or USDT BEP20 (NowPayments) deposit awaiting confirmation."""
+
+    __tablename__ = "deposit_orders"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    order_code: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
+    method: Mapped[str] = mapped_column(String(16))  # upi | usdt_bep20
+    provider: Mapped[str] = mapped_column(String(32))  # razorpay | nowpayments
+    pay_amount: Mapped[float] = mapped_column(Numeric(18, 8))
+    pay_currency: Mapped[str] = mapped_column(String(8))  # INR | USDT
+    coins: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    provider_order_id: Mapped[str] = mapped_column(String(128), nullable=True, index=True)
+    provider_payment_id: Mapped[str] = mapped_column(String(128), nullable=True)
+    checkout_url: Mapped[str] = mapped_column(String(1024), nullable=True)
+    extra: Mapped[str] = mapped_column(Text, nullable=True)
+    paid_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
 
 class WalletTransaction(Base):
@@ -376,6 +424,27 @@ class PlayerReport(Base):
     details: Mapped[str] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class SupportTicket(Base):
+    """Player support query visible to admin."""
+
+    __tablename__ = "support_tickets"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    ticket_code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), index=True)
+    category: Mapped[str] = mapped_column(String(64), default="general")
+    subject: Mapped[str] = mapped_column(String(160))
+    message: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="open", index=True)
+    admin_reply: Mapped[str] = mapped_column(Text, nullable=True)
+    reviewed_by: Mapped[str] = mapped_column(String(128), nullable=True)
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
 
 
 class FcmToken(Base):

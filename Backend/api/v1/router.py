@@ -9,6 +9,7 @@ from api.v1 import (
     pool,
     presence,
     referral,
+    tickets,
     tournament,
     wallet,
 )
@@ -24,3 +25,4 @@ router.include_router(tournament.router)
 router.include_router(leaderboard.router)
 router.include_router(notifications.router)
 router.include_router(presence.router)
+router.include_router(tickets.router)

@@ -97,6 +97,15 @@
       background: #fff; font-size: 12px; font-weight: 700; color: var(--ink);
     }
     .presets button:hover { border-color: var(--red); color: var(--red); }
+    .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .method-card {
+      text-align: left; border: 1.5px solid var(--line); background: #fff; border-radius: 16px;
+      padding: 12px; cursor: pointer;
+    }
+    .method-card.on { border-color: var(--red); background: #FFF7F7; }
+    .method-card .m-ico { font-size: 20px; }
+    .method-card .m-name { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 14px; margin-top: 4px; }
+    .method-card .m-rate { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
 
     .btn-red {
       width: 100%; background: var(--red); color: #fff; border-radius: 12px;
@@ -124,11 +133,19 @@
     .tx-item .up { color: #16A34A; }
     .tx-item .down { color: var(--red); }
     .tx-item span { color: var(--muted); font-size: 11px; }
+    .wd-status {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+      padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+    }
+    .wd-status.pending { background: #FEF3C7; color: #B45309; }
+    .wd-status.approved { background: #DCFCE7; color: #15803D; }
+    .wd-status.rejected { background: #FEE2E2; color: #B91C1C; }
+    .addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; word-break: break-all; }
 
     .bottom-nav {
       position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
       width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
-      display: grid; grid-template-columns: repeat(5, 1fr);
+      display: grid; grid-template-columns: repeat(4, 1fr);
       padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
     }
     .bottom-nav a {
@@ -157,20 +174,30 @@
     <header class="topbar">
       <a class="icon-btn" href="/" aria-label="Back">←</a>
       <h1>Wallet</h1>
-      <a class="icon-btn" href="/swap.html" title="Swap" aria-label="Swap">⇄</a>
+      <a class="icon-btn" href="/p2p.html" title="P2P" aria-label="P2P">⇄</a>
     </header>
 
     <div class="pad">
       <section class="bal-card">
-        <p class="label">Available Balance · All games</p>
-        <p class="bal" id="balText">1,250 WXO</p>
-        <p class="inr" id="inrText">≈ ₹1,250.00 · 1 Coin = ₹1</p>
+        <p class="label">Main wallet · Withdrawable</p>
+        <p class="bal" id="balText">0 WXO</p>
+        <p class="inr" id="inrText">≈ ₹0.00 · 1 Coin = ₹1</p>
+        <p class="inr" id="uidText" style="opacity:.85">Your User ID · —</p>
+      </section>
+
+      <section class="card" id="bonusCard" style="background:#FFF8E7;border-color:#F5E0A8">
+        <h2 style="color:#8B6914">Bonus wallet</h2>
+        <p style="font-family:Montserrat,sans-serif;font-size:22px;font-weight:800;color:#B45309" id="bonusText">0 WXO</p>
+        <p class="hint" style="margin-top:8px">
+          Signup bonus sits here. <strong>Tournament only</strong> — no withdraw, no P2P.
+          While bonus remains, each entry uses <strong>80% main + 20% bonus</strong>. After bonus is 0, 100% main.
+        </p>
       </section>
 
       <div class="quick">
         <a class="active" href="/wallet.html#deposit"><span class="ico">↓</span>Deposit</a>
         <a href="/wallet.html#withdraw"><span class="ico">↑</span>Withdraw</a>
-        <a href="/swap.html"><span class="ico">⇄</span>Swap</a>
+        <a href="/p2p.html"><span class="ico">⇄</span>P2P</a>
       </div>
 
       <div class="tabs" role="tablist">
@@ -180,62 +207,76 @@
 
       <!-- DEPOSIT -->
       <div class="panel on" id="panel-deposit">
-        <div class="note">Deposit INR to get WXO Coins. <strong>1 WXO = ₹1</strong>. Same coins work in <strong>all games &amp; tournaments</strong>.</div>
+        <div class="note" id="depNote">
+          Choose a deposit method. <strong>UPI: ₹1 = 1 WXO</strong> · <strong>USDT BEP20: 1 USDT = 100 WXO</strong>.
+        </div>
+        <div class="method-grid">
+          <button type="button" class="method-card on" id="mUpi" data-method="upi">
+            <div class="m-ico">🇮🇳</div>
+            <div class="m-name">UPI</div>
+            <div class="m-rate">₹1 = 1 coin</div>
+          </button>
+          <button type="button" class="method-card" id="mUsdt" data-method="usdt_bep20">
+            <div class="m-ico">₮</div>
+            <div class="m-name">USDT BEP20</div>
+            <div class="m-rate">1 USDT = 100 coins</div>
+          </button>
+        </div>
         <div class="card">
-          <h2>Deposit / Buy WXO Coin</h2>
+          <h2 id="depTitle">Deposit with UPI</h2>
           <div class="field">
-            <label for="depAmount">Amount (₹)</label>
+            <label for="depAmount" id="depAmtLabel">Amount (₹)</label>
             <input id="depAmount" type="number" min="10" step="1" placeholder="Enter amount" value="100" />
           </div>
-          <div class="presets">
-            <button type="button" data-fill="depAmount" data-val="50">₹50</button>
-            <button type="button" data-fill="depAmount" data-val="100">₹100</button>
-            <button type="button" data-fill="depAmount" data-val="250">₹250</button>
-            <button type="button" data-fill="depAmount" data-val="500">₹500</button>
-            <button type="button" data-fill="depAmount" data-val="1000">₹1,000</button>
-          </div>
-          <div class="field">
-            <label for="depMethod">Payment method</label>
-            <select id="depMethod">
-              <option>UPI</option>
-              <option>Card</option>
-              <option>Net Banking</option>
-              <option>Wallet</option>
-            </select>
+          <div class="presets" id="depPresets">
+            <button type="button" data-val="50">₹50</button>
+            <button type="button" data-val="100">₹100</button>
+            <button type="button" data-val="250">₹250</button>
+            <button type="button" data-val="500">₹500</button>
+            <button type="button" data-val="1000">₹1,000</button>
           </div>
           <p class="hint" id="depPreview">You will receive <strong>100 WXO</strong> coins.</p>
-          <button class="btn-red" type="button" id="btnDeposit" style="margin-top:12px">Deposit Now</button>
+          <button class="btn-red" type="button" id="btnDeposit" style="margin-top:12px">Pay with UPI</button>
         </div>
       </div>
 
       <!-- WITHDRAW -->
       <div class="panel" id="panel-withdraw">
-        <div class="note">Withdraw eligible earned coins per platform policy. Processing may take time after verification.</div>
+        <div class="note">
+          Withdraw is <strong>USDT BEP20 only</strong> from the <strong>main wallet</strong>.
+          Rate <strong>100 WXO = 1 USDT</strong>. <strong>Bonus wallet cannot be withdrawn.</strong>
+          Coins lock immediately. Admin approves once, then USDT is sent to your BEP20 address.
+        </div>
         <div class="card">
-          <h2>Withdraw WXO Coin</h2>
+          <h2>Withdraw USDT BEP20</h2>
+          <div class="method-grid" style="grid-template-columns:1fr">
+            <div class="method-card on">
+              <div class="m-ico">₮</div>
+              <div class="m-name">USDT BEP20</div>
+              <div class="m-rate">100 WXO = 1 USDT · Admin approval</div>
+            </div>
+          </div>
           <div class="field">
             <label for="wdAmount">Amount (WXO)</label>
-            <input id="wdAmount" type="number" min="10" step="1" placeholder="Enter coins" value="100" />
+            <input id="wdAmount" type="number" min="100" step="1" placeholder="Minimum 100" value="100" />
           </div>
           <div class="presets">
-            <button type="button" data-fill="wdAmount" data-val="50">50</button>
             <button type="button" data-fill="wdAmount" data-val="100">100</button>
-            <button type="button" data-fill="wdAmount" data-val="250">250</button>
+            <button type="button" data-fill="wdAmount" data-val="200">200</button>
             <button type="button" data-fill="wdAmount" data-val="500">500</button>
+            <button type="button" data-fill="wdAmount" data-val="1000">1,000</button>
+            <button type="button" data-fill="wdAmount" data-val="2000">2,000</button>
           </div>
           <div class="field">
-            <label for="wdMethod">Payout method</label>
-            <select id="wdMethod">
-              <option>UPI</option>
-              <option>Bank Transfer</option>
-            </select>
+            <label for="wdAddress">USDT BEP20 address</label>
+            <input id="wdAddress" type="text" maxlength="64" placeholder="0x…" autocomplete="off" />
           </div>
-          <div class="field">
-            <label for="wdDetail">UPI ID / Account</label>
-            <input id="wdDetail" type="text" placeholder="name@upi or account details" />
-          </div>
-          <p class="hint" id="wdPreview">You will receive ≈ <strong>₹100</strong>.</p>
+          <p class="hint" id="wdPreview">You will receive <strong>1.00 USDT</strong> on BNB Smart Chain after admin approval.</p>
           <button class="btn-red" type="button" id="btnWithdraw" style="margin-top:12px">Request Withdrawal</button>
+        </div>
+        <div class="card tx">
+          <h3>Withdrawal requests</h3>
+          <div id="wdList"></div>
         </div>
       </div>
 
@@ -247,21 +288,24 @@
 
     <nav class="bottom-nav" aria-label="Primary">
       <a href="/"><span class="ico">🏠</span>Home</a>
-      <a href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
-      <a href="/#referral" aria-label="Earn"><span class="play-fab">💰</span></a>
-      <a class="active" href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
+      <a href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
       <a href="/profile.html"><span class="ico">👤</span>Profile</a>
     </nav>
   </div>
   <div class="toast" id="toast"></div>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="/assets/wxo-auth.js?v=1"></script>
-  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <script src="/assets/wxo-wallet.js?v=9"></script>
   <script>
     const RATE = 1;
     function paintBal() {
       const b = WXOWallet.getBal();
+      const bonus = WXOWallet.getBonus ? WXOWallet.getBonus() : 0;
       document.getElementById('balText').textContent = b.toLocaleString('en-IN') + ' WXO';
-      document.getElementById('inrText').textContent = '≈ ₹' + (b * RATE).toLocaleString('en-IN', { minimumFractionDigits: 2 }) + ' · 1 Coin = ₹1 · All games';
+      document.getElementById('inrText').textContent = '≈ ₹' + (b * RATE).toLocaleString('en-IN', { minimumFractionDigits: 2 }) + ' · 1 Coin = ₹1 · Withdrawable';
+      const bonusEl = document.getElementById('bonusText');
+      if (bonusEl) bonusEl.textContent = bonus.toLocaleString('en-IN') + ' WXO';
     }
     function paintTx() {
       const list = document.getElementById('txList');
@@ -281,6 +325,11 @@
     paintBal();
     paintTx();
     window.addEventListener('wxo:balance', () => { paintBal(); paintTx(); });
+    if (window.WXOAuth && WXOAuth.isLoggedIn()) {
+      WXOAuth.me().then(function (me) {
+        if (me && me.id) document.getElementById('uidText').textContent = 'Your User ID · ' + me.id;
+      }).catch(function () {});
+    }
 
     function toast(msg) {
       const t = document.getElementById('toast');
@@ -293,6 +342,7 @@
       document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
       document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-' + name));
       history.replaceState(null, '', name === 'withdraw' ? '#withdraw' : '#deposit');
+      if (name === 'withdraw') loadWithdrawals();
     }
     function showTabFromHash() {
       showTab(location.hash === '#withdraw' ? 'withdraw' : 'deposit');
@@ -309,17 +359,50 @@
       });
     });
 
+    let depMethod = 'upi';
+    const UPI_PRESETS = [50, 100, 250, 500, 1000];
+    const USDT_PRESETS = [1, 5, 10, 20, 50];
+
+    function setMethod(method) {
+      depMethod = method;
+      document.getElementById('mUpi').classList.toggle('on', method === 'upi');
+      document.getElementById('mUsdt').classList.toggle('on', method === 'usdt_bep20');
+      const upi = method === 'upi';
+      document.getElementById('depTitle').textContent = upi ? 'Deposit with UPI' : 'Deposit USDT BEP20';
+      document.getElementById('depAmtLabel').textContent = upi ? 'Amount (₹)' : 'Amount (USDT)';
+      document.getElementById('depAmount').step = upi ? '1' : '0.01';
+      document.getElementById('depAmount').min = upi ? '10' : '1';
+      document.getElementById('depAmount').value = upi ? '100' : '10';
+      document.getElementById('btnDeposit').textContent = upi ? 'Pay with UPI' : 'Pay USDT BEP20';
+      const box = document.getElementById('depPresets');
+      box.innerHTML = (upi ? UPI_PRESETS : USDT_PRESETS).map(function (v) {
+        return '<button type="button" data-val="' + v + '">' + (upi ? ('₹' + v) : (v + ' USDT')) + '</button>';
+      }).join('');
+      box.querySelectorAll('button').forEach(function (b) {
+        b.onclick = function () {
+          document.getElementById('depAmount').value = b.getAttribute('data-val');
+          updatePreviews();
+        };
+      });
+      updatePreviews();
+    }
+    document.getElementById('mUpi').onclick = function () { setMethod('upi'); };
+    document.getElementById('mUsdt').onclick = function () { setMethod('usdt_bep20'); };
+
     function updatePreviews() {
-      const dep = Math.max(0, Number(document.getElementById('depAmount').value) || 0);
+      const raw = Number(document.getElementById('depAmount').value) || 0;
+      const coins = depMethod === 'upi' ? Math.floor(raw) : Math.floor(raw * 100);
       document.getElementById('depPreview').innerHTML =
-        'You will receive <strong>' + dep.toLocaleString('en-IN') + ' WXO</strong> — usable in all games.';
-      const wd = Math.max(0, Number(document.getElementById('wdAmount').value) || 0);
+        'You will receive <strong>' + Math.max(0, coins).toLocaleString('en-IN') + ' WXO</strong> coins.';
+      const wd = Math.max(0, Math.floor(Number(document.getElementById('wdAmount').value) || 0));
+      const usdt = wd / 100;
       document.getElementById('wdPreview').innerHTML =
-        'You will receive ≈ <strong>₹' + (wd * RATE).toLocaleString('en-IN') + '</strong>.';
+        'You will receive <strong>' + usdt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) +
+        ' USDT</strong> on BNB Smart Chain (BEP20) after admin approval.';
     }
     document.getElementById('depAmount').addEventListener('input', updatePreviews);
     document.getElementById('wdAmount').addEventListener('input', updatePreviews);
-    updatePreviews();
+    setMethod('upi');
 
     /** Money actions belong to a real account, not just this device. */
     function needsAccount() {
@@ -335,33 +418,170 @@
       return true;
     }
 
-    document.getElementById('btnDeposit').onclick = () => {
-      if (needsAccount()) return;
-      const amt = Math.floor(Number(document.getElementById('depAmount').value) || 0);
-      const method = document.getElementById('depMethod').value;
-      const res = WXOWallet.deposit(amt, method);
-      if (!res.ok) return toast(res.error);
-      paintBal(); paintTx();
+    function onDepositPaid(coins) {
+      if (window.WXOWallet) WXOWallet.syncFromServer().then(function () { paintBal(); paintTx(); });
       WXOWallet.showPopup({
         icon: '🪙',
         title: 'Deposit successful',
-        prize: res.amount,
-        message: 'Coins added to your WXO wallet. Use them in IQ Match, Ludo, tournaments — any game on WXO.',
+        prize: coins,
+        message: coins + ' WXO coins added to your wallet.',
         okText: 'Play Tournaments',
         onOk: () => { location.href = '/tournaments.html'; }
       });
+    }
+
+    function openRazorpay(data) {
+      if (typeof Razorpay === 'undefined') return toast('UPI checkout failed to load');
+      const rzp = new Razorpay({
+        key: data.razorpay_key,
+        amount: data.amount_paise,
+        currency: 'INR',
+        name: 'WXO',
+        description: data.coins + ' WXO coins',
+        order_id: data.razorpay_order_id,
+        prefill: { name: data.prefill_name || '', email: data.prefill_email || '' },
+        theme: { color: '#E31C23' },
+        method: { upi: true, card: false, netbanking: false, wallet: false },
+        handler: function (resp) {
+          WXOAuth.api('/payments/deposit/razorpay/verify', {
+            method: 'POST',
+            body: {
+              razorpay_order_id: resp.razorpay_order_id,
+              razorpay_payment_id: resp.razorpay_payment_id,
+              razorpay_signature: resp.razorpay_signature
+            }
+          }).then(function (res) {
+            onDepositPaid(res.coins);
+          }).catch(function (err) {
+            toast(err.message || 'Could not verify UPI payment');
+          });
+        }
+      });
+      rzp.on('payment.failed', function () { toast('UPI payment failed'); });
+      rzp.open();
+    }
+
+    document.getElementById('btnDeposit').onclick = () => {
+      if (needsAccount()) return;
+      const amt = Number(document.getElementById('depAmount').value) || 0;
+      if (depMethod === 'upi' && amt < 10) return toast('Minimum UPI deposit is ₹10');
+      if (depMethod === 'usdt_bep20' && amt < 1) return toast('Minimum USDT deposit is 1 USDT');
+      const btn = document.getElementById('btnDeposit');
+      btn.disabled = true;
+      const old = btn.textContent;
+      btn.textContent = 'Starting payment…';
+      WXOAuth.api('/payments/deposit/create', {
+        method: 'POST',
+        body: { method: depMethod, amount: amt }
+      }).then(function (data) {
+        if (data.checkout === 'razorpay') {
+          openRazorpay(data);
+        } else if (data.checkout === 'nowpayments' && data.invoice_url) {
+          location.href = data.invoice_url;
+        } else {
+          toast('Could not start payment');
+        }
+      }).catch(function (err) {
+        toast(err.message || 'Deposit failed');
+      }).finally(function () {
+        btn.disabled = false;
+        btn.textContent = old;
+      });
     };
 
+    (function handleReturn() {
+      const q = new URLSearchParams(location.search);
+      const flag = q.get('deposit');
+      const order = q.get('order');
+      if (!flag) return;
+      if (flag === 'cancel') toast('USDT payment cancelled');
+      if (flag === 'ok' && order && window.WXOAuth && WXOAuth.isLoggedIn()) {
+        toast('Checking USDT payment…');
+        var tries = 0;
+        var t = setInterval(function () {
+          tries += 1;
+          WXOAuth.api('/payments/deposit/' + encodeURIComponent(order))
+            .then(function (row) {
+              if (row.status === 'paid') {
+                clearInterval(t);
+                onDepositPaid(row.coins);
+              } else if (tries >= 12) {
+                clearInterval(t);
+                toast('Payment pending. Coins will credit after confirmation.');
+                if (window.WXOWallet) WXOWallet.syncFromServer().then(function () { paintBal(); paintTx(); });
+              }
+            })
+            .catch(function () {
+              if (tries >= 12) clearInterval(t);
+            });
+        }, 2500);
+      }
+      history.replaceState(null, '', location.pathname + (location.hash || '#deposit'));
+    })();
+
+    function shortAddr(addr) {
+      if (!addr || addr.length < 12) return addr || '';
+      return addr.slice(0, 6) + '…' + addr.slice(-4);
+    }
+    function paintWithdrawals(items) {
+      const list = document.getElementById('wdList');
+      if (!items || !items.length) {
+        list.innerHTML = '<div class="tx-item"><div><b>No requests yet</b><br /><span>USDT BEP20 only · admin approval</span></div><span>—</span></div>';
+        return;
+      }
+      list.innerHTML = items.slice(0, 12).map(function (row) {
+        const when = row.created_at ? new Date(row.created_at).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) : '';
+        const note = row.status === 'rejected' && row.admin_note ? '<br /><span>' + row.admin_note + '</span>' : '';
+        const tx = row.payout_tx ? '<br /><span>TX · ' + shortAddr(row.payout_tx) + '</span>' : '';
+        return '<div class="tx-item"><div><b>−' + Number(row.coins).toLocaleString('en-IN') + ' WXO</b>' +
+          '<br /><span>' + Number(row.usdt_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) +
+          ' USDT · <span class="addr">' + shortAddr(row.bep20_address) + '</span></span>' + note + tx +
+          '</div><div style="text-align:right"><span class="wd-status ' + (row.status || 'pending') + '">' +
+          (row.status || 'pending') + '</span><br /><span>' + when + '</span></div></div>';
+      }).join('');
+    }
+    function loadWithdrawals() {
+      if (!window.WXOAuth || !WXOAuth.isLoggedIn()) {
+        paintWithdrawals([]);
+        return;
+      }
+      WXOAuth.api('/wallet/withdrawals').then(function (res) {
+        paintWithdrawals(res && res.items ? res.items : []);
+      }).catch(function () {
+        paintWithdrawals([]);
+      });
+    }
     document.getElementById('btnWithdraw').onclick = () => {
       if (needsAccount()) return;
       const amt = Math.floor(Number(document.getElementById('wdAmount').value) || 0);
-      const detail = document.getElementById('wdDetail').value.trim();
-      if (!detail) return toast('Enter UPI / account details');
-      const method = document.getElementById('wdMethod').value;
-      const res = WXOWallet.withdraw(amt, method);
-      if (!res.ok) return toast(res.error);
-      paintBal(); paintTx();
-      toast('Withdrawal requested · ' + amt + ' WXO');
+      const addr = document.getElementById('wdAddress').value.trim();
+      if (amt < 100) return toast('Minimum withdrawal is 100 WXO (1 USDT)');
+      if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) return toast('Enter a valid BEP20 address (0x…)');
+      const btn = document.getElementById('btnWithdraw');
+      btn.disabled = true;
+      const old = btn.textContent;
+      btn.textContent = 'Submitting…';
+      WXOAuth.api('/wallet/withdraw', {
+        method: 'POST',
+        body: { amount: amt, bep20_address: addr }
+      }).then(function (res) {
+        if (window.WXOWallet) {
+          if (typeof res.balance === 'number') WXOWallet.setBal(res.balance);
+          WXOWallet.addTx({
+            type: 'out',
+            amount: amt,
+            title: 'Withdraw USDT BEP20',
+            note: 'Pending admin approval'
+          });
+        }
+        paintBal(); paintTx(); loadWithdrawals();
+        toast('Requested · ' + amt + ' WXO → ' + Number(res.usdt_amount).toFixed(2) + ' USDT');
+      }).catch(function (err) {
+        toast(err.message || 'Withdraw failed');
+      }).finally(function () {
+        btn.disabled = false;
+        btn.textContent = old;
+      });
     };
   </script>
 </body>

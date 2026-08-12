@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WXO Earn — Referral</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23; --ink: #111; --muted: #6B7280;
+      --line: #ECEEF2; --bg: #FFF; --soft: #F7F8FA; --gold: #C99213;
+      --green: #1AA260; --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif; background: #111; color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto; background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5); padding-bottom: 96px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; }
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+      padding: 10px 14px; background: rgba(255,255,255,.96); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; background: var(--soft);
+    }
+    .topbar h1 {
+      text-align: center; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800;
+    }
+
+    .pad { padding: 14px; }
+
+    .hero {
+      border-radius: 20px; padding: 18px 16px; margin-bottom: 12px;
+      background: linear-gradient(145deg, #111 0%, #2a0a0c 80%); color: #fff;
+    }
+    .hero .lbl { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+    .hero .amt { font-family: Montserrat, sans-serif; font-size: 34px; font-weight: 800; margin: 6px 0 2px; }
+    .hero .sub { font-size: 12px; font-weight: 600; color: #FBBF24; }
+    .hero .meta { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .hero .pill {
+      background: rgba(255,255,255,.08); border-radius: 14px; padding: 10px 12px;
+    }
+    .hero .pill b { display: block; font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 800; }
+    .hero .pill span { font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .stat {
+      border-radius: 18px; padding: 16px 12px; text-align: center;
+      background: linear-gradient(180deg, #FFF1F2 0%, #fff 75%); border: 1px solid #FECDD3;
+    }
+    .stat.sat {
+      background: linear-gradient(180deg, #FFF8E7 0%, #fff 75%); border-color: #F3E2B3;
+    }
+    .stat .num {
+      font-family: Montserrat, sans-serif; font-size: 32px; font-weight: 800; line-height: 1; color: var(--red);
+    }
+    .stat.sat .num { color: var(--gold); }
+    .stat .lbl {
+      margin-top: 8px; font-size: 11px; font-weight: 800; letter-spacing: .05em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .stat .hint { margin-top: 4px; font-size: 10px; font-weight: 600; color: #9CA3AF; }
+
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 14px; margin-bottom: 12px;
+    }
+    .card h2 {
+      font-family: Montserrat, sans-serif; font-size: 13px; font-weight: 800;
+      letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+    }
+    .card h2 span {
+      font-family: Inter, sans-serif; letter-spacing: 0; text-transform: none; font-weight: 700; color: var(--ink); float: right;
+    }
+
+    .ref-code {
+      font-family: Montserrat, sans-serif; font-size: 22px; font-weight: 800; letter-spacing: .04em; margin-bottom: 8px;
+    }
+    .ref-link {
+      font-size: 12px; font-weight: 600; color: var(--muted); word-break: break-all;
+      background: var(--soft); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px;
+    }
+    .acts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .acts button, .acts a {
+      display: block; text-align: center; border-radius: 12px; padding: 11px 8px;
+      font-weight: 800; font-size: 12px; background: var(--red); color: #fff;
+    }
+    .acts .ghost { background: var(--soft); color: var(--ink); border: 1px solid var(--line); }
+
+    .note {
+      background: #FFF8E7; border: 1px solid #F5E0A8; border-radius: 12px;
+      padding: 10px 12px; font-size: 11px; color: #8B6914; line-height: 1.45; margin-bottom: 12px;
+    }
+    .note strong { color: #111; }
+
+    .income-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .ibox { background: var(--soft); border-radius: 14px; padding: 12px 8px; text-align: center; }
+    .ibox .n { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 16px; }
+    .ibox .t { font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+    .ibox.green .n { color: var(--green); }
+    .ibox.gold .n { color: var(--gold); }
+
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+    .split .box {
+      border: 1px solid var(--line); border-radius: 14px; padding: 12px;
+    }
+    .split .n { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 20px; }
+    .split .t { font-size: 11px; font-weight: 800; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .04em; }
+    .split .d { font-size: 10px; color: #9CA3AF; font-weight: 600; margin-top: 2px; }
+
+    .lvl {
+      display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; align-items: center;
+      padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px;
+    }
+    .lvl:first-of-type { border-top: 0; }
+    .lvl .badge {
+      font-size: 11px; font-weight: 800; background: var(--soft); border-radius: 999px; padding: 5px 8px; text-align: center;
+    }
+    .lvl .badge.l1 { background: #FFF1F2; color: var(--red); }
+    .lvl .who { font-weight: 700; }
+    .lvl .meta { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .lvl .pts { font-family: Montserrat, sans-serif; font-weight: 800; color: var(--green); text-align: right; }
+
+    .row {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+      padding: 12px 0; border-top: 1px solid var(--line);
+    }
+    .row:first-of-type { border-top: 0; }
+    .user { font-weight: 800; font-size: 14px; }
+    .when { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .amt { font-family: Montserrat, sans-serif; font-weight: 800; color: var(--green); text-align: right; }
+    .type {
+      display: inline-flex; background: var(--soft); border-radius: 999px; padding: 3px 8px;
+      font-size: 10px; font-weight: 800; margin-top: 4px;
+    }
+    .type.l1 { background: #FFF1F2; color: var(--red); }
+
+    .links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .links a {
+      display: block; text-align: center; border: 1px solid var(--line); border-radius: 14px;
+      padding: 12px 8px; font-weight: 800; font-size: 12px; background: var(--soft);
+    }
+
+    .empty, .state { text-align: center; padding: 22px 12px; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .empty .em-ico { font-size: 36px; display: block; margin-bottom: 8px; }
+
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px;
+    }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0; pointer-events: none;
+      transition: .25s var(--ease); white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="icon-btn" href="/" aria-label="Back">←</a>
+      <h1>Earn · Referral</h1>
+      <a class="icon-btn" href="/team.html" aria-label="Team">👥</a>
+    </header>
+
+    <div class="pad">
+      <section class="hero">
+        <div class="lbl">Referral income</div>
+        <div class="amt" id="heroTotal">0</div>
+        <div class="sub">WXO earned from your team’s tournament entries</div>
+        <div class="meta">
+          <div class="pill"><b id="heroToday">0</b><span>Today</span></div>
+          <div class="pill"><b id="heroWeek">0</b><span>This week</span></div>
+        </div>
+      </section>
+
+      <div class="note">
+        Share your link. Friends join with your code. When they play paid tournaments you earn
+        <strong>L1 Direct 5%</strong> · <strong>L2–L6 Sat Team 1%</strong> each.
+      </div>
+
+      <div class="card">
+        <h2>Your referral link</h2>
+        <div class="ref-code" id="refCode">—</div>
+        <div class="ref-link" id="refLink">Login to get your invite link</div>
+        <div class="acts">
+          <button type="button" id="btnCopyCode">Copy code</button>
+          <button type="button" class="ghost" id="btnCopyLink">Copy link</button>
+          <button type="button" class="ghost" id="btnShare">Share</button>
+        </div>
+      </div>
+
+      <section class="stats">
+        <div class="stat">
+          <div class="num" id="directCount">0</div>
+          <div class="lbl">Direct</div>
+          <div class="hint">Level 1 · 5%</div>
+        </div>
+        <div class="stat sat">
+          <div class="num" id="satCount">0</div>
+          <div class="lbl">Sat Team</div>
+          <div class="hint">L2–L6 · 1% each</div>
+        </div>
+      </section>
+
+      <div class="card">
+        <h2>Referral income <span id="incTotalLbl"></span></h2>
+        <div class="income-grid">
+          <div class="ibox green"><div class="n" id="incToday">0</div><div class="t">Today</div></div>
+          <div class="ibox"><div class="n" id="incWeek">0</div><div class="t">Week</div></div>
+          <div class="ibox gold"><div class="n" id="incTotal">0</div><div class="t">All time</div></div>
+        </div>
+        <div class="split">
+          <div class="box">
+            <div class="n" id="incDirect">0</div>
+            <div class="t">Direct income</div>
+            <div class="d">From L1 team · 5%</div>
+          </div>
+          <div class="box">
+            <div class="n" id="incSat">0</div>
+            <div class="t">Sat team income</div>
+            <div class="d">From L2–L6 · 1%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Team by level</h2>
+        <div id="levelList"><div class="state">Loading…</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Recent referral income</h2>
+        <div id="earnList"><div class="state">Loading…</div></div>
+      </div>
+
+      <div class="links">
+        <a href="/team.html">View team →</a>
+        <a href="/income.html">Rewards history →</a>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <a href="/"><span class="ico">🏠</span>Home</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
+      <a class="active" href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
+      <a href="/profile.html"><span class="ico">👤</span>Profile</a>
+    </nav>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script>
+    (function () {
+      if (!window.WXOAuth || !WXOAuth.requireAuth()) return;
+
+      function toast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800);
+      }
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+      function fmt(n) {
+        var v = Number(n || 0);
+        if (!isFinite(v)) v = 0;
+        return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      }
+      function fmtWhen(s) {
+        if (!s) return '';
+        var d = new Date(s);
+        if (isNaN(d)) return '';
+        return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      }
+
+      var refCode = '';
+      var refLink = '';
+
+      function copyText(text, okMsg) {
+        if (!text) return toast('Not ready yet');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { toast(okMsg); }, function () { toast(text); });
+        } else {
+          toast(text);
+        }
+      }
+
+      document.getElementById('btnCopyCode').onclick = function () { copyText(refCode, 'Code copied'); };
+      document.getElementById('btnCopyLink').onclick = function () { copyText(refLink, 'Link copied'); };
+      document.getElementById('btnShare').onclick = function () {
+        if (!refCode) return toast('Not ready yet');
+        var msg = 'Join WXO with my referral code ' + refCode + '\n' + refLink;
+        if (navigator.share) {
+          navigator.share({ title: 'WXO Referral', text: msg, url: refLink }).catch(function () { copyText(msg, 'Invite copied'); });
+        } else {
+          copyText(msg, 'Invite copied');
+        }
+      };
+
+      function paintMe(me) {
+        refCode = me.referral_code || '';
+        refLink = me.referral_link || (location.origin + '/register.html?ref=' + encodeURIComponent(refCode));
+        document.getElementById('refCode').textContent = refCode || '—';
+        document.getElementById('refLink').textContent = refLink;
+        document.getElementById('directCount').textContent = fmt(me.direct_count);
+        document.getElementById('satCount').textContent = fmt(me.sat_count);
+
+        var inc = me.income || {};
+        document.getElementById('heroTotal').textContent = fmt(inc.total) + ' WXO';
+        document.getElementById('heroToday').textContent = fmt(inc.today);
+        document.getElementById('heroWeek').textContent = fmt(inc.week);
+        document.getElementById('incToday').textContent = fmt(inc.today);
+        document.getElementById('incWeek').textContent = fmt(inc.week);
+        document.getElementById('incTotal').textContent = fmt(inc.total);
+        document.getElementById('incDirect').textContent = fmt(inc.direct);
+        document.getElementById('incSat').textContent = fmt(inc.sat);
+        document.getElementById('incTotalLbl').textContent = fmt(inc.total) + ' WXO';
+
+        var counts = {};
+        (me.team_counts || []).forEach(function (row) { counts[row.level] = row.members; });
+        var byLevel = inc.by_level || [];
+        var html = byLevel.map(function (row) {
+          var members = counts[row.level] != null ? counts[row.level] : 0;
+          var label = row.level === 1 ? 'Direct' : ('Sat L' + row.level);
+          return '' +
+            '<div class="lvl">' +
+              '<span class="badge' + (row.level === 1 ? ' l1' : '') + '">L' + row.level + '</span>' +
+              '<div><div class="who">' + label + ' · ' + row.percent + '%</div>' +
+              '<div class="meta">' + fmt(members) + ' members · ' + fmt(row.entries) + ' entries</div></div>' +
+              '<div class="pts">+' + fmt(row.points) + '</div>' +
+            '</div>';
+        }).join('');
+        document.getElementById('levelList').innerHTML = html || '<div class="empty"><span class="em-ico">👥</span><p>No team yet. Share your link.</p></div>';
+      }
+
+      function paintEarnings(items) {
+        var list = document.getElementById('earnList');
+        if (!items || !items.length) {
+          list.innerHTML = '<div class="empty"><span class="em-ico">🪙</span><p>Abhi referral income nahi aayi.<br>Team jab tournament khelegi, yahan dikhega.</p></div>';
+          return;
+        }
+        list.innerHTML = items.slice(0, 20).map(function (row) {
+          var cls = row.level === 1 ? ' l1' : '';
+          return '' +
+            '<div class="row">' +
+              '<div><div class="user">' + esc(row.user || row.from_name || 'Player') + '</div>' +
+              '<div class="when">' + esc(fmtWhen(row.created_at)) + '</div>' +
+              '<span class="type' + cls + '">' + esc(row.type || ('L' + row.level)) + '</span></div>' +
+              '<div class="amt">+' + fmt(row.points) + '</div>' +
+            '</div>';
+        }).join('');
+      }
+
+      Promise.all([
+        WXOAuth.api('/referral/me'),
+        WXOAuth.api('/referral/earnings?limit=20')
+      ]).then(function (res) {
+        paintMe(res[0] || {});
+        paintEarnings((res[1] && res[1].items) || []);
+      }).catch(function (err) {
+        toast(err.message || 'Could not load earn page');
+        document.getElementById('levelList').innerHTML = '<div class="state">' + esc(err.message || 'Failed') + '</div>';
+        document.getElementById('earnList').innerHTML = '<div class="state">' + esc(err.message || 'Failed') + '</div>';
+      });
+    })();
+  </script>
+</body>
+</html>

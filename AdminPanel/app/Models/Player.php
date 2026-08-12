@@ -43,4 +43,14 @@ class Player extends Model
     {
         return $this->hasMany(IapPurchase::class, 'user_id');
     }
+
+    public function withdrawalRequests(): HasMany
+    {
+        return $this->hasMany(WithdrawalRequest::class, 'user_id');
+    }
+
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class, 'user_id');
+    }
 }

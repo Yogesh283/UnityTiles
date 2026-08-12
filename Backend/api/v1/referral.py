@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -16,6 +18,15 @@ _LEVEL_LABELS = {
     5: "5th-Level Team",
     6: "6th-Level Team",
 }
+
+
+def _parse_day(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value.strip(), "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 
 @router.get("/program")
@@ -50,14 +61,17 @@ def my_referral(
     code = service.ensure_code(user)
     db.commit()
 
-    counts = service.team_counts(user)
+    snap = service.team_snapshot(user)
     summary = service.income_summary(user.id)
+    counts = snap["counts"]
 
     return {
         "referral_code": code,
-        "referral_link": f"https://matchiq.fun/join?ref={code}",
+        "referral_link": service.referral_link(code),
+        "direct_count": snap["direct_count"],
+        "sat_count": snap["sat_count"],
+        "team_size": snap["team_size"],
         "team_counts": [{"level": lvl, "members": counts.get(lvl, 0)} for lvl in range(1, MAX_LEVEL + 1)],
-        "team_size": sum(counts.values()),
         "income": summary,
     }
 
@@ -83,10 +97,23 @@ def income(
 @router.get("/earnings")
 def earnings(
     limit: int = Query(50, ge=1, le=200),
+    date_str: str | None = Query(None, alias="date"),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return {"items": ReferralService(db).recent_earnings(user.id, limit=limit)}
+    day = _parse_day(date_str)
+    return {"items": ReferralService(db).recent_earnings(user.id, limit=limit, day=day)}
+
+
+@router.get("/rewards")
+def rewards(
+    date_str: str | None = Query(None, alias="date"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """All income for a calendar day. Today total is always included."""
+    day = _parse_day(date_str) or date.today()
+    return ReferralService(db).rewards_report(user, day)
 
 
 @router.get("/directs")
@@ -100,11 +127,13 @@ def directs(
     service.ensure_code(user)
     db.commit()
 
-    counts = service.team_counts(user)
+    snap = service.team_snapshot(user)
     return {
-        "direct_count": counts.get(1, 0),
-        "team_size": sum(counts.values()),
+        "direct_count": snap["direct_count"],
+        "sat_count": snap["sat_count"],
+        "team_size": snap["team_size"],
         "referral_code": user.referral_code,
+        "referral_link": service.referral_link(user.referral_code or ""),
         "members": service.direct_members(user, limit=limit),
     }
 
@@ -115,10 +144,17 @@ def team(
     db: Session = Depends(get_db),
 ):
     service = ReferralService(db)
-    counts = service.team_counts(user)
+    snap = service.team_snapshot(user)
+    counts = snap["counts"]
     summary = service.income_summary(user.id)
     by_level = {row["level"]: row for row in summary["by_level"]}
     return {
+        "direct_count": snap["direct_count"],
+        "sat_count": snap["sat_count"],
+        "total_members": snap["team_size"],
+        "total_points": summary["total"],
+        "direct_points": summary.get("direct", 0),
+        "sat_points": summary.get("sat", 0),
         "levels": [
             {
                 "level": lvl,
@@ -129,6 +165,4 @@ def team(
             }
             for lvl in range(1, MAX_LEVEL + 1)
         ],
-        "total_members": sum(counts.values()),
-        "total_points": summary["total"],
     }

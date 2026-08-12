@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WXO Support Ticket</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23; --ink: #111; --muted: #6B7280;
+      --line: #ECEEF2; --bg: #FFF; --soft: #F7F8FA; --gold: #C99213;
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif; background: #111; color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button { border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto; background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5); padding-bottom: 96px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; }
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+      padding: 10px 14px; background: rgba(255,255,255,.96); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; background: var(--soft);
+    }
+    .topbar h1 {
+      text-align: center; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800;
+    }
+
+    .pad { padding: 14px; }
+
+    .hero {
+      background: linear-gradient(180deg, #FFF1F2 0%, #fff 75%);
+      border: 1px solid #FECDD3; border-radius: 20px; padding: 16px; margin-bottom: 14px;
+    }
+    .hero .who { font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 800; }
+    .hero .sub { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; line-height: 1.45; }
+
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 12px;
+    }
+    .card h2 { font-family: Montserrat, sans-serif; font-size: 14px; font-weight: 800; margin-bottom: 10px; }
+
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px;
+      background: var(--soft); outline: none; font-weight: 600;
+    }
+    .field textarea { min-height: 120px; resize: vertical; font-weight: 500; line-height: 1.45; }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: #FECACA; background: #fff;
+    }
+
+    .btn-red {
+      width: 100%; background: var(--red); color: #fff; border-radius: 12px;
+      padding: 13px; font-weight: 800; font-size: 14px;
+      box-shadow: 0 8px 18px rgba(227,28,35,.3);
+    }
+    .btn-red:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-ghost {
+      width: 100%; border: 1.5px solid var(--line); border-radius: 12px;
+      padding: 11px; font-weight: 800; font-size: 13px; background: #fff; margin-top: 8px;
+    }
+    .hint { font-size: 11px; color: var(--muted); line-height: 1.45; margin-top: 10px; }
+
+    .ticket {
+      border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; background: #fff;
+    }
+    .ticket:last-child { margin-bottom: 0; }
+    .ticket .head { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+    .ticket .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; color: var(--muted); }
+    .ticket .title { font-size: 14px; font-weight: 800; margin-top: 6px; }
+    .ticket .meta { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 3px; }
+    .ticket .body { font-size: 13px; line-height: 1.5; margin-top: 8px; white-space: pre-wrap; }
+    .ticket .reply {
+      margin-top: 10px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 10px 12px;
+    }
+    .ticket .reply .lbl { font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #15803D; }
+    .ticket .reply .txt { font-size: 13px; line-height: 1.45; margin-top: 4px; white-space: pre-wrap; }
+
+    .badge {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+      padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+    }
+    .badge.open { background: #FEF3C7; color: #B45309; }
+    .badge.answered { background: #DBEAFE; color: #1D4ED8; }
+    .badge.closed { background: #E5E7EB; color: #4B5563; }
+
+    .empty, .error, .loading {
+      text-align: center; padding: 22px 12px; color: var(--muted); font-weight: 600; font-size: 13px; line-height: 1.5;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%) translateY(8px);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0;
+      pointer-events: none; transition: .25s var(--ease); white-space: nowrap; max-width: 90%;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px;
+    }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="icon-btn" href="/profile.html" aria-label="Back">←</a>
+      <h1>Support Ticket</h1>
+      <a class="icon-btn" href="/wallet.html" aria-label="Wallet">👛</a>
+    </header>
+
+    <div class="pad">
+      <section class="hero">
+        <p class="who">Need help?</p>
+        <p class="sub" id="sub">Send your query to WXO admin. Replies show here on this page.</p>
+      </section>
+
+      <form class="card" id="ticketForm">
+        <h2>New ticket</h2>
+        <div class="field">
+          <label for="category">Category</label>
+          <select id="category" name="category">
+            <option value="general">General</option>
+            <option value="payment">Payment / Wallet</option>
+            <option value="game">Game / Match</option>
+            <option value="account">Account / Login</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="subject">Subject</label>
+          <input id="subject" name="subject" maxlength="160" placeholder="Short title" required />
+        </div>
+        <div class="field">
+          <label for="message">Your query</label>
+          <textarea id="message" name="message" maxlength="2000" placeholder="Write your question for admin…" required></textarea>
+        </div>
+        <button class="btn-red" type="submit" id="btnSend">Send to admin</button>
+        <p class="hint">Login required. Admin will reply on this same page.</p>
+      </form>
+
+      <div class="card">
+        <h2>My tickets</h2>
+        <div id="list"><p class="loading">Loading…</p></div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <a href="/"><span class="ico">🏠</span>Home</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
+      <a href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
+      <a class="active" href="/profile.html"><span class="ico">👤</span>Profile</a>
+    </nav>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script>
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () { el.classList.remove('show'); }, 2400);
+    }
+    function escapeHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    function timeAgo(iso) {
+      if (!iso) return '';
+      const diff = Date.now() - new Date(iso).getTime();
+      if (!Number.isFinite(diff) || diff < 0) return 'Just now';
+      const mins = Math.floor(diff / 60000);
+      if (mins < 60) return Math.max(1, mins) + 'm ago';
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return hours + 'h ago';
+      return Math.floor(hours / 24) + 'd ago';
+    }
+    function catLabel(c) {
+      return ({ general: 'General', payment: 'Payment', game: 'Game', account: 'Account', other: 'Other' })[c] || 'General';
+    }
+
+    function renderList(rows) {
+      const box = document.getElementById('list');
+      if (!rows.length) {
+        box.innerHTML = '<div class="empty">No tickets yet. Send your first query above.</div>';
+        return;
+      }
+      box.innerHTML = rows.map(function (row) {
+        const status = escapeHtml(row.status || 'open');
+        const reply = row.admin_reply
+          ? ('<div class="reply"><div class="lbl">Admin reply</div><div class="txt">' + escapeHtml(row.admin_reply) + '</div></div>')
+          : '';
+        const closeBtn = (row.status === 'open' || row.status === 'answered')
+          ? ('<button class="btn-ghost" type="button" data-close="' + escapeHtml(row.ticket_code) + '">Close ticket</button>')
+          : '';
+        return '<article class="ticket">' +
+          '<div class="head"><span class="code">' + escapeHtml(row.ticket_code) + '</span>' +
+          '<span class="badge ' + status + '">' + status + '</span></div>' +
+          '<div class="title">' + escapeHtml(row.subject) + '</div>' +
+          '<div class="meta">' + escapeHtml(catLabel(row.category)) + ' · ' + timeAgo(row.created_at) + '</div>' +
+          '<div class="body">' + escapeHtml(row.message) + '</div>' +
+          reply + closeBtn +
+          '</article>';
+      }).join('');
+    }
+
+    function loadTickets() {
+      return WXOAuth.api('/tickets').then(function (rows) {
+        renderList(Array.isArray(rows) ? rows : []);
+      }).catch(function (err) {
+        document.getElementById('list').innerHTML =
+          '<div class="error">' + escapeHtml(err && err.message ? err.message : 'Could not load tickets.') + '</div>';
+      });
+    }
+
+    if (!WXOAuth.requireAuth()) {
+      /* redirected to login */
+    } else {
+      const user = WXOAuth.getUser() || {};
+      document.getElementById('sub').textContent = user.email
+        ? ('Signed in as ' + user.email + '. Admin replies appear below.')
+        : 'Logged-in players can send queries to admin.';
+
+      loadTickets();
+
+      document.getElementById('ticketForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSend');
+        const subject = document.getElementById('subject').value.trim();
+        const message = document.getElementById('message').value.trim();
+        const category = document.getElementById('category').value;
+        if (subject.length < 4) { toast('Subject is too short'); return; }
+        if (message.length < 10) { toast('Write a bit more detail'); return; }
+        btn.disabled = true;
+        WXOAuth.api('/tickets', {
+          method: 'POST',
+          body: { subject: subject, message: message, category: category }
+        }).then(function () {
+          document.getElementById('subject').value = '';
+          document.getElementById('message').value = '';
+          toast('Ticket sent to admin');
+          return loadTickets();
+        }).catch(function (err) {
+          toast(err && err.message ? err.message : 'Could not send ticket');
+        }).then(function () {
+          btn.disabled = false;
+        });
+      });
+
+      document.getElementById('list').addEventListener('click', function (e) {
+        const btn = e.target.closest('[data-close]');
+        if (!btn) return;
+        const code = btn.getAttribute('data-close');
+        btn.disabled = true;
+        WXOAuth.api('/tickets/' + encodeURIComponent(code) + '/close', { method: 'POST' })
+          .then(function () { toast('Ticket closed'); return loadTickets(); })
+          .catch(function (err) { toast(err && err.message ? err.message : 'Could not close'); btn.disabled = false; });
+      });
+    }
+  </script>
+</body>
+</html>

@@ -63,16 +63,17 @@
       border-bottom: 1px solid var(--line);
     }
     .icon-btn {
-      width: 36px; height: 36px; border-radius: 10px;
-      display: grid; place-items: center; font-size: 18px; color: #222;
+      width: 40px; height: 40px; border-radius: 12px;
+      display: grid; place-items: center; font-size: 20px; color: #111;
+      background: var(--soft); border: 1px solid var(--line);
     }
     .brand {
       justify-self: center; text-decoration: none;
-      display: flex; flex-direction: row; align-items: center; gap: 9px;
+      display: flex; flex-direction: row; align-items: center; gap: 8px;
     }
-    .brand img { height: 40px; width: 40px; object-fit: contain; display: block; }
+    .brand img { height: 44px; width: 44px; object-fit: contain; display: block; }
     .brand-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
-    .brand-name { font-weight: 900; font-size: 21px; letter-spacing: .02em; color: var(--red); }
+    .brand-name { font-weight: 900; font-size: 22px; letter-spacing: .02em; color: var(--red); }
     .brand-tag { font-size: 8px; font-weight: 800; letter-spacing: .16em; color: var(--muted); margin-top: 3px; }
     .top-actions { display: flex; align-items: center; gap: 6px; }
     .bell { position: relative; }
@@ -341,11 +342,11 @@
       font-family: Montserrat, sans-serif; letter-spacing: .1em; color: var(--red); font-size: 13px;
     }
     .ref-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-    .ref-actions button {
+    .ref-actions button, .ref-actions a {
       background: var(--red); color: #fff; border-radius: 10px;
-      padding: 8px 12px; font-size: 11px; font-weight: 700;
+      padding: 8px 12px; font-size: 11px; font-weight: 700; display: inline-block;
     }
-    .ref-actions button.ghost { background: #111; }
+    .ref-actions button.ghost, .ref-actions a.ghost { background: #111; }
 
     /* Stats */
     .stats {
@@ -406,7 +407,7 @@
       position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
       width: 100%; max-width: 430px;
       background: #fff; border-top: 1px solid var(--line);
-      display: grid; grid-template-columns: repeat(5, 1fr);
+      display: grid; grid-template-columns: repeat(4, 1fr);
       padding: 6px 4px calc(8px + env(safe-area-inset-bottom));
       z-index: 50;
     }
@@ -437,10 +438,14 @@
     }
     .side-menu.open { transform: translateX(0); }
     .side-menu .menu-head {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;
     }
+    .side-menu .menu-brand {
+      display: flex; align-items: center; gap: 8px; min-width: 0;
+    }
+    .side-menu .menu-brand img { width: 36px; height: 36px; object-fit: contain; }
     .side-menu .menu-head strong {
-      font-family: Montserrat, sans-serif; font-weight: 800; color: var(--red);
+      font-family: Montserrat, sans-serif; font-weight: 800; color: var(--red); font-size: 18px;
     }
     .side-menu a.m-link {
       display: block; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px;
@@ -484,15 +489,21 @@
     <div class="menu-overlay" id="menuOverlay" hidden></div>
     <aside class="side-menu" id="sideMenu" aria-hidden="true">
       <div class="menu-head">
-        <strong>WXO Menu</strong>
+        <div class="menu-brand">
+          <img src="/assets/wxo-logo.png" alt="WXO" />
+          <strong>WXO</strong>
+        </div>
         <button class="icon-btn" type="button" id="menuClose" aria-label="Close">✕</button>
       </div>
       <a class="m-link" href="#top" data-close-menu>Home</a>
       <a class="m-link" href="#games" data-close-menu>Games</a>
       <a class="m-link" href="/tournaments.html" data-close-menu>Tournaments</a>
-      <a class="m-link" href="#referral" data-close-menu>Referral</a>
+      <a class="m-link" href="/earn.html" data-close-menu>Earn · Referral</a>
+      <a class="m-link" href="/income.html" data-close-menu>Rewards History</a>
       <a class="m-link" href="/wallet.html" data-close-menu>Wallet</a>
-      <a class="m-link" href="/swap.html" data-close-menu>Swap</a>
+      <a class="m-link" href="/history.html" data-close-menu>Game History</a>
+      <a class="m-link" href="/ticket.html" data-close-menu>Support Ticket</a>
+      <a class="m-link" href="/p2p.html" data-close-menu>P2P Transfer</a>
       <a class="m-link" href="/profile.html" data-close-menu>Profile</a>
       <a class="m-link" href="#faq" data-close-menu>FAQ</a>
       <a class="m-link" href="/login.html" id="menuAuthLink" data-close-menu>Login / Register</a>
@@ -510,7 +521,7 @@
     <header class="topbar">
       <button class="icon-btn" type="button" id="menuOpen" aria-label="Menu">☰</button>
       <a class="brand" href="#top" aria-label="WXO — Tournament Platform">
-        <img src="/assets/wxo-logo.png" alt="" />
+        <img src="/assets/wxo-logo.png" alt="WXO" />
         <span class="brand-text">
           <span class="brand-name">WXO</span>
           <span class="brand-tag">TOURNAMENT PLATFORM</span>
@@ -519,7 +530,6 @@
       <div class="top-actions">
         <button class="icon-btn bell" type="button" id="btnBell" aria-label="Notifications">🔔<span class="dot"></span></button>
         <a class="wallet-chip" href="/wallet.html">🪙 <span data-wxo-balance>0</span> <span class="plus">+</span></a>
-        <a class="avatar" id="navAvatar" href="/profile.html" aria-label="My Profile" title="My Profile">WX</a>
       </div>
     </header>
 
@@ -538,8 +548,8 @@
 
       <div class="apk-banner" id="apkBanner">
         <div class="txt">
-          <strong>WXO App (website as APK)</strong>
-          <span>Install once. Wallet, games, tournaments &amp; referral — sab isi APK me chalenge.</span>
+          <strong>WXO App (Native + Unity)</strong>
+          <span>Install once. Wallet, games, tournaments, referral &amp; Unity gameplay — sab isi APK me.</span>
         </div>
         <a href="/WXO-release.apk" download>Download</a>
       </div>
@@ -605,7 +615,8 @@
         <div class="info">
           <p class="label">WXO Wallet · All games</p>
           <p class="bal" data-wxo-balance-label>0 WXO</p>
-          <p class="inr">1 Coin = ₹1 · Deposit once, play any game</p>
+          <p class="inr" data-wxo-bonus-label>0 WXO bonus</p>
+          <p class="inr">1 Coin = ₹1 · Bonus = tournament only, no withdraw</p>
         </div>
         <div class="acts">
           <a class="add" href="/wallet.html#deposit">+ Add Coins</a>
@@ -659,7 +670,7 @@
           <div class="ico">🎁</div>
           <h3>Earn WXO Coin</h3>
           <p>Win &amp; referrals</p>
-          <a href="#referral">Earn Now →</a>
+          <a href="/earn.html">Earn Now →</a>
         </article>
         <article class="util sell">
           <div class="ico">⇄</div>
@@ -674,12 +685,13 @@
         <div class="illus">🤝</div>
         <div style="flex:1;min-width:0">
           <h3>Invite Friends &amp; Earn WXO Coins</h3>
-          <p>Refer friends and earn unlimited rewards when they join tournaments.</p>
+          <p>Refer friends and earn unlimited rewards when they join tournaments. L1 = 5%, L2–L6 = 1%.</p>
           <p class="code-line">Your code: <b id="pageRefCode">————</b></p>
           <div class="ref-actions">
             <button type="button" data-copy="code">Copy Code</button>
             <button type="button" class="ghost" data-copy="link">Copy Link</button>
             <button type="button" class="ghost" data-copy="share">Invite Now</button>
+            <a class="ghost" href="/earn.html">Earn page →</a>
           </div>
         </div>
       </section>
@@ -707,7 +719,7 @@
         <details><summary>How to buy WXO Coin?</summary><p>Open Wallet → Add Coins. 1 Coin = ₹1. Coins credit instantly after payment.</p></details>
         <details><summary>How to earn WXO Coin?</summary><p>Win tournaments, join events, and earn via your referral code when friends play.</p></details>
         <details><summary>How does referral work?</summary><p>Share your code or link. When invited players join tournaments, you earn WXO Coin rewards.</p></details>
-        <details><summary>How can I sell eligible coins?</summary><p>Eligible earned coins can be withdrawn per platform policy with secure settlement.</p></details>
+        <details><summary>How can I sell eligible coins?</summary><p>Withdraw is USDT BEP20 only. 100 WXO = 1 USDT. Submit your BEP20 address; admin approves once, then USDT is sent.</p></details>
       </section>
 
       <footer class="site-footer" id="footer">
@@ -717,10 +729,11 @@
             <a href="#about">About</a>
             <a href="#games">Games</a>
             <a href="/tournaments.html">Tournaments</a>
-            <a href="#referral">Referral</a>
+            <a href="/earn.html">Referral</a>
           </div>
           <div>
             <h4>Support</h4>
+            <a href="/ticket.html">Support Ticket</a>
             <a href="#faq">FAQ</a>
             <a href="https://api.matchiq.fun/legal/terms.html">Terms</a>
             <a href="https://api.matchiq.fun/legal/privacy.html">Privacy</a>
@@ -733,16 +746,15 @@
 
     <nav class="bottom-nav" aria-label="Primary">
       <a class="active" href="#top"><span class="ico">🏠</span>Home</a>
-      <a href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
-      <a href="#referral" aria-label="Earn"><span class="play-fab">💰</span></a>
-      <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
+      <a href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
       <a href="/profile.html"><span class="ico">👤</span>Profile</a>
     </nav>
   </div>
 
   <div class="toast" id="toast" role="status"></div>
   <script src="/assets/wxo-auth.js?v=1"></script>
-  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <script src="/assets/wxo-wallet.js?v=9"></script>
   <script>
     const ORIGIN = location.origin || 'https://rmsurveyai.com';
     function makeCode() {
@@ -908,45 +920,24 @@
       referredBy: localStorage.getItem('wxo_referred_by') || null
     };
 
-    // Top-nav avatar + menu auth link reflect the logged-in WXO account
+    // Side-menu login/logout only — top nav has logo + menu, not profile.
     function paintNavProfile() {
       try {
-        const p = JSON.parse(localStorage.getItem('wxo_profile_v1') || '{}');
         const account = window.WXOAuth ? WXOAuth.getUser() : null;
-        const name = p.name || (account && account.name) || '';
-        const el = document.getElementById('navAvatar');
         const authLink = document.getElementById('menuAuthLink');
-
-        if (authLink) {
-          if (account) {
-            authLink.textContent = 'Logout (' + (account.name || 'Player') + ')';
-            authLink.href = '#';
-            authLink.onclick = (e) => {
-              e.preventDefault();
-              WXOAuth.logout('/login.html');
-            };
-          } else {
-            authLink.textContent = 'Login / Register';
-            authLink.href = '/login.html';
-            authLink.onclick = null;
-          }
+        if (!authLink) return;
+        if (account) {
+          authLink.textContent = 'Logout (' + (account.name || 'Player') + ')';
+          authLink.href = '#';
+          authLink.onclick = (e) => {
+            e.preventDefault();
+            WXOAuth.logout('/login.html');
+          };
+        } else {
+          authLink.textContent = 'Login / Register';
+          authLink.href = '/login.html';
+          authLink.onclick = null;
         }
-
-        if (!el) return;
-        el.href = account ? '/profile.html' : '/login.html';
-        if (p.photo) {
-          el.innerHTML = '';
-          const img = document.createElement('img');
-          img.src = p.photo;
-          img.alt = name || 'Profile';
-          el.appendChild(img);
-        } else if (name) {
-          const parts = name.trim().split(/\s+/);
-          el.textContent = parts.length > 1
-            ? (parts[0][0] + parts[1][0]).toUpperCase()
-            : parts[0].slice(0, 2).toUpperCase();
-        }
-        if (name) el.title = name;
       } catch (_) {}
     }
     paintNavProfile();

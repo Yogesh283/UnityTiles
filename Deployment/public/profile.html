@@ -123,10 +123,27 @@
     .links a:last-child { border-bottom: 0; }
     .links a span { color: var(--muted); font-weight: 500; font-size: 12px; }
 
+    .h-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--line);
+    }
+    .h-row:last-child { border-bottom: 0; }
+    .h-rank {
+      width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+      display: grid; place-items: center; font-weight: 800; font-size: 13px;
+      background: var(--soft); color: var(--ink);
+    }
+    .h-rank.win { background: #ECFDF3; color: #15803D; }
+    .h-body { flex: 1; min-width: 0; }
+    .h-title { font-size: 13px; font-weight: 800; }
+    .h-meta { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .h-prize { font-size: 12px; font-weight: 800; color: #B45309; white-space: nowrap; }
+    .h-prize.none { color: var(--muted); font-weight: 600; }
+
     .bottom-nav {
       position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
       width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
-      display: grid; grid-template-columns: repeat(5, 1fr);
+      display: grid; grid-template-columns: repeat(4, 1fr);
       padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
     }
     .bottom-nav a {
@@ -214,12 +231,22 @@
         <p class="hint">Photo stays on this device. Max ~1.5 MB · JPG / PNG / WebP.</p>
       </form>
 
+      <div class="card" id="historyCard">
+        <h2>Game history</h2>
+        <div id="historyPreview"><p class="hint" style="margin:0">Login to see your matches.</p></div>
+        <a href="/history.html" class="btn-ghost" style="margin-top:10px;display:block;text-align:center">View all matches</a>
+      </div>
+
       <div class="card links">
         <h2>Quick links</h2>
+        <a href="/history.html">Game History <span>Your ranks &amp; scores →</span></a>
+        <a href="/ticket.html">Support Ticket <span>Send query to admin →</span></a>
         <a href="/wallet.html">Wallet <span>Deposit · Withdraw →</span></a>
         <a href="/tournaments.html">Tournaments <span>Join live →</span></a>
-        <a href="/swap.html">Swap <span>WXO ↔ INR →</span></a>
-        <a href="/team.html">My Team <span>Directs &amp; team count →</span></a>
+        <a href="/p2p.html">P2P Transfer <span>Send by User ID →</span></a>
+        <a href="/earn.html">Earn · Referral <span>Link · Direct · Sat team · Income →</span></a>
+        <a href="/team.html">My Team <span>Directs &amp; sat team →</span></a>
+        <a href="/income.html">Rewards <span>Level income · date history →</span></a>
       </div>
 
       <div class="card">
@@ -233,9 +260,8 @@
 
     <nav class="bottom-nav" aria-label="Primary">
       <a href="/"><span class="ico">🏠</span>Home</a>
-      <a href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
-      <a href="/#referral" aria-label="Earn"><span class="play-fab">💰</span></a>
-      <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
+      <a href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
       <a class="active" href="/profile.html"><span class="ico">👤</span>Profile</a>
     </nav>
   </div>
@@ -378,6 +404,60 @@
 
     paint();
     paintAccount();
+    loadRecentHistory();
+
+    function escapeHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    function ordinal(n) {
+      const v = Math.abs(n) % 100;
+      if (v >= 11 && v <= 13) return n + 'th';
+      if (n % 10 === 1) return n + 'st';
+      if (n % 10 === 2) return n + 'nd';
+      if (n % 10 === 3) return n + 'rd';
+      return n + 'th';
+    }
+    function timeAgo(iso) {
+      if (!iso) return '';
+      const diff = Date.now() - new Date(iso).getTime();
+      if (!Number.isFinite(diff) || diff < 0) return 'Just now';
+      const mins = Math.floor(diff / 60000);
+      if (mins < 60) return Math.max(1, mins) + 'm ago';
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return hours + 'h ago';
+      return Math.floor(hours / 24) + 'd ago';
+    }
+    function loadRecentHistory() {
+      const box = document.getElementById('historyPreview');
+      if (!box) return;
+      if (!window.WXOAuth || !WXOAuth.isLoggedIn()) {
+        box.innerHTML = '<p class="hint" style="margin:0">Login to see your matches.</p>';
+        return;
+      }
+      box.innerHTML = '<p class="hint" style="margin:0">Loading your matches…</p>';
+      WXOAuth.api('/tournaments/history').then(function (rows) {
+        const list = Array.isArray(rows) ? rows.slice(0, 3) : [];
+        if (!list.length) {
+          box.innerHTML = '<p class="hint" style="margin:0">No matches yet. Play IQ Match to build your history.</p>';
+          return;
+        }
+        box.innerHTML = list.map(function (row) {
+          const win = Number(row.rank) === 1;
+          const name = escapeHtml(row.tournament_name || row.tournament_id || 'Match');
+          const prize = Number(row.prize) > 0 ? ('+' + row.prize + ' WXO') : 'No prize';
+          const when = timeAgo(row.created_at);
+          return '<div class="h-row">' +
+            '<div class="h-rank' + (win ? ' win' : '') + '">' + ordinal(row.rank) + '</div>' +
+            '<div class="h-body"><div class="h-title">' + (win ? 'You won · ' : '') + name + '</div>' +
+            '<div class="h-meta">Score ' + (row.score || 0) + (when ? ' · ' + when : '') + '</div></div>' +
+            '<div class="h-prize' + (Number(row.prize) > 0 ? '' : ' none') + '">' + prize + '</div></div>';
+        }).join('');
+      }).catch(function () {
+        box.innerHTML = '<p class="hint" style="margin:0">Could not load history. Pull to refresh or open View all.</p>';
+      });
+    }
 
     // Fill display name from the account on first visit
     (function seedNameFromAccount() {

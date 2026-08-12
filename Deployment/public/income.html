@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WXO Rewards</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23; --ink: #111; --muted: #6B7280;
+      --line: #ECEEF2; --bg: #FFF; --soft: #F7F8FA; --gold: #C99213;
+      --green: #1AA260; --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif; background: #111; color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto; background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5); padding-bottom: 96px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; }
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      padding: 10px 14px 12px; background: rgba(255,255,255,.97); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar-row {
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; background: var(--soft);
+    }
+    .topbar h1 {
+      text-align: center; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800;
+    }
+
+    .datebar {
+      margin-top: 12px; display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; align-items: center;
+    }
+    .datebar .nav {
+      width: 44px; height: 44px; border-radius: 14px; background: #fff; border: 1px solid var(--line);
+      display: grid; place-items: center; font-size: 20px; font-weight: 800;
+    }
+    .datebar .nav:disabled { opacity: .35; }
+    .date-pick {
+      position: relative; height: 44px; border-radius: 14px; border: 1px solid var(--line);
+      background: #fff; display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-weight: 800; font-size: 14px;
+    }
+    .date-pick .cal { font-size: 16px; }
+    .date-pick input[type="date"] {
+      position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;
+    }
+    .today-chip {
+      margin-top: 10px; display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(90deg, #FFF1F2, #fff); border: 1px solid #FECDD3;
+      border-radius: 14px; padding: 10px 12px;
+    }
+    .today-chip .k { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .today-chip .v { font-family: Montserrat, sans-serif; font-weight: 800; color: var(--red); font-size: 18px; }
+    .today-chip .go {
+      font-size: 11px; font-weight: 800; color: var(--red); background: #fff; border: 1px solid #FECDD3;
+      border-radius: 999px; padding: 6px 10px;
+    }
+
+    .pad { padding: 14px; }
+
+    .hero {
+      border-radius: 20px; padding: 18px 16px; margin-bottom: 12px;
+      background: #111; color: #fff;
+    }
+    .hero .lbl { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #9CA3AF; }
+    .hero .amt { font-family: Montserrat, sans-serif; font-size: 36px; font-weight: 800; margin: 6px 0 2px; }
+    .hero .sub { font-size: 12px; font-weight: 600; color: #9CA3AF; }
+    .hero .meta { margin-top: 12px; display: flex; gap: 8px; }
+    .hero .pill {
+      background: #1f1f22; border-radius: 999px; padding: 6px 10px;
+      font-size: 11px; font-weight: 700; color: #E5E7EB;
+    }
+
+    .mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .mini .box {
+      border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fff;
+    }
+    .mini .n { font-family: Montserrat, sans-serif; font-weight: 800; font-size: 18px; }
+    .mini .t { font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+    .mini .gold .n { color: var(--gold); }
+
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 6px 14px; margin-bottom: 12px;
+    }
+    .card > h2 {
+      font-family: Montserrat, sans-serif; font-size: 13px; font-weight: 800;
+      letter-spacing: .04em; text-transform: uppercase; padding: 12px 0 8px; color: var(--muted);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .card > h2 span { font-family: Inter, sans-serif; letter-spacing: 0; text-transform: none; font-weight: 700; color: var(--ink); }
+
+    .cols {
+      display: grid; grid-template-columns: 1.3fr 1.1fr .8fr; gap: 6px;
+      font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+      color: var(--muted); padding: 0 0 8px;
+    }
+    .row {
+      display: grid; grid-template-columns: 1.3fr 1.1fr .8fr; gap: 6px; align-items: center;
+      padding: 12px 0; border-top: 1px solid var(--line);
+    }
+    .user { font-weight: 800; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .when { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .type {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--soft); border-radius: 999px; padding: 5px 8px;
+      font-size: 11px; font-weight: 800; text-align: center;
+    }
+    .type.l1 { background: #FFF1F2; color: var(--red); }
+    .type.prize { background: #ECFDF3; color: var(--green); }
+    .amt { font-family: Montserrat, sans-serif; font-weight: 800; text-align: right; color: var(--green); }
+
+    .empty, .state { text-align: center; padding: 28px 12px; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .empty .em-ico { font-size: 36px; display: block; margin-bottom: 8px; }
+
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px;
+    }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0; pointer-events: none;
+      transition: .25s var(--ease); white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-row">
+        <a class="icon-btn" href="/earn.html" aria-label="Back">←</a>
+        <h1>Rewards</h1>
+        <a class="icon-btn" href="/team.html" aria-label="Team">👥</a>
+      </div>
+
+      <div class="datebar">
+        <button class="nav" id="btnPrev" type="button" aria-label="Previous day">‹</button>
+        <label class="date-pick">
+          <span class="cal">📅</span>
+          <span id="dateLabel">Today</span>
+          <input id="dateInput" type="date" />
+        </label>
+        <button class="nav" id="btnNext" type="button" aria-label="Next day">›</button>
+      </div>
+
+      <div class="today-chip">
+        <div>
+          <div class="k">Today’s income</div>
+          <div class="v" id="todayAmt">0</div>
+        </div>
+        <button class="go" id="btnToday" type="button">View today</button>
+      </div>
+    </header>
+
+    <div class="pad">
+      <section class="hero">
+        <div class="lbl" id="heroLbl">Selected day</div>
+        <div class="amt" id="heroAmt">0</div>
+        <div class="sub" id="heroSub">All income for this date</div>
+        <div class="meta">
+          <span class="pill" id="heroCount">0 entries</span>
+          <span class="pill" id="heroTotal">All time 0</span>
+        </div>
+      </section>
+
+      <section class="mini">
+        <div class="box"><div class="n" id="levelMini">0</div><div class="t">Level income</div></div>
+        <div class="box gold"><div class="n" id="prizeMini">0</div><div class="t">Game prizes</div></div>
+      </section>
+
+      <div class="card">
+        <h2>All income <span id="listCount"></span></h2>
+        <div class="cols"><div>User</div><div>Type</div><div style="text-align:right">Amount</div></div>
+        <div id="list"><div class="state">Loading rewards…</div></div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <a href="/"><span class="ico">🏠</span>Home</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
+      <a class="active" href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
+      <a href="/profile.html"><span class="ico">👤</span>Profile</a>
+    </nav>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script>
+    (function () {
+      if (!window.WXOAuth || !WXOAuth.requireAuth()) return;
+
+      function toast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800);
+      }
+
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      function fmt(n) {
+        var v = Number(n || 0);
+        if (!isFinite(v)) v = 0;
+        return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      }
+
+      function ymd(d) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+      }
+
+      function parseYmd(s) {
+        var p = String(s || '').split('-');
+        return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+      }
+
+      function prettyDate(s) {
+        var d = parseYmd(s);
+        if (isNaN(d)) return s;
+        if (ymd(d) === ymd(new Date())) return 'Today';
+        return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      function fmtTime(s) {
+        if (!s) return '';
+        var d = new Date(s);
+        if (isNaN(d)) return '';
+        return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      }
+
+      function typeClass(key) {
+        if (!key) return '';
+        if (String(key).indexOf('level_1') === 0) return 'l1';
+        if (String(key).indexOf('level_') === 0) return '';
+        return 'prize';
+      }
+
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var selected = new Date(today);
+      var dateInput = document.getElementById('dateInput');
+      dateInput.max = ymd(today);
+      dateInput.value = ymd(selected);
+
+      function syncDateUi() {
+        dateInput.value = ymd(selected);
+        document.getElementById('dateLabel').textContent = prettyDate(ymd(selected));
+        document.getElementById('btnNext').disabled = ymd(selected) >= ymd(today);
+      }
+
+      function shiftDay(delta) {
+        var next = new Date(selected);
+        next.setDate(next.getDate() + delta);
+        if (next > today) next = new Date(today);
+        selected = next;
+        syncDateUi();
+        load();
+      }
+
+      function render(data) {
+        document.getElementById('todayAmt').textContent = fmt(data.today) + ' WXO';
+        document.getElementById('heroLbl').textContent = data.is_today ? 'Today’s income' : prettyDate(data.date);
+        document.getElementById('heroAmt').textContent = fmt(data.selected);
+        document.getElementById('heroSub').textContent = data.is_today
+          ? 'All income received today'
+          : 'All income on ' + prettyDate(data.date);
+        document.getElementById('heroCount').textContent = (data.count || 0) + ' entries';
+        document.getElementById('heroTotal').textContent = 'All time ' + fmt(data.total);
+
+        var levelPts = 0, prizePts = 0;
+        (data.items || []).forEach(function (row) {
+          if (String(row.type_key || '').indexOf('level_') === 0) levelPts += Number(row.points || 0);
+          else prizePts += Number(row.points || 0);
+        });
+        document.getElementById('levelMini').textContent = fmt(levelPts);
+        document.getElementById('prizeMini').textContent = fmt(prizePts);
+        document.getElementById('listCount').textContent = data.count ? data.count + ' txns' : '';
+
+        var list = document.getElementById('list');
+        var items = data.items || [];
+        if (!items.length) {
+          list.innerHTML = '<div class="empty"><span class="em-ico">🪙</span><p>Is date pe koi income nahi mili.</p></div>';
+          return;
+        }
+        list.innerHTML = items.map(function (row) {
+          return '' +
+            '<div class="row">' +
+              '<div><div class="user">' + esc(row.user || row.from_name || 'Player') + '</div>' +
+              '<div class="when">' + esc(fmtTime(row.created_at)) + '</div></div>' +
+              '<div><span class="type ' + typeClass(row.type_key) + '">' + esc(row.type || 'Income') + '</span></div>' +
+              '<div class="amt">+' + fmt(row.points) + '</div>' +
+            '</div>';
+        }).join('');
+      }
+
+      function load() {
+        document.getElementById('list').innerHTML = '<div class="state">Loading rewards…</div>';
+        WXOAuth.api('/referral/rewards?date=' + encodeURIComponent(ymd(selected)))
+          .then(render)
+          .catch(function (err) {
+            toast(err.message || 'Could not load rewards');
+            document.getElementById('list').innerHTML =
+              '<div class="state">' + esc(err.message || 'Could not load rewards.') + '</div>';
+          });
+      }
+
+      document.getElementById('btnPrev').onclick = function () { shiftDay(-1); };
+      document.getElementById('btnNext').onclick = function () { shiftDay(1); };
+      document.getElementById('btnToday').onclick = function () {
+        selected = new Date(today);
+        syncDateUi();
+        load();
+      };
+      dateInput.onchange = function () {
+        if (!dateInput.value) return;
+        var d = parseYmd(dateInput.value);
+        if (isNaN(d) || d > today) d = new Date(today);
+        selected = d;
+        syncDateUi();
+        load();
+      };
+
+      syncDateUi();
+      load();
+    })();
+  </script>
+</body>
+</html>

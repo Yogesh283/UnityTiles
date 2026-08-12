@@ -125,7 +125,7 @@
     .bottom-nav {
       position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
       width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
-      display: grid; grid-template-columns: repeat(5, 1fr);
+      display: grid; grid-template-columns: repeat(4, 1fr);
       padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
     }
     .bottom-nav a {
@@ -164,8 +164,8 @@
           <div class="lbl">Direct</div>
         </div>
         <div class="stat total">
-          <div class="num" id="teamCount">0</div>
-          <div class="lbl">Total Team</div>
+          <div class="num" id="satCount">0</div>
+          <div class="lbl">Sat Team L2–L6</div>
         </div>
       </section>
 
@@ -177,6 +177,14 @@
         <button class="btn-copy" id="btnCopy" type="button">Copy</button>
       </section>
 
+      <a href="/earn.html" class="refcard" style="margin-bottom:14px">
+        <div class="rc-info">
+          <div class="rc-lbl">Referral income</div>
+          <div class="rc-code" style="font-size:15px">Earn · link &amp; income</div>
+        </div>
+        <span class="btn-copy">Open</span>
+      </a>
+
       <div class="card">
         <h2>Direct referrals</h2>
         <div id="list">
@@ -187,9 +195,8 @@
 
     <nav class="bottom-nav" aria-label="Primary">
       <a href="/"><span class="ico">🏠</span>Home</a>
-      <a href="/tournaments.html"><span class="ico">🏆</span>Tournaments</a>
-      <a href="/#referral" aria-label="Earn"><span class="play-fab">💰</span></a>
-      <a href="/wallet.html"><span class="ico">👛</span>Wallet</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
+      <a href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
       <a href="/profile.html"><span class="ico">👤</span>Profile</a>
     </nav>
   </div>
@@ -269,7 +276,7 @@
       WXOAuth.api('/referral/directs?limit=100')
         .then(function (data) {
           document.getElementById('directCount').textContent = data.direct_count || 0;
-          document.getElementById('teamCount').textContent = data.team_size || 0;
+          document.getElementById('satCount').textContent = data.sat_count || 0;
           refCode = data.referral_code || '';
           refCodeEl.textContent = refCode || '—';
           renderMembers(data.members || []);

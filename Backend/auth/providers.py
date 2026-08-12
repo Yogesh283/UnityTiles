@@ -131,9 +131,12 @@ def register_user(
     )
     db.add(user)
     db.flush()
-    db.add(Wallet(user_id=user.id, balance=_starting_coins()))
+    db.add(Wallet(user_id=user.id, balance=_starting_coins(), bonus_balance=0))
     _finalize_new_user(db, user, referral_code)
     db.commit()
+    from wallet.service import WalletService
+
+    WalletService(db).credit_signup_bonus(user.id)
     db.refresh(user)
     return user
 
@@ -153,7 +156,7 @@ def _ensure_wallet(db: Session, user_id: int) -> None:
     wallet = db.query(Wallet).filter(Wallet.user_id == user_id).first()
     starting = _starting_coins()
     if not wallet:
-        db.add(Wallet(user_id=user_id, balance=starting))
+        db.add(Wallet(user_id=user_id, balance=starting, bonus_balance=0))
     elif starting > 0 and wallet.balance < starting:
         wallet.balance = starting
 
@@ -180,7 +183,7 @@ def guest_login(
     )
     db.add(user)
     db.flush()
-    db.add(Wallet(user_id=user.id, balance=_starting_coins()))
+    db.add(Wallet(user_id=user.id, balance=_starting_coins(), bonus_balance=0))
     _finalize_new_user(db, user, referral_code)
     db.commit()
     db.refresh(user)
@@ -210,9 +213,12 @@ def google_login(
     )
     db.add(user)
     db.flush()
-    db.add(Wallet(user_id=user.id, balance=_starting_coins()))
+    db.add(Wallet(user_id=user.id, balance=_starting_coins(), bonus_balance=0))
     _finalize_new_user(db, user, referral_code)
     db.commit()
+    from wallet.service import WalletService
+
+    WalletService(db).credit_signup_bonus(user.id)
     db.refresh(user)
     return user
 

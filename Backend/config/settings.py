@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 240
     require_https: bool = False
 
+    public_site_url: str = "https://rmsurveyai.com"
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+    razorpay_webhook_secret: str = ""
+    nowpayments_api_key: str = ""
+    nowpayments_ipn_secret: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         if self.cors_origins.strip() == "*":

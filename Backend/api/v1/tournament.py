@@ -35,6 +35,7 @@ def _build_room_response(
     room: TournamentRoom,
     *,
     wallet_balance: int | None = None,
+    bonus_balance: int | None = None,
 ) -> RoomResponse:
     payload = serialize_room(db, room)
     return RoomResponse(
@@ -54,6 +55,7 @@ def _build_room_response(
         search_status=payload.get("search_status"),
         queued=False,
         wallet_balance=wallet_balance,
+        bonus_balance=bonus_balance,
         players=[RoomPlayerResponse(**player) for player in payload["players"]],
     )
 
@@ -100,7 +102,7 @@ def join_tournament(
         )
         .first()
     )
-    if not already_in_room and wallet.get_balance(user.id) < tournament.entry_fee:
+    if not already_in_room and not wallet.can_afford_tournament(user.id, tournament.entry_fee):
         raise HTTPException(status_code=400, detail="Insufficient balance")
 
     try:
@@ -135,8 +137,10 @@ def join_tournament(
     db.commit()
 
     room = db.query(TournamentRoom).filter(TournamentRoom.id == room.id).first()
-    wallet_balance = WalletService(db).get_balance(user.id)
-    return _build_room_response(db, room, wallet_balance=wallet_balance)
+    snap = WalletService(db).snapshot(user.id)
+    return _build_room_response(
+        db, room, wallet_balance=snap["balance"], bonus_balance=snap["bonus_balance"]
+    )
 
 
 @router.get("/rooms/{room_id}", response_model=RoomResponse)
@@ -231,14 +235,15 @@ def submit_score(
     else:
         logger.info("submit-score stored room_id=%s user_id=%s waiting_finalize", payload.room_id, user.id)
 
-    wallet_balance = WalletService(db).get_balance(user.id)
+    snap = WalletService(db).snapshot(user.id)
     return SubmitScoreResponse(
         ok=True,
         finalized=results is not None,
         rank=player.rank,
         prize=player.prize or 0,
         room_status=room.status,
-        wallet_balance=wallet_balance,
+        wallet_balance=snap["balance"],
+        bonus_balance=snap["bonus_balance"],
     )
 
 
@@ -265,15 +270,19 @@ def tournament_level_reward(
 
     level_number = room.level_index + 1
     if level_number != 300:
-        balance = WalletService(db).get_balance(user.id)
-        return WalletResponse(balance=balance)
+        snap = WalletService(db).snapshot(user.id)
+        return WalletResponse(balance=snap["balance"], bonus_balance=snap["bonus_balance"])
 
     wallet = WalletService(db).credit_tournament_level(user.id, 50, body.room_id)
-    return WalletResponse(balance=wallet.balance)
+    return WalletResponse(
+        balance=wallet.balance,
+        bonus_balance=int(getattr(wallet, "bonus_balance", 0) or 0),
+    )
 
 
 @router.get("/history")
 def history(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Logged-in player's own finished matches (newest first)."""
     rows = (
         db.query(TournamentResult)
         .filter(TournamentResult.user_id == user.id)
@@ -281,14 +290,21 @@ def history(user: User = Depends(get_current_user), db: Session = Depends(get_db
         .limit(50)
         .all()
     )
-    return [
-        {
-            "tournament_id": row.tournament_id,
-            "room_id": row.room_id,
-            "rank": row.rank,
-            "score": row.score,
-            "prize": row.prize,
-            "created_at": row.created_at,
-        }
-        for row in rows
-    ]
+    out = []
+    for row in rows:
+        tournament = get_tournament(row.tournament_id)
+        created = row.created_at.isoformat() if row.created_at else None
+        out.append(
+            {
+                "tournament_id": row.tournament_id,
+                "tournament_name": tournament.display_name if tournament else row.tournament_id,
+                "max_players": tournament.max_players if tournament else None,
+                "entry_fee": tournament.entry_fee if tournament else None,
+                "room_id": row.room_id,
+                "rank": row.rank,
+                "score": row.score,
+                "prize": row.prize,
+                "created_at": created,
+            }
+        )
+    return out

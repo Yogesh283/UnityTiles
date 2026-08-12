@@ -12,7 +12,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from database.models import ReferralEarning, User
+from database.models import ReferralEarning, User, WalletTransaction
 from wallet.service import WalletService
 
 # Level -> percent of the eligible entry fee.
@@ -21,6 +21,25 @@ MAX_LEVEL = 6
 TOTAL_PERCENT = sum(LEVEL_PERCENTS.values())
 
 _CODE_PREFIX = "WXO"
+
+_PRIZE_TYPE_LABELS = {
+    "tournament_prize": "Tournament Win",
+    "pool_prize": "Pool Prize",
+    "tournament_level_reward": "Level Reward",
+    "level_complete_reward": "Level Complete",
+    "admin_adjust": "Bonus",
+}
+
+
+def _level_type_label(level: int) -> str:
+    if level == 1:
+        return "Level 1 Income"
+    return f"Level {level} Income"
+
+
+def _day_bounds(day: date) -> tuple[datetime, datetime]:
+    start = datetime.combine(day, datetime.min.time())
+    return start, start + timedelta(days=1)
 
 
 def build_referral_code(user_id: int) -> str:
@@ -82,6 +101,23 @@ class ReferralService:
             seen.add(sponsor.id)
             current = sponsor
         return chain
+
+    def referral_link(self, code: str) -> str:
+        from config import get_settings
+
+        base = (get_settings().public_site_url or "https://rmsurveyai.com").rstrip("/")
+        return f"{base}/register.html?ref={code}"
+
+    def team_snapshot(self, user: User) -> dict:
+        counts = self.team_counts(user)
+        direct = int(counts.get(1, 0))
+        sat = sum(int(counts.get(lvl, 0)) for lvl in range(2, MAX_LEVEL + 1))
+        return {
+            "direct_count": direct,
+            "sat_count": sat,
+            "team_size": direct + sat,
+            "counts": counts,
+        }
 
     def team_counts(self, user: User) -> dict[int, int]:
         """Members per level below `user`, level 1..6."""
@@ -227,11 +263,16 @@ class ReferralService:
         )
         by_level = {int(level): {"points": int(points), "entries": int(count)} for level, points, count in by_level_rows}
 
+        direct_pts = int(by_level.get(1, {}).get("points", 0))
+        sat_pts = sum(int(by_level.get(lvl, {}).get("points", 0)) for lvl in range(2, MAX_LEVEL + 1))
+
         return {
             "today": self._sum_between(user_id, today_start),
             "week": self._sum_between(user_id, week_start),
             "month": self._sum_between(user_id, month_start),
             "total": self._sum_between(user_id, None),
+            "direct": direct_pts,
+            "sat": sat_pts,
             "by_level": [
                 {
                     "level": level,
@@ -243,15 +284,21 @@ class ReferralService:
             ],
         }
 
-    def recent_earnings(self, user_id: int, limit: int = 50) -> list[dict]:
-        rows = (
+    def recent_earnings(
+        self,
+        user_id: int,
+        limit: int = 50,
+        day: date | None = None,
+    ) -> list[dict]:
+        query = (
             self.db.query(ReferralEarning, User.display_name)
             .join(User, User.id == ReferralEarning.from_user_id)
             .filter(ReferralEarning.user_id == user_id)
-            .order_by(ReferralEarning.created_at.desc())
-            .limit(limit)
-            .all()
         )
+        if day is not None:
+            start, end = _day_bounds(day)
+            query = query.filter(ReferralEarning.created_at >= start, ReferralEarning.created_at < end)
+        rows = query.order_by(ReferralEarning.created_at.desc()).limit(limit).all()
         return [
             {
                 "id": e.id,
@@ -260,9 +307,116 @@ class ReferralService:
                 "entry_fee": e.entry_fee,
                 "points": e.points,
                 "from_name": name or "Player",
+                "user": name or "Player",
+                "type": _level_type_label(e.level),
+                "type_key": f"level_{e.level}",
                 "room_id": e.room_id,
                 "tournament_id": e.tournament_id,
                 "created_at": e.created_at,
             }
             for e, name in rows
         ]
+
+    def _wallet_income(self, user_id: int, start: datetime | None, end: datetime | None) -> list[dict]:
+        query = self.db.query(WalletTransaction).filter(
+            WalletTransaction.user_id == user_id,
+            WalletTransaction.amount > 0,
+            WalletTransaction.type.in_(tuple(_PRIZE_TYPE_LABELS.keys())),
+        )
+        if start is not None:
+            query = query.filter(WalletTransaction.created_at >= start)
+        if end is not None:
+            query = query.filter(WalletTransaction.created_at < end)
+        rows = query.order_by(WalletTransaction.created_at.desc()).all()
+        items: list[dict] = []
+        for row in rows:
+            items.append(
+                {
+                    "id": f"w{row.id}",
+                    "user": "You",
+                    "type": _PRIZE_TYPE_LABELS.get(row.type, row.type),
+                    "type_key": row.type,
+                    "level": None,
+                    "percent": None,
+                    "entry_fee": None,
+                    "points": int(row.amount or 0),
+                    "from_name": "You",
+                    "room_id": row.reference_id,
+                    "tournament_id": None,
+                    "created_at": row.created_at,
+                }
+            )
+        return items
+
+    def _sum_wallet_income(self, user_id: int, start: datetime | None, end: datetime | None = None) -> int:
+        query = self.db.query(func.coalesce(func.sum(WalletTransaction.amount), 0)).filter(
+            WalletTransaction.user_id == user_id,
+            WalletTransaction.amount > 0,
+            WalletTransaction.type.in_(tuple(_PRIZE_TYPE_LABELS.keys())),
+        )
+        if start is not None:
+            query = query.filter(WalletTransaction.created_at >= start)
+        if end is not None:
+            query = query.filter(WalletTransaction.created_at < end)
+        return int(query.scalar() or 0)
+
+    def rewards_report(self, user: User, day: date) -> dict:
+        """All income for one calendar day, plus always-on today/total totals."""
+        today = date.today()
+        if day > today:
+            day = today
+
+        day_start, day_end = _day_bounds(day)
+        today_start, today_end = _day_bounds(today)
+
+        level_items = self.recent_earnings(user.id, limit=200, day=day)
+        prize_items = self._wallet_income(user.id, day_start, day_end)
+        items = sorted(
+            level_items + prize_items,
+            key=lambda row: row.get("created_at") or datetime.min,
+            reverse=True,
+        )
+
+        today_points = self._sum_between(user.id, today_start) + self._sum_wallet_income(
+            user.id, today_start, today_end
+        )
+        total_points = self._sum_between(user.id, None) + self._sum_wallet_income(user.id, None)
+        selected_points = sum(int(row.get("points") or 0) for row in items)
+
+        by_level_rows = (
+            self.db.query(
+                ReferralEarning.level,
+                func.coalesce(func.sum(ReferralEarning.points), 0),
+                func.count(ReferralEarning.id),
+            )
+            .filter(
+                ReferralEarning.user_id == user.id,
+                ReferralEarning.created_at >= day_start,
+                ReferralEarning.created_at < day_end,
+            )
+            .group_by(ReferralEarning.level)
+            .all()
+        )
+        by_level_map = {
+            int(level): {"points": int(points), "entries": int(count)}
+            for level, points, count in by_level_rows
+        }
+
+        return {
+            "date": day.isoformat(),
+            "is_today": day == today,
+            "today": today_points,
+            "total": total_points,
+            "selected": selected_points,
+            "count": len(items),
+            "items": items,
+            "by_level": [
+                {
+                    "level": level,
+                    "percent": LEVEL_PERCENTS[level],
+                    "points": by_level_map.get(level, {}).get("points", 0),
+                    "entries": by_level_map.get(level, {}).get("entries", 0),
+                }
+                for level in range(1, MAX_LEVEL + 1)
+            ],
+        }

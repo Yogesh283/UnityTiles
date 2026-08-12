@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>WXO P2P Transfer</title>
+  <meta name="theme-color" content="#E31C23" />
+  <link rel="icon" href="/assets/favicon.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E31C23; --ink: #111; --muted: #6B7280;
+      --line: #ECEEF2; --bg: #FFF; --soft: #F7F8FA; --green: #1AA260;
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif; background: #111; color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; background: none; color: inherit; }
+
+    .app {
+      min-height: 100svh; max-width: 430px; margin: 0 auto; background: var(--bg);
+      box-shadow: 0 0 0 1px #222, 0 30px 80px rgba(0,0,0,.5); padding-bottom: 96px;
+    }
+    @media (min-width: 900px) {
+      body { background: #1a1a1c; padding: 24px 0; }
+      .app { border-radius: 28px; overflow: hidden; }
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center;
+      padding: 10px 14px; background: rgba(255,255,255,.96); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; background: var(--soft);
+    }
+    .topbar h1 {
+      text-align: center; font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 800;
+    }
+
+    .pad { padding: 14px; }
+
+    .id-card {
+      display: flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, #111, #2a0a0c 80%); color: #fff;
+      border-radius: 18px; padding: 14px; margin-bottom: 12px;
+    }
+    .id-card .k { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.65); }
+    .id-card .v { font-family: Montserrat, sans-serif; font-size: 22px; font-weight: 800; margin-top: 2px; }
+    .id-card .copy {
+      margin-left: auto; background: #fff; color: var(--red); border-radius: 12px;
+      padding: 10px 14px; font-weight: 800; font-size: 13px; flex: none;
+    }
+
+    .bal-chip {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--soft); border: 1px solid var(--line); border-radius: 14px;
+      padding: 12px 14px; margin-bottom: 14px; font-size: 12px; font-weight: 600; color: var(--muted);
+    }
+    .bal-chip b { color: var(--ink); font-family: Montserrat, sans-serif; font-size: 14px; }
+
+    .note {
+      background: #FFF8E7; border: 1px solid #F5E0A8; border-radius: 12px;
+      padding: 10px 12px; font-size: 12px; color: #8B6914; line-height: 1.45; margin-bottom: 12px;
+    }
+    .note strong { color: #111; }
+
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 18px;
+      padding: 14px; margin-bottom: 12px;
+    }
+    .card h2 { font-family: Montserrat, sans-serif; font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 800; color: var(--muted);
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .field input {
+      width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px;
+      background: var(--soft); outline: none; font-weight: 700;
+    }
+    .field input:focus { border-color: #FECACA; background: #fff; }
+
+    .preview {
+      display: none; align-items: center; gap: 10px;
+      background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px;
+      padding: 10px 12px; margin: -4px 0 12px;
+    }
+    .preview.on { display: flex; }
+    .preview.bad { background: #FFF1F2; border-color: #FECDD3; }
+    .av {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--red); color: #fff;
+      display: grid; place-items: center; font-family: Montserrat, sans-serif; font-weight: 800; flex: none;
+    }
+    .preview .name { font-weight: 800; font-size: 14px; }
+    .preview .meta { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .presets button {
+      padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line);
+      background: #fff; font-size: 12px; font-weight: 700;
+    }
+
+    .btn-red {
+      width: 100%; background: var(--red); color: #fff; border-radius: 12px;
+      padding: 13px; font-weight: 800; font-size: 14px;
+      box-shadow: 0 8px 18px rgba(227,28,35,.3);
+    }
+    .btn-red:disabled { opacity: .55; cursor: not-allowed; }
+
+    .hist h3 {
+      font-family: Montserrat, sans-serif; font-size: 13px; font-weight: 800;
+      margin: 4px 0 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+    }
+    .h-item {
+      display: flex; justify-content: space-between; gap: 8px; align-items: center;
+      padding: 12px 0; border-top: 1px solid var(--line); font-size: 13px;
+    }
+    .h-item:first-of-type { border-top: 0; }
+    .h-item b { display: block; }
+    .h-item .sub { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .h-item .in { color: var(--green); font-family: Montserrat, sans-serif; font-weight: 800; }
+    .h-item .out { color: var(--red); font-family: Montserrat, sans-serif; font-weight: 800; }
+    .empty { text-align: center; padding: 20px 8px; color: var(--muted); font-size: 13px; font-weight: 600; }
+
+    .bottom-nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: 100%; max-width: 430px; background: #fff; border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      padding: 6px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 9px; font-weight: 600; color: #9CA3AF; padding: 4px;
+    }
+    .bottom-nav a.active { color: var(--red); }
+    .bottom-nav .ico { font-size: 18px; }
+    .bottom-nav .play-fab {
+      width: 52px; height: 52px; margin-top: -24px; border-radius: 50%;
+      background: var(--red); color: #fff; display: grid; place-items: center;
+      box-shadow: 0 8px 22px rgba(227,28,35,.45); font-size: 22px; border: 3px solid #fff;
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; z-index: 100; opacity: 0; pointer-events: none;
+      transition: .25s var(--ease); white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="icon-btn" href="/wallet.html" aria-label="Back">←</a>
+      <h1>P2P Transfer</h1>
+      <a class="icon-btn" href="/wallet.html" aria-label="Wallet">👛</a>
+    </header>
+
+    <div class="pad">
+      <section class="id-card">
+        <div>
+          <div class="k">Your User ID</div>
+          <div class="v" id="myId">—</div>
+        </div>
+        <button class="copy" id="btnCopyId" type="button">Copy</button>
+      </section>
+
+      <div class="bal-chip">
+        <span>Available WXO</span>
+        <b id="balText">0 WXO</b>
+      </div>
+
+      <div class="note">
+        Dusre WXO user ko <strong>User ID</strong> se seedha coins bhejo.
+        Transfer turant wallet me credit hota hai. Minimum <strong>1 WXO</strong>.
+      </div>
+
+      <div class="card">
+        <h2>Send WXO</h2>
+        <div class="field">
+          <label for="toId">Receiver User ID</label>
+          <input id="toId" type="text" inputmode="numeric" placeholder="e.g. 1042" autocomplete="off" />
+        </div>
+        <div class="preview" id="preview">
+          <div class="av" id="prevAv">WX</div>
+          <div>
+            <div class="name" id="prevName">—</div>
+            <div class="meta" id="prevMeta"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="amt">Amount (WXO)</label>
+          <input id="amt" type="number" min="1" step="1" placeholder="0" />
+        </div>
+        <div class="presets">
+          <button type="button" data-amt="50">50</button>
+          <button type="button" data-amt="100">100</button>
+          <button type="button" data-amt="250">250</button>
+          <button type="button" data-amt="500">500</button>
+          <button type="button" id="btnMax">MAX</button>
+        </div>
+        <div class="field">
+          <label for="note">Note (optional)</label>
+          <input id="note" type="text" maxlength="120" placeholder="For game / thank you" />
+        </div>
+        <button class="btn-red" type="button" id="btnSend">Send now</button>
+      </div>
+
+      <div class="card hist">
+        <h3>Recent P2P</h3>
+        <div id="hist"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <a href="/"><span class="ico">🏠</span>Home</a>
+      <a href="/tournaments.html"><span class="ico">🏆</span>Tournament</a>
+      <a href="/income.html" aria-label="Reward"><span class="play-fab">🎁</span>Reward</a>
+      <a href="/profile.html"><span class="ico">👤</span>Profile</a>
+    </nav>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/wxo-auth.js?v=1"></script>
+  <script src="/assets/wxo-wallet.js?v=7"></script>
+  <script>
+    (function () {
+      if (!window.WXOAuth || !WXOAuth.requireAuth()) return;
+
+      var myId = '';
+      var found = null;
+      var lookupT = null;
+
+      function toast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function () { t.classList.remove('show'); }, 2000);
+      }
+
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      function initials(name) {
+        var p = (name || 'Player').trim().split(/\s+/).filter(Boolean);
+        if (!p.length) return 'WX';
+        if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+        return (p[0][0] + p[1][0]).toUpperCase();
+      }
+
+      function paintBal() {
+        var b = window.WXOWallet ? WXOWallet.getBal() : 0;
+        document.getElementById('balText').textContent = Number(b || 0).toLocaleString('en-IN') + ' WXO';
+      }
+
+      function showPreview(ok, title, meta) {
+        var el = document.getElementById('preview');
+        el.classList.add('on');
+        el.classList.toggle('bad', !ok);
+        document.getElementById('prevAv').textContent = ok ? initials(title) : '!';
+        document.getElementById('prevName').textContent = title;
+        document.getElementById('prevMeta').textContent = meta || '';
+      }
+
+      function hidePreview() {
+        found = null;
+        document.getElementById('preview').classList.remove('on', 'bad');
+      }
+
+      function lookup(q) {
+        q = String(q || '').trim();
+        if (!q) { hidePreview(); return; }
+        WXOAuth.api('/wallet/p2p/lookup?q=' + encodeURIComponent(q))
+          .then(function (u) {
+            found = u;
+            showPreview(true, u.display_name, 'ID ' + u.user_id + (u.username ? ' · @' + u.username : ''));
+          })
+          .catch(function (err) {
+            found = null;
+            showPreview(false, err.message || 'User not found', '');
+          });
+      }
+
+      function paintHist(items) {
+        var box = document.getElementById('hist');
+        if (!items || !items.length) {
+          box.innerHTML = '<div class="empty">Abhi koi P2P transfer nahi.</div>';
+          return;
+        }
+        box.innerHTML = items.map(function (h) {
+          var when = h.created_at ? new Date(h.created_at).toLocaleString(undefined, {
+            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+          }) : '';
+          var dir = h.direction === 'in' ? 'in' : 'out';
+          var sign = dir === 'in' ? '+' : '−';
+          var label = dir === 'in' ? 'Received from ' : 'Sent to ';
+          return '' +
+            '<div class="h-item">' +
+              '<div><b>' + esc(label + (h.other_name || ('ID ' + h.other_user_id))) + '</b>' +
+              '<div class="sub">ID ' + esc(h.other_user_id || '—') + (h.note ? ' · ' + esc(h.note) : '') +
+              (when ? ' · ' + when : '') + '</div></div>' +
+              '<div class="' + dir + '">' + sign + Number(h.amount || 0).toLocaleString('en-IN') + '</div>' +
+            '</div>';
+        }).join('');
+      }
+
+      function loadHist() {
+        WXOAuth.api('/wallet/p2p/history')
+          .then(function (data) { paintHist(data.items || []); })
+          .catch(function () { paintHist([]); });
+      }
+
+      WXOAuth.me().then(function (me) {
+        myId = String(me.id || '');
+        document.getElementById('myId').textContent = myId || '—';
+      }).catch(function () {});
+
+      if (window.WXOWallet) WXOWallet.syncFromServer().then(paintBal);
+      else paintBal();
+      window.addEventListener('wxo:balance', paintBal);
+      loadHist();
+
+      document.getElementById('btnCopyId').onclick = function () {
+        if (!myId) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(myId).then(function () { toast('User ID copied'); }, function () { toast(myId); });
+        } else toast(myId);
+      };
+
+      document.getElementById('toId').addEventListener('input', function () {
+        found = null;
+        clearTimeout(lookupT);
+        var q = this.value.trim();
+        if (!q) { hidePreview(); return; }
+        lookupT = setTimeout(function () { lookup(q); }, 350);
+      });
+      document.getElementById('toId').addEventListener('blur', function () {
+        var q = this.value.trim();
+        if (q) lookup(q);
+      });
+
+      document.querySelectorAll('[data-amt]').forEach(function (btn) {
+        btn.onclick = function () {
+          document.getElementById('amt').value = btn.getAttribute('data-amt');
+        };
+      });
+      document.getElementById('btnMax').onclick = function () {
+        var b = window.WXOWallet ? WXOWallet.getBal() : 0;
+        document.getElementById('amt').value = String(Math.max(0, Math.floor(b)));
+      };
+
+      document.getElementById('btnSend').onclick = function () {
+        var to = document.getElementById('toId').value.trim();
+        var amount = Math.floor(Number(document.getElementById('amt').value) || 0);
+        var note = document.getElementById('note').value.trim();
+        var btn = document.getElementById('btnSend');
+        if (!to) return toast('Enter receiver User ID');
+        if (amount < 1) return toast('Enter amount');
+        if (window.WXOWallet && amount > WXOWallet.getBal()) return toast('Insufficient balance');
+
+        var label = found && found.display_name ? found.display_name : ('ID ' + to);
+        if (!confirm('Send ' + amount + ' WXO to ' + label + '?')) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+        WXOAuth.api('/wallet/p2p/transfer', {
+          method: 'POST',
+          body: { to: to, amount: amount, note: note || null }
+        }).then(function (res) {
+          if (window.WXOWallet) {
+            WXOWallet.setBal(res.balance);
+            WXOWallet.addTx({
+              type: 'out',
+              amount: amount,
+              title: 'P2P to ' + ((res.to && res.to.display_name) || label),
+              note: 'ID ' + ((res.to && res.to.user_id) || to)
+            });
+          }
+          document.getElementById('amt').value = '';
+          document.getElementById('note').value = '';
+          toast(amount + ' WXO sent');
+          loadHist();
+        }).catch(function (err) {
+          toast(err.message || 'Transfer failed');
+        }).finally(function () {
+          btn.disabled = false;
+          btn.textContent = 'Send now';
+        });
+      };
+    })();
+  </script>
+</body>
+</html>

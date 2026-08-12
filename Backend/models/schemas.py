@@ -39,6 +39,29 @@ class GoogleLoginRequest(BaseModel):
 
 class WalletResponse(BaseModel):
     balance: int
+    bonus_balance: int = 0
+
+
+class P2PTransferRequest(BaseModel):
+    to: str = Field(min_length=1, max_length=64)
+    amount: int = Field(ge=1, le=10_000_000)
+    note: str | None = Field(default=None, max_length=200)
+
+
+class WithdrawRequest(BaseModel):
+    amount: int = Field(ge=100, le=10_000_000)
+    bep20_address: str = Field(min_length=42, max_length=64)
+
+
+class DepositCreateRequest(BaseModel):
+    method: str = Field(min_length=3, max_length=32)
+    amount: float = Field(gt=0)
+
+
+class RazorpayVerifyRequest(BaseModel):
+    razorpay_order_id: str = Field(min_length=6, max_length=64)
+    razorpay_payment_id: str = Field(min_length=6, max_length=64)
+    razorpay_signature: str = Field(min_length=10, max_length=256)
 
 
 class IapProductResponse(BaseModel):
@@ -133,6 +156,7 @@ class RoomResponse(BaseModel):
     search_status: str | None = None
     queued: bool = False
     wallet_balance: int | None = None
+    bonus_balance: int | None = None
     players: list[RoomPlayerResponse] = []
 
 
@@ -150,6 +174,7 @@ class SubmitScoreResponse(BaseModel):
     prize: int = 0
     room_status: str = "active"
     wallet_balance: int | None = None
+    bonus_balance: int | None = None
 
 
 class TournamentLevelRewardRequest(BaseModel):
